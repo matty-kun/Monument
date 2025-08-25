@@ -46,33 +46,67 @@ export default function EventsPage() {
 
   return (
     <div>
-      <h1>Event Results</h1>
-      <div className="card">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">📅 Event Results</h1>
+        <p className="text-gray-600">Competition results and winners by event</p>
+      </div>
+      
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead className="bg-ndmc-green text-white">
+          <table className="min-w-full">
+            <thead className="table-header">
               <tr>
-                <th className="px-4 py-3 text-left">Event</th>
-                <th className="px-4 py-3 text-center">🥇 Gold</th>
-                <th className="px-4 py-3 text-center">🥈 Silver</th>
-                <th className="px-4 py-3 text-center">🥉 Bronze</th>
+                <th className="table-cell text-left font-semibold">Event</th>
+                <th className="table-cell text-center font-semibold">🥇 Gold</th>
+                <th className="table-cell text-center font-semibold">🥈 Silver</th>
+                <th className="table-cell text-center font-semibold">🥉 Bronze</th>
               </tr>
             </thead>
             <tbody>
               {Object.entries(grouped).map(([eventName, winners]) => (
-                <tr key={eventName} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2 font-medium">{eventName}</td>
-                  <td className="px-4 py-2 text-center font-semibold text-yellow-500">
-                    {winners.gold || "-"}
+                <tr key={eventName} className="table-row animate-fadeIn">
+                  <td className="table-cell">
+                    <span className="font-semibold text-gray-900">{eventName}</span>
                   </td>
-                  <td className="px-4 py-2 text-center font-semibold text-gray-400">
-                    {winners.silver || "-"}
+                  <td className="table-cell text-center">
+                    {winners.gold ? (
+                      <span className="badge badge-gold font-semibold px-3 py-1">
+                        {winners.gold}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
-                  <td className="px-4 py-2 text-center font-semibold text-orange-500">
-                    {winners.bronze || "-"}
+                  <td className="table-cell text-center">
+                    {winners.silver ? (
+                      <span className="badge badge-silver font-semibold px-3 py-1">
+                        {winners.silver}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="table-cell text-center">
+                    {winners.bronze ? (
+                      <span className="badge badge-bronze font-semibold px-3 py-1">
+                        {winners.bronze}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
+              {Object.keys(grouped).length === 0 && (
+                <tr>
+                  <td colSpan={4} className="table-cell text-center py-12 text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl mb-2">📅</div>
+                      <p>No event results yet. Check back soon!</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

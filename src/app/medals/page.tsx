@@ -38,35 +38,70 @@ export default function MedalTallyPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Medal Tally</h1>
-      <div className="overflow-x-auto shadow rounded-lg">
-        <table className="min-w-full bg-white">
-          <thead className="bg-yellow-600 text-white">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏅 Medal Tally</h1>
+        <p className="text-gray-600">Department medal counts and achievements</p>
+      </div>
+      
+      <div className="table-container">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
             <tr>
-              <th className="px-4 py-2">Department</th>
-              <th className="px-4 py-2">🥇 Gold</th>
-              <th className="px-4 py-2">🥈 Silver</th>
-              <th className="px-4 py-2">🥉 Bronze</th>
+              <th className="table-cell text-left font-semibold">Department</th>
+              <th className="table-cell text-center font-semibold">🥇 Gold</th>
+              <th className="table-cell text-center font-semibold">🥈 Silver</th>
+              <th className="table-cell text-center font-semibold">🥉 Bronze</th>
+              <th className="table-cell text-center font-semibold">Total</th>
             </tr>
           </thead>
           <tbody>
             {departments.map((dept) => (
-              <tr key={dept.id} className="border-b">
-                <td className="px-4 py-2">{dept.name}</td>
-                <td className="px-4 py-2 text-center font-semibold text-yellow-600">
-                  {dept.golds}
+              <tr key={dept.id} className="table-row animate-fadeIn">
+                <td className="table-cell">
+                  <span className="font-semibold text-gray-900">{dept.name}</span>
                 </td>
-                <td className="px-4 py-2 text-center font-semibold text-gray-500">
-                  {dept.silvers}
+                <td className="table-cell text-center">
+                  <div className="flex items-center justify-center">
+                    <span className="badge badge-gold text-lg font-bold px-3 py-1">
+                      {dept.golds}
+                    </span>
+                  </div>
                 </td>
-                <td className="px-4 py-2 text-center font-semibold text-orange-600">
-                  {dept.bronzes}
+                <td className="table-cell text-center">
+                  <div className="flex items-center justify-center">
+                    <span className="badge badge-silver text-lg font-bold px-3 py-1">
+                      {dept.silvers}
+                    </span>
+                  </div>
+                </td>
+                <td className="table-cell text-center">
+                  <div className="flex items-center justify-center">
+                    <span className="badge badge-bronze text-lg font-bold px-3 py-1">
+                      {dept.bronzes}
+                    </span>
+                  </div>
+                </td>
+                <td className="table-cell text-center">
+                  <span className="text-xl font-bold text-ndmc-green">
+                    {dept.golds + dept.silvers + dept.bronzes}
+                  </span>
                 </td>
               </tr>
             ))}
+            {departments.length === 0 && (
+              <tr>
+                <td colSpan={5} className="table-cell text-center py-12 text-gray-500">
+                  <div className="flex flex-col items-center">
+                    <div className="text-4xl mb-2">🏅</div>
+                    <p>No medals awarded yet. Check back soon!</p>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
     </div>
   );
-}
+};

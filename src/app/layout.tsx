@@ -1,4 +1,4 @@
-import "../styles/globals.css";
+import "./globals.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -14,9 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen bg-gray-50">
         <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-6">
+        <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
           {children}
         </main>
         <Footer />

@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  /* Basic Typography & Layout */
   body {
     @apply bg-gray-50 text-gray-900 font-sans antialiased;
   }
@@ -27,27 +26,9 @@
   a {
     @apply text-ndmc-green hover:underline;
   }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
-  }
 }
 
 @layer components {
-  /* Reusable Button Styles */
   .btn {
     @apply font-semibold py-2 px-4 rounded-lg shadow-sm transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
@@ -72,7 +53,6 @@
     @apply bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500;
   }
 
-  /* Card Style */
   .card {
     @apply bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden p-6 transition-shadow hover:shadow-xl;
   }
@@ -81,7 +61,6 @@
     @apply border-b border-gray-200 pb-4 mb-4;
   }
 
-  /* Form Input Style */
   .input {
     @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ndmc-green focus:border-transparent transition-colors;
   }
@@ -90,7 +69,6 @@
     @apply border-red-300 focus:ring-red-500;
   }
 
-  /* Table Styles */
   .table-container {
     @apply bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100;
   }
@@ -107,7 +85,6 @@
     @apply px-6 py-4;
   }
 
-  /* Status badges */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
@@ -124,12 +101,10 @@
     @apply bg-orange-100 text-orange-800;
   }
 
-  /* Loading spinner */
   .spinner {
     @apply animate-spin rounded-full h-8 w-8 border-b-2 border-ndmc-green;
   }
 
-  /* Gradient backgrounds */
   .gradient-primary {
     @apply bg-gradient-to-r from-ndmc-green to-green-600;
   }
@@ -139,7 +114,6 @@
   }
 }
 
-/* Animation keyframes */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

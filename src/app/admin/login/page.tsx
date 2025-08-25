@@ -25,14 +25,19 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-ndmc-green mb-2">🔐 Admin Login</h1>
+          <p className="text-gray-600">Sign in to manage the SIDLAK system</p>
+        </div>
+        
       <div className="card">
-        <h1>Admin Login</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="email"
             placeholder="Email"
-            className="input"
+            className="input text-center"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -40,16 +45,21 @@ export default function AdminLoginPage() {
           <input
             type="password"
             placeholder="Password"
-            className="input"
+            className="input text-center"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-600 text-sm text-center">{errorMsg}</p>
+            </div>
+          )}
           <button type="submit" className="btn btn-primary w-full">
-            Login
+            🚀 Sign In
           </button>
         </form>
+      </div>
       </div>
     </div>
   );

@@ -13,35 +13,64 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <div>
+          <h1 className="text-4xl font-bold text-ndmc-green mb-2">⚙️ Admin Dashboard</h1>
+          <p className="text-gray-600">Manage your intramurals system</p>
+        </div>
         <button
           onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          className="btn btn-danger"
         >
-          Logout
+          🚪 Logout
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link
           href="/admin/results"
-          className="bg-blue-100 hover:bg-blue-200 p-6 rounded-lg shadow text-center"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
         >
-          ➕ Add Result
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">➕</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Add Results</h3>
+          <p className="text-gray-600 text-sm">Record competition results and award medals</p>
         </Link>
+        
         <Link
           href="/admin/events"
-          className="bg-green-100 hover:bg-green-200 p-6 rounded-lg shadow text-center"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
         >
-          📅 Manage Events
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📅</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Events</h3>
+          <p className="text-gray-600 text-sm">Create and organize competition events</p>
         </Link>
+        
         <Link
           href="/admin/departments"
-          className="bg-yellow-100 hover:bg-yellow-200 p-6 rounded-lg shadow text-center"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
         >
-          🏫 Manage Departments
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏫</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Departments</h3>
+          <p className="text-gray-600 text-sm">Add and organize participating departments</p>
+        </Link>
+        
+        <Link
+          href="/admin"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+        >
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📢</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Announcements</h3>
+          <p className="text-gray-600 text-sm">Manage announcements and notifications</p>
+        </Link>
+        
+        <Link
+          href="/bigscreen"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+        >
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📺</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Big Screen</h3>
+          <p className="text-gray-600 text-sm">Display live results on big screen</p>
         </Link>
       </div>
     </div>

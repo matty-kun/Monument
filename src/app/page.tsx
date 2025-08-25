@@ -37,30 +37,58 @@ export default function LeaderboardPage() {
 
   return (
     <div>
-      <h1>Leaderboard</h1>
-      <div className="card">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏆 Leaderboard</h1>
+        <p className="text-gray-600">Real-time department rankings and scores</p>
+      </div>
+      
+      <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead className="bg-ndmc-green text-white">
+          <table className="min-w-full">
+            <thead className="table-header">
               <tr>
-                <th className="px-4 py-3 text-left">Rank</th>
-                <th className="px-4 py-3 text-left">Department</th>
-                <th className="px-4 py-3 text-center">Points</th>
+                <th className="table-cell text-left font-semibold">Rank</th>
+                <th className="table-cell text-left font-semibold">Department</th>
+                <th className="table-cell text-center font-semibold">Total Points</th>
               </tr>
             </thead>
             <tbody>
               {departments.map((dept, index) => (
-                <tr key={dept.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2 text-center font-semibold">{index + 1}</td>
-                  <td className="px-4 py-2 flex items-center gap-3">
-                    {dept.logo_url && (
-                      <img src={dept.logo_url} alt={dept.name} className="w-8 h-8 rounded-full" />
-                    )}
-                    <span className="font-medium">{dept.name}</span>
+                <tr key={dept.id} className="table-row animate-fadeIn">
+                  <td className="table-cell">
+                    <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                      index === 0 ? 'bg-yellow-500 text-white' :
+                      index === 1 ? 'bg-gray-400 text-white' :
+                      index === 2 ? 'bg-orange-500 text-white' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {index + 1}
+                    </div>
                   </td>
-                  <td className="px-4 py-2 text-center font-bold text-lg text-ndmc-green">{dept.total_points}</td>
+                  <td className="table-cell">
+                    <div className="flex items-center gap-3">
+                    {dept.logo_url && (
+                      <img src={dept.logo_url} alt={dept.name} className="w-10 h-10 rounded-full border-2 border-gray-200" />
+                    )}
+                    <span className="font-semibold text-gray-900">{dept.name}</span>
+                    </div>
+                  </td>
+                  <td className="table-cell text-center">
+                    <span className="text-2xl font-bold text-ndmc-green">{dept.total_points}</span>
+                    <span className="text-sm text-gray-500 ml-1">pts</span>
+                  </td>
                 </tr>
               ))}
+              {departments.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="table-cell text-center py-12 text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl mb-2">📊</div>
+                      <p>No results yet. Check back soon!</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

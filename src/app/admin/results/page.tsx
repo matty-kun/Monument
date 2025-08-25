@@ -53,13 +53,24 @@ export default function AddResultPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-6 rounded-lg shadow">
-      <h1 className="text-2xl font-bold mb-4">Add Result</h1>
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">➕ Add Result</h1>
+        <p className="text-gray-600">Record competition results and award medals to departments</p>
+      </div>
+      
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-xl font-semibold text-gray-800">Competition Result Form</h2>
+        </div>
+        
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
         <select
           value={eventId}
           onChange={(e) => setEventId(e.target.value)}
-          className="w-full border rounded px-3 py-2"
+          className="input"
           required
         >
           <option value="">Select Event</option>
@@ -69,11 +80,14 @@ export default function AddResultPage() {
             </option>
           ))}
         </select>
+        </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
         <select
           value={departmentId}
           onChange={(e) => setDepartmentId(e.target.value)}
-          className="w-full border rounded px-3 py-2"
+          className="input"
           required
         >
           <option value="">Select Department</option>
@@ -83,8 +97,11 @@ export default function AddResultPage() {
             </option>
           ))}
         </select>
+        </div>
 
-        <div className="flex gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Medal Type</label>
+          <div className="grid grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
             <input
               type="radio"
@@ -94,8 +111,9 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(5);
               }}
+              className="text-ndmc-green focus:ring-ndmc-green"
             />
-            🥇 Gold
+            <span className="badge badge-gold">🥇 Gold (5 pts)</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -106,8 +124,9 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(3);
               }}
+              className="text-ndmc-green focus:ring-ndmc-green"
             />
-            🥈 Silver
+            <span className="badge badge-silver">🥈 Silver (3 pts)</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -118,29 +137,42 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(1);
               }}
+              className="text-ndmc-green focus:ring-ndmc-green"
             />
-            🥉 Bronze
+            <span className="badge badge-bronze">🥉 Bronze (1 pt)</span>
           </label>
+          </div>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
         <input
           type="number"
           value={points}
           onChange={(e) => setPoints(Number(e.target.value))}
-          className="w-full border rounded px-3 py-2"
+          className="input"
           placeholder="Points"
           required
+          min="0"
         />
+        </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="btn btn-primary w-full text-lg py-3"
         >
-          Submit
+          🏆 Submit Result
         </button>
       </form>
 
-      {message && <p className="mt-4 text-center">{message}</p>}
+      {message && (
+        <div className={`mt-6 p-4 rounded-lg text-center ${
+          message.includes('✅') ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          <p className="font-medium">{message}</p>
+        </div>
+      )}
+      </div>
     </div>
   );
 }
