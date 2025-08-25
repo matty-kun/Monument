@@ -103,5 +103,6 @@ export default function MedalTallyPage() {
         </table>
       </div>
     </div>
+    </div>
   );
-};
+}
