@@ -34,12 +34,14 @@ export default function Navbar() {
               src={Logo} 
               alt="Monument Logo" 
               width={50} 
-              className="mr-1"
+              className="mr-2"
               priority
             />
-            Monument
+            <div className="flex flex-col">
+              <span>Monument</span>
+              <span className="text-sm text-gray-500 font-normal">This is your moment</span>
+            </div>
           </Link>
-          <span className="ml-2 text-sm text-gray-500 hidden sm:inline">Intramurals</span>
         </div>
         <div className="flex items-center space-x-1">
           <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
