@@ -3,8 +3,11 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 export const metadata = {
-  title: "SIDLAK Scoreboard",
-  description: "Real-time intramurals score tracking system",
+  title: "Monument",
+  description: "Real-time Intramurals score tracking system",
+  icons: {
+    icon: '/monument-logo.png',
+  }
 };
 
 export default function RootLayout({

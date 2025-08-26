@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import Logo from "../assets/monument-logo.png";
 
 export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
@@ -27,8 +29,15 @@ export default function Navbar() {
     <nav className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
         <div className="flex items-center">
-          <Link href="/" className="text-2xl font-bold text-ndmc-green hover:text-green-700 transition-colors">
-            🏆 SIDLAK
+          <Link href="/" className="flex items-center text-2xl font-bold text-ndmc-green hover:text-green-700 transition-colors no-underline">
+            <Image 
+              src={Logo} 
+              alt="Monument Logo" 
+              width={50} 
+              className="mr-1"
+              priority
+            />
+            Monument
           </Link>
           <span className="ml-2 text-sm text-gray-500 hidden sm:inline">Intramurals</span>
         </div>
