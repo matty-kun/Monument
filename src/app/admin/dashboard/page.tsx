@@ -56,7 +56,7 @@ export default function AdminDashboard() {
         </Link>
         
         <Link
-          href="/admin"
+          href="/admin/announcements"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📢</div>

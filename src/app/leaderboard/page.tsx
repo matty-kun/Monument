@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface LeaderboardRow {
   id: string;
   name: string;
+  image_url?: string;
   total_points: number;
   golds: number;
   silvers: number;
@@ -57,15 +58,33 @@ export default function ScoreboardPage() {
               className={`flex justify-between items-center p-6 rounded-2xl shadow-lg 
                 ${index === 0 ? "bg-yellow-500 text-black" : "bg-gray-800"}`}
             >
-              {/* Left Side: Rank & Department */}
-              <div className="flex flex-col">
-                <span className="text-2xl md:text-4xl font-bold">
-                  #{index + 1} {dept.name}
-                </span>
-                <div className="flex gap-4 mt-2 text-lg md:text-2xl">
-                  <span className="text-yellow-400">🥇 {dept.golds}</span>
-                  <span className="text-gray-300">🥈 {dept.silvers}</span>
-                  <span className="text-orange-400">🥉 {dept.bronzes}</span>
+              {/* Left Side: Image, Rank & Department */}
+              <div className="flex items-center gap-4">
+                {/* Department Image */}
+                <div className="flex-shrink-0">
+                  {dept.image_url ? (
+                    <img 
+                      src={dept.image_url} 
+                      alt={dept.name}
+                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-4 border-white shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-600 rounded-full border-4 border-white flex items-center justify-center">
+                      <span className="text-2xl">🏫</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Department Info */}
+                <div className="flex flex-col">
+                  <span className="text-2xl md:text-4xl font-bold">
+                    #{index + 1} {dept.name}
+                  </span>
+                  <div className="flex gap-4 mt-2 text-lg md:text-2xl">
+                    <span className="text-yellow-400">🥇 {dept.golds}</span>
+                    <span className="text-gray-300">🥈 {dept.silvers}</span>
+                    <span className="text-orange-400">🥉 {dept.bronzes}</span>
+                  </div>
                 </div>
               </div>
 

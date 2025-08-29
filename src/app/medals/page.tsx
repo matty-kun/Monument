@@ -18,9 +18,16 @@ export default function MedalTallyPage() {
   useEffect(() => {
     fetchTally();
 
-    // Refresh every 30s for real-time updates
-    const interval = setInterval(fetchTally, 30000);
-    return () => clearInterval(interval);
+    const channel = supabase
+      .channel("medals-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
+        fetchTally();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchTally() {
@@ -30,46 +37,50 @@ export default function MedalTallyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-8">
-      <h1 className="text-4xl md:text-6xl font-extrabold text-center mb-10 text-yellow-400">
-        🏆 SIDLAK 2025 Medal Tally
-      </h1>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="p-3">Rank</th>
-              <th className="p-3">Department</th>
-              <th className="p-3 text-yellow-400">🥇 Gold</th>
-              <th className="p-3 text-gray-300">🥈 Silver</th>
-              <th className="p-3 text-orange-400">🥉 Bronze</th>
-              <th className="p-3">Total Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tally.map((row, idx) => (
-              <tr
-                key={row.department_id}
-                className={`border-t ${
-                  idx === 0 ? "bg-yellow-900/40" : ""
-                }`}
-              >
-                <td className="p-3 font-bold">{idx + 1}</td>
-                <td className="p-3 font-semibold">{row.department_name}</td>
-                <td className="p-3 text-yellow-300 font-bold">{row.gold}</td>
-                <td className="p-3 text-gray-300">{row.silver}</td>
-                <td className="p-3 text-orange-400">{row.bronze}</td>
-                <td className="p-3 font-extrabold">{row.total_points}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏆 Medal Tally</h1>
+        <p className="text-gray-600">Overall department rankings and medal counts</p>
       </div>
 
-      <p className="text-center text-gray-400 mt-6 text-sm">
-        Auto-refreshes every 30 seconds • Powered by Supabase ⚡
-      </p>
+      <div className="table-container">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="table-header">
+              <tr>
+                <th className="table-cell text-left font-semibold">Rank</th>
+                <th className="table-cell text-left font-semibold">Department</th>
+                <th className="table-cell text-center font-semibold">🥇 Gold</th>
+                <th className="table-cell text-center font-semibold">🥈 Silver</th>
+                <th className="table-cell text-center font-semibold">🥉 Bronze</th>
+                <th className="table-cell text-center font-semibold">Total Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tally.map((row, idx) => (
+                <tr key={row.department_id} className="table-row animate-fadeIn">
+                  <td className="table-cell font-bold">{idx + 1}</td>
+                  <td className="table-cell font-semibold">{row.department_name}</td>
+                  <td className="table-cell text-center text-yellow-500 font-bold">{row.gold}</td>
+                  <td className="table-cell text-center text-gray-400">{row.silver}</td>
+                  <td className="table-cell text-center text-orange-400">{row.bronze}</td>
+                  <td className="table-cell text-center font-extrabold">{row.total_points}</td>
+                </tr>
+              ))}
+              {tally.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl mb-2">🏆</div>
+                      <p>No medal tally yet. Check back soon!</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 // import { AnnouncementsAdmin } from "../../components/admin/AnnouncementsAdmin";
-import { DepartmentsAdmin } from "../../components/admin/DepartmentsAdmin";
-import { EventsAdmin } from "../../components/admin/EventsAdmin";
-import { ResultsAdmin } from "../../components/admin/ResultsAdmin";
+// import { DepartmentsAdmin } from "../../components/admin/DepartmentsAdmin";
+// import { EventsAdmin } from "../../components/admin/EventsAdmin";
+// import { ResultsAdmin } from "../../components/admin/ResultsAdmin";
 
 export default function AdminPage() {
   const [tab, setTab] = useState("announcements");
@@ -28,9 +28,9 @@ export default function AdminPage() {
       </div>
 
       {/* {tab === "announcements" && <AnnouncementsAdmin />} */}
-      {tab === "departments" && <DepartmentsAdmin />}
-      {tab === "events" && <EventsAdmin />}
-      {tab === "results" && <ResultsAdmin />}
+      {/* {tab === "departments" && <DepartmentsAdmin />} */}
+      {/* {tab === "events" && <EventsAdmin />} */}
+      {/* {tab === "results" && <ResultsAdmin />} */}
     </div>
   );
 }
