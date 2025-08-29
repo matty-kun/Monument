@@ -30,7 +30,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link
           href="/admin/results"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">➕</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Add Results</h3>
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
         
         <Link
           href="/admin/events"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📅</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Events</h3>
@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         
         <Link
           href="/admin/departments"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏫</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Departments</h3>
@@ -57,20 +57,11 @@ export default function AdminDashboard() {
         
         <Link
           href="/admin"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📢</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Announcements</h3>
           <p className="text-gray-600 text-sm">Manage announcements and notifications</p>
-        </Link>
-        
-        <Link
-          href="/bigscreen"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group"
-        >
-          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📺</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Big Screen</h3>
-          <p className="text-gray-600 text-sm">Display live results on big screen</p>
         </Link>
       </div>
     </div>
