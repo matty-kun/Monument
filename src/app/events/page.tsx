@@ -47,7 +47,7 @@ export default function EventsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-ndmc-green mb-2">📅 Event Results</h1>
+        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏟️ Event Results</h1>
         <p className="text-gray-600">Competition results and winners by event</p>
       </div>
       
@@ -101,7 +101,7 @@ export default function EventsPage() {
                 <tr>
                   <td colSpan={4} className="table-cell text-center py-12 text-gray-500">
                     <div className="flex flex-col items-center">
-                      <div className="text-4xl mb-2">📅</div>
+                      <div className="text-4xl mb-2">🏟️</div>
                       <p>No event results yet. Check back soon!</p>
                     </div>
                   </td>

@@ -51,7 +51,10 @@ export default function Navbar() {
             🏅 Medals
           </Link>
           <Link href="/events" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
-            📅 Events
+            🏟️ Events
+          </Link>
+          <Link href="/schedule" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
+            🗓️ Schedule
           </Link>
           {role === "admin" && (
             <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-ndmc-green hover:bg-green-700 transition-all shadow-sm">
