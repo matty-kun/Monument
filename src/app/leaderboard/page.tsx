@@ -41,15 +41,16 @@ export default function ScoreboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center p-6">
-      <h1 className="text-4xl md:text-6xl font-bold mb-8 text-yellow-400">
-        🏆 SIDLAK Live Scoreboard
-      </h1>
+    <div className="min-h-screen bg-gray-50 text-black flex flex-col items-center p-6">
+      {/* Minimalist Podium */}
+      <div className="relative w-full mt-8">
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <Podium leaderboard={leaderboard.slice(0, 3)} />
+        </div>
+      </div>
 
-      {leaderboard.length >= 3 && <Podium leaderboard={leaderboard.slice(0, 3)} />}
-
-      <div className="w-full max-w-5xl space-y-4 mt-8">
-        <h2 className="text-3xl font-bold text-center mb-4">Full Leaderboard</h2>
+      {/* Minimalist Full Leaderboard */}
+      <div className="w-full max-w-3xl space-y-2 mt-8">
         <AnimatePresence>
           {leaderboard.slice(3).map((dept, index) => (
             <motion.div
@@ -59,41 +60,34 @@ export default function ScoreboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.5 }}
-              className={`flex justify-between items-center p-6 rounded-2xl shadow-lg 
-                ${index === 0 ? "bg-yellow-500 text-black" : "bg-gray-800"}`}
+              className="flex justify-between items-center p-4 rounded-lg bg-white"
             >
-              {/* Left Side: Image, Rank & Department */}
               <div className="flex items-center gap-4">
-                {/* Department Image */}
                 <div className="flex-shrink-0">
                   {dept.image_url ? (
                     <img 
                       src={dept.image_url} 
                       alt={dept.name}
-                      className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-full border-4 border-white shadow-lg"
+                      className="w-12 h-12 object-cover rounded-full"
                     />
                   ) : (
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-600 rounded-full border-4 border-white flex items-center justify-center">
-                      <span className="text-2xl">🏫</span>
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-xl">🏫</span>
                     </div>
                   )}
                 </div>
-
-                {/* Department Info */}
                 <div className="flex flex-col">
-                  <span className="text-2xl md:text-4xl font-bold">
-                    #{index + 1} {dept.name}
+                  <span className="text-base font-medium">
+                    #{index + 4} {dept.name}
                   </span>
-                  <div className="flex gap-4 mt-2 text-lg md:text-2xl">
-                    <span className="text-yellow-400">🥇 {dept.golds}</span>
-                    <span className="text-gray-300">🥈 {dept.silvers}</span>
-                    <span className="text-orange-400">🥉 {dept.bronzes}</span>
+                  <div className="flex gap-2 mt-1 text-sm">
+                    <span className="text-gray-600">🥇 {dept.golds}</span>
+                    <span className="text-gray-600">🥈 {dept.silvers}</span>
+                    <span className="text-gray-600">🥉 {dept.bronzes}</span>
                   </div>
                 </div>
               </div>
-
-              {/* Right Side: Points */}
-              <span className="text-3xl md:text-5xl font-extrabold">
+              <span className="text-xl font-semibold">
                 {dept.total_points}
               </span>
             </motion.div>

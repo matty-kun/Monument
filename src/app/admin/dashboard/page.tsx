@@ -2,15 +2,33 @@
 
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
+import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // router.push("/admin/login"); // Temporarily bypass login
+      } else {
+        setUser(session.user);
+      }
+    };
+
+    fetchUser();
+  }, [router]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/admin/login");
   }
+
+  
 
   return (
     <div className="space-y-8">
@@ -47,7 +65,7 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
-          href="admin/schedule"
+          href="/admin/schedule"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🗓️</div>

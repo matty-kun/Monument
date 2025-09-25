@@ -24,7 +24,7 @@
   }
 
   a {
-    @apply text-ndmc-green hover:underline;
+    @apply text-ndmc-green;
   }
 }
 
@@ -103,6 +103,10 @@
 
   .spinner {
     @apply animate-spin rounded-full h-8 w-8 border-b-2 border-ndmc-green;
+  }
+
+  .spinner-sm {
+    @apply animate-spin rounded-full h-5 w-5 border-b-2 border-white;
   }
 
   .gradient-primary {

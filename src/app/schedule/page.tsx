@@ -1,7 +1,11 @@
+"use client";
 
 import { NextPage } from 'next';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 
 interface Event {
+  id: string;
   name: string;
   departments: string[];
   location: string;
@@ -10,34 +14,20 @@ interface Event {
   status: 'upcoming' | 'ongoing' | 'finished';
 }
 
-const events: Event[] = [
-  {
-    name: 'Event 1',
-    departments: ['Department A', 'Department B'],
-    location: 'Location 1',
-    time: '10:00 AM',
-    date: '2025-09-01',
-    status: 'upcoming',
-  },
-  {
-    name: 'Event 2',
-    departments: ['Department C', 'Department D'],
-    location: 'Location 2',
-    time: '02:00 PM',
-    date: '2025-09-01',
-    status: 'ongoing',
-  },
-  {
-    name: 'Event 3',
-    departments: ['Department E', 'Department F'],
-    location: 'Location 3',
-    time: '04:00 PM',
-    date: '2025-09-01',
-    status: 'finished',
-  },
-];
-
 const SchedulePage: NextPage = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  async function fetchEvents() {
+    const { data, error } = await supabase.from("schedules").select("*").order("date");
+    if (!error && data) {
+      setEvents(data as Event[]);
+    }
+  }
+
   return (
     <div>
       <div className="mb-8">
@@ -59,8 +49,8 @@ const SchedulePage: NextPage = () => {
               </tr>
             </thead>
             <tbody>
-              {events.map((event, index) => (
-                <tr key={index} className="table-row animate-fadeIn">
+              {events.map((event) => (
+                <tr key={event.id} className="table-row animate-fadeIn">
                   <td className="table-cell">{event.name}</td>
                   <td className="table-cell">{event.departments.join(', ')}</td>
                   <td className="table-cell">{event.location}</td>
@@ -81,6 +71,13 @@ const SchedulePage: NextPage = () => {
                   </td>
                 </tr>
               ))}
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-gray-500">
+                    No events scheduled yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

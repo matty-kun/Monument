@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import { useRouter } from "next/navigation";
+import { User } from "@supabase/supabase-js"; // Import User type
 
 interface Department {
   id: string;
@@ -13,6 +15,8 @@ interface Event {
 }
 
 export default function AddResultPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null); // Update useState type
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState("");
@@ -22,8 +26,18 @@ export default function AddResultPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // router.push("/admin/login"); // Temporarily bypass login
+      } else {
+        setUser(session.user);
+      }
+    };
+
+    fetchUser();
     fetchDropdownData();
-  }, []);
+  }, [router]);
 
   async function fetchDropdownData() {
     const { data: deptData } = await supabase.from("departments").select("id, name");
@@ -51,6 +65,8 @@ export default function AddResultPage() {
       setPoints(5);
     }
   }
+
+  
 
   return (
     <div className="max-w-2xl mx-auto">
