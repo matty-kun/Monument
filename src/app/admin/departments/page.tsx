@@ -1,7 +1,10 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+
+type DepartmentInsert = { name: string; image_url?: string };
 
 interface Department {
   id: string;
@@ -73,14 +76,12 @@ export default function DepartmentsPage() {
 
     try {
       if (editingId) {
-        const updateData: any = { name };
+        const updateData: DepartmentInsert = { name };
         if (imageUrl) updateData.image_url = imageUrl;
-        
         await supabase.from("departments").update(updateData).eq("id", editingId);
       } else {
-        const insertData: any = { name };
+        const insertData: DepartmentInsert = { name };
         if (imageUrl) insertData.image_url = imageUrl;
-        
         await supabase.from("departments").insert([insertData]);
       }
       

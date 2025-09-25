@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
+import Podium from "@/components/Podium";
 
 interface LeaderboardRow {
   id: string;
@@ -45,9 +46,12 @@ export default function ScoreboardPage() {
         🏆 SIDLAK Live Scoreboard
       </h1>
 
-      <div className="w-full max-w-5xl space-y-4">
+      {leaderboard.length >= 3 && <Podium leaderboard={leaderboard.slice(0, 3)} />}
+
+      <div className="w-full max-w-5xl space-y-4 mt-8">
+        <h2 className="text-3xl font-bold text-center mb-4">Full Leaderboard</h2>
         <AnimatePresence>
-          {leaderboard.map((dept, index) => (
+          {leaderboard.slice(3).map((dept, index) => (
             <motion.div
               key={dept.id}
               layout

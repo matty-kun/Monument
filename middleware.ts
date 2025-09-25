@@ -59,11 +59,18 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated access to admin
-  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
+  // If user is not authenticated and is trying to access a protected route
+  if (!user && request.nextUrl.pathname.startsWith("/admin") && request.nextUrl.pathname !== "/admin/login") {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/admin/login";
     return NextResponse.redirect(loginUrl);
+  }
+
+  // If user is authenticated and is trying to access the login page
+  if (user && request.nextUrl.pathname === "/admin/login") {
+    const dashboardUrl = request.nextUrl.clone();
+    dashboardUrl.pathname = "/admin/dashboard";
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return response;

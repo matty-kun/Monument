@@ -41,13 +41,13 @@ export default function AdminDashboard() {
           href="/admin/events"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
-          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📅</div>
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏟️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Events</h3>
           <p className="text-gray-600 text-sm">Create and organize competition events</p>
         </Link>
 
         <Link
-          href="/schedule"
+          href="admin/schedule"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🗓️</div>
@@ -64,14 +64,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600 text-sm">Add and organize participating departments</p>
         </Link>
         
-        <Link
-          href="/admin/announcements"
-          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
-        >
-          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📢</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Announcements</h3>
-          <p className="text-gray-600 text-sm">Manage announcements and notifications</p>
-        </Link>
+        
       </div>
     </div>
   );
