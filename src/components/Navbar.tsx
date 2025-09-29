@@ -8,6 +8,7 @@ import Logo from "../assets/monument-logo.png";
 
 export default function Navbar() {
   const [role, setRole] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     getRole();
@@ -43,7 +44,7 @@ export default function Navbar() {
             </div>
           </Link>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="hidden md:flex items-center space-x-1">
           <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
             📊 Leaderboard
           </Link>
@@ -62,7 +63,27 @@ export default function Navbar() {
             </Link>
           )}
         </div>
+        <div className="md:hidden flex items-center">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-700 hover:text-ndmc-green focus:outline-none">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+          </button>
+        </div>
       </div>
+      {isMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">📊 Leaderboard</Link>
+            <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🏅 Medals</Link>
+            <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🏟️ Events</Link>
+            <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🗓️ Schedule</Link>
+            {role === "admin" && (
+              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-ndmc-green hover:bg-green-700">⚙️ Admin</Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
