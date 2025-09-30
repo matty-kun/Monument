@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
+import { calculateTotalPoints } from "@/utils/scoring";
 
 interface LeaderboardRow {
   id: string;
@@ -37,7 +38,14 @@ export default function ScoreboardPage() {
 
   async function fetchLeaderboard() {
     const { data, error } = await supabase.rpc("get_leaderboard");
-    if (!error && data) setLeaderboard(data);
+    if (!error && data) {
+      // Calculate total_points using the scoring logic
+      const calculated = data.map((row: LeaderboardRow) => ({
+        ...row,
+        total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
+      }));
+      setLeaderboard(calculated);
+    }
   }
 
   return (

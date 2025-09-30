@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js"; // Import User type
+import { User } from "@supabase/supabase-js";
+import { calculateTotalPoints } from "@/utils/scoring";
 
 interface Department {
   id: string;
@@ -22,7 +23,8 @@ export default function AddResultPage() {
   const [eventId, setEventId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [medalType, setMedalType] = useState("gold");
-  const [points, setPoints] = useState(5);
+  // Points are now calculated based on medal type
+  const [points, setPoints] = useState(1);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -48,12 +50,17 @@ export default function AddResultPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Calculate points based on medal type
+    let calculatedPoints = 0;
+    if (medalType === "gold") calculatedPoints = 1;
+    else if (medalType === "silver") calculatedPoints = 0.20;
+    else if (medalType === "bronze") calculatedPoints = 0.04;
     const { error } = await supabase.from("results").insert([
       {
         event_id: eventId,
         department_id: departmentId,
         medal_type: medalType,
-        points,
+        points: calculatedPoints,
       },
     ]);
     if (error) setMessage(error.message);
@@ -129,7 +136,7 @@ export default function AddResultPage() {
               }}
               className="text-ndmc-green focus:ring-ndmc-green"
             />
-            <span className="badge badge-gold">🥇 Gold (5 pts)</span>
+            <span className="badge badge-gold">🥇 Gold (1 pt)</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -142,7 +149,7 @@ export default function AddResultPage() {
               }}
               className="text-ndmc-green focus:ring-ndmc-green"
             />
-            <span className="badge badge-silver">🥈 Silver (3 pts)</span>
+            <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -155,7 +162,7 @@ export default function AddResultPage() {
               }}
               className="text-ndmc-green focus:ring-ndmc-green"
             />
-            <span className="badge badge-bronze">🥉 Bronze (1 pt)</span>
+            <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
           </label>
           </div>
         </div>

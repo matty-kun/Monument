@@ -56,7 +56,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
             </div>
             <div className="text-center">
               <div className="text-base md:text-lg font-semibold">{dept.name}</div>
-              <div className="text-sm md:text-base">{dept.total_points} pts</div>
+                  <div className="text-sm md:text-base">{calculateTotalPoints(dept.golds, dept.silvers, dept.bronzes)} pts</div>
             </div>
             <div
               className={`w-28 md:w-56 rounded-t-lg text-center text-black font-bold p-2 md:p-4 ${bgColor} ${height}`}
@@ -69,3 +69,4 @@ export default function Podium({ leaderboard }: PodiumProps) {
     </div>
   );
 }
+import { calculateTotalPoints } from "@/utils/scoring";
