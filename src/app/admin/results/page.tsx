@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import Link from "next/link";
 // ...existing code...
 
 interface Department {
@@ -64,9 +65,14 @@ export default function AddResultPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-  <h1 className="text-4xl font-bold text-monument-green mb-2">➕ Add Result</h1>
-        <p className="text-gray-600">Record competition results and award medals to departments</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold text-monument-green mb-2">➕ Add Result</h1>
+          <p className="text-gray-600">Record competition results and award medals to departments</p>
+        </div>
+        <Link href="/admin/results/manage" className="btn btn-secondary">
+          Manage Results
+        </Link>
       </div>
       
       <div className="card">
@@ -119,7 +125,7 @@ export default function AddResultPage() {
               checked={medalType === "gold"}
               onChange={(e) => {
                 setMedalType(e.target.value);
-                setPoints(5);
+                setPoints(1);
               }}
               className="text-monument-green focus:ring-monument-green"
             />
@@ -132,7 +138,7 @@ export default function AddResultPage() {
               checked={medalType === "silver"}
               onChange={(e) => {
                 setMedalType(e.target.value);
-                setPoints(3);
+                setPoints(0.20);
               }}
               className="text-monument-green focus:ring-monument-green"
             />
@@ -145,7 +151,7 @@ export default function AddResultPage() {
               checked={medalType === "bronze"}
               onChange={(e) => {
                 setMedalType(e.target.value);
-                setPoints(1);
+                setPoints(0.04);
               }}
               className="text-monument-green focus:ring-monument-green"
             />
@@ -158,6 +164,7 @@ export default function AddResultPage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
         <input
           type="number"
+          step="any"
           value={points}
           onChange={(e) => setPoints(Number(e.target.value))}
           className="input"

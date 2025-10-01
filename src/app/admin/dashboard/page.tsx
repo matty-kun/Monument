@@ -7,14 +7,14 @@ import { useEffect } from "react";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  // ...existing code...
 
-  useEffect(() => {
-    // ...existing code...
-  }, [router]);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      alert('Logout failed. Please try again.');
+      return;
+    }
     router.push("/admin/login");
   }
 

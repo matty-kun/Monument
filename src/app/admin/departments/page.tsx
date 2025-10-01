@@ -4,7 +4,8 @@ import Image from 'next/image';
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-// ...existing code...
+import toast, { Toaster } from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 type DepartmentInsert = { name: string; image_url?: string };
 
@@ -15,13 +16,14 @@ interface Department {
 }
 
 export default function DepartmentsPage() {
-  // ...existing code...
   const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDepartments();
@@ -36,7 +38,6 @@ export default function DepartmentsPage() {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedImage(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -55,7 +56,7 @@ export default function DepartmentsPage() {
       .upload(filePath, file);
 
     if (uploadError) {
-      console.error('Error uploading image:', uploadError);
+      toast.error(`Error uploading image: ${uploadError.message}`);
       return null;
     }
 
@@ -72,26 +73,33 @@ export default function DepartmentsPage() {
 
     let imageUrl = null;
     
-    // Upload image if selected
     if (selectedImage) {
       imageUrl = await uploadImage(selectedImage);
+      if (!imageUrl) {
+        setUploading(false);
+        return; // Stop if image upload failed
+      }
     }
 
     try {
       if (editingId) {
         const updateData: DepartmentInsert = { name };
         if (imageUrl) updateData.image_url = imageUrl;
-        await supabase.from("departments").update(updateData).eq("id", editingId);
+        const { error } = await supabase.from("departments").update(updateData).eq("id", editingId);
+        if (error) throw error;
+        toast.success("Department updated successfully!");
       } else {
         const insertData: DepartmentInsert = { name };
         if (imageUrl) insertData.image_url = imageUrl;
-        await supabase.from("departments").insert([insertData]);
+        const { error } = await supabase.from("departments").insert([insertData]);
+        if (error) throw error;
+        toast.success("Department added successfully!");
       }
       
       resetForm();
       fetchDepartments();
-    } catch (error) {
-      console.error('Error saving department:', error);
+    } catch (error: any) {
+      toast.error(`Error saving department: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -105,18 +113,33 @@ export default function DepartmentsPage() {
   }
 
   async function handleDelete(id: string) {
-    // Get the department to delete its image from storage
-    const dept = departments.find(d => d.id === id);
-    
-    if (dept?.image_url) {
-      // Extract file path from URL and delete from storage
-      const urlParts = dept.image_url.split('/');
-      const filePath = `departments/${urlParts[urlParts.length - 1]}`;
-      await supabase.storage.from('department-images').remove([filePath]);
-    }
+    setDepartmentToDeleteId(id);
+    setShowConfirmModal(true);
+  }
 
-    await supabase.from("departments").delete().eq("id", id);
-    fetchDepartments();
+  async function handleConfirmDelete() {
+    if (!departmentToDeleteId) return;
+
+    try {
+      const dept = departments.find(d => d.id === departmentToDeleteId);
+      
+      if (dept?.image_url) {
+        const urlParts = dept.image_url.split('/');
+        const filePath = `departments/${urlParts[urlParts.length - 1]}`;
+        const { error: storageError } = await supabase.storage.from('department-images').remove([filePath]);
+        if (storageError) throw storageError;
+      }
+
+      const { error } = await supabase.from("departments").delete().eq("id", departmentToDeleteId);
+      if (error) throw error;
+      toast.success("Department deleted successfully!");
+      fetchDepartments();
+    } catch (error: any) {
+      toast.error(`Error deleting department: ${error.message}`);
+    } finally {
+      setShowConfirmModal(false);
+      setDepartmentToDeleteId(null);
+    }
   }
 
   function handleEdit(dept: Department) {
@@ -227,11 +250,7 @@ export default function DepartmentsPage() {
                       ✏️ Edit
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to delete ${dept.name}?`)) {
-                          handleDelete(dept.id);
-                        }
-                      }}
+                      onClick={() => handleDelete(dept.id)}
                       className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                     >
                       🗑️ Delete
@@ -253,6 +272,14 @@ export default function DepartmentsPage() {
           </tbody>
         </table>
       </div>
+    <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this department entry? This action cannot be undone."
+      />
+      <Toaster />
     </div>
   );
 }

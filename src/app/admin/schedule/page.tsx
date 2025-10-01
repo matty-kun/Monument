@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-// ...existing code...
+import toast, { Toaster } from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Schedule {
   id: string;
@@ -15,7 +16,6 @@ interface Schedule {
 }
 
 export default function SchedulePage() {
-  // ...existing code...
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [name, setName] = useState("");
   const [departments, setDepartments] = useState("");
@@ -24,6 +24,8 @@ export default function SchedulePage() {
   const [date, setDate] = useState("");
   const [status, setStatus] = useState<"upcoming" | "ongoing" | "finished">("upcoming");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSchedules();
@@ -37,13 +39,21 @@ export default function SchedulePage() {
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
     const departmentsArray = departments.split(",").map((d) => d.trim());
-    if (editingId) {
-      await supabase
-        .from("schedules")
-        .update({ name, departments: departmentsArray, location, time, date, status })
-        .eq("id", editingId);
-    } else {
-      await supabase.from("schedules").insert([{ name, departments: departmentsArray, location, time, date, status }]);
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from("schedules")
+          .update({ name, departments: departmentsArray, location, time, date, status })
+          .eq("id", editingId);
+        if (error) throw error;
+        toast.success("Schedule updated successfully!");
+      } else {
+        const { error } = await supabase.from("schedules").insert([{ name, departments: departmentsArray, location, time, date, status }]);
+        if (error) throw error;
+        toast.success("Schedule added successfully!");
+      }
+    } catch (error: any) {
+      toast.error(`Error saving schedule: ${error.message}`);
     }
     setName("");
     setDepartments("");
@@ -56,8 +66,22 @@ export default function SchedulePage() {
   }
 
   async function handleDelete(id: string) {
-    await supabase.from("schedules").delete().eq("id", id);
-    fetchSchedules();
+    setScheduleToDeleteId(id);
+    setShowConfirmModal(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!scheduleToDeleteId) return;
+
+    const { error } = await supabase.from("schedules").delete().eq("id", scheduleToDeleteId);
+    if (error) {
+      toast.error("Error deleting schedule.");
+    } else {
+      toast.success("Schedule deleted successfully!");
+      fetchSchedules();
+    }
+    setShowConfirmModal(false);
+    setScheduleToDeleteId(null);
   }
 
   
@@ -152,6 +176,7 @@ export default function SchedulePage() {
                 <td className="px-4 py-2 flex gap-2">
                   <button
                     onClick={() => {
+                      console.log("Editing schedule:", schedule);
                       setEditingId(schedule.id);
                       setName(schedule.name);
                       setDepartments(schedule.departments.join(", "));
@@ -159,6 +184,15 @@ export default function SchedulePage() {
                       setTime(schedule.time);
                       setDate(schedule.date);
                       setStatus(schedule.status);
+                      console.log("State after edit click:", {
+                        editingId: schedule.id,
+                        name: schedule.name,
+                        departments: schedule.departments.join(", "),
+                        location: schedule.location,
+                        time: schedule.time,
+                        date: schedule.date,
+                        status: schedule.status,
+                      });
                     }}
                     className="px-3 py-1 bg-yellow-400 rounded hover:bg-yellow-500"
                   >
@@ -183,6 +217,14 @@ export default function SchedulePage() {
           </tbody>
         </table>
       </div>
+    <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this schedule entry? This action cannot be undone."
+      />
+      <Toaster />
     </div>
   );
 }

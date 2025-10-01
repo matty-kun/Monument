@@ -38,16 +38,13 @@ export default function Navbar() {
               className="mr-2"
               priority
             />
-            <div className="flex flex-col">
-              <span>Monument</span>
-              <span className="text-sm text-gray-500 font-normal">This is your moment</span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-xl font-bold">Monument</span>
+              <span className="text-sm text-gray-500 font-normal">| This is your moment</span>
             </div>
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-1">
-          <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-            📊 Leaderboard
-          </Link>
           <Link href="/medals" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🏅 Medals
           </Link>
@@ -59,7 +56,7 @@ export default function Navbar() {
           </Link>
           {role === "admin" && (
             <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm">
-              ⚙️ Admin
+              📊 Dashboard
             </Link>
           )}
         </div>
@@ -74,12 +71,11 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">📊 Leaderboard</Link>
             <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏅 Medals</Link>
             <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏟️ Events</Link>
             <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🗓️ Schedule</Link>
             {role === "admin" && (
-              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700">⚙️ Admin</Link>
+              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700">📊 Dashboard</Link>
             )}
           </div>
         </div>

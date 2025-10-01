@@ -1,5 +1,6 @@
 // src/app/admin/register/page.tsx
 'use client';
+import monumentLogo from '../../../assets/monument-logo.png';
 
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
@@ -36,7 +37,7 @@ export default function RegisterAdminPage() {
     <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 p-4 overflow-hidden">
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
-          src="/Monument Logo.png"
+          src={monumentLogo}
           alt="SIDLAK Logo"
           width={150}
           height={150}

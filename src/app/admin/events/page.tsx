@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
-// Removed unused imports
+import toast, { Toaster } from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 interface Event {
   id: string;
@@ -17,6 +18,8 @@ export default function EventsPage() {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -29,10 +32,18 @@ export default function EventsPage() {
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
-    if (editingId) {
-      await supabase.from("events").update({ name, category }).eq("id", editingId);
-    } else {
-      await supabase.from("events").insert([{ name, category }]);
+    try {
+      if (editingId) {
+        const { error } = await supabase.from("events").update({ name, category }).eq("id", editingId);
+        if (error) throw error;
+        toast.success("Event updated successfully!");
+      } else {
+        const { error } = await supabase.from("events").insert([{ name, category }]);
+        if (error) throw error;
+        toast.success("Event added successfully!");
+      }
+    } catch (error: any) {
+      toast.error(`Error saving event: ${error.message}`);
     }
     setName("");
     setCategory("");
@@ -41,8 +52,22 @@ export default function EventsPage() {
   }
 
   async function handleDelete(id: string) {
-    await supabase.from("events").delete().eq("id", id);
-    fetchEvents();
+    setEventToDeleteId(id);
+    setShowConfirmModal(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!eventToDeleteId) return;
+
+    const { error } = await supabase.from("events").delete().eq("id", eventToDeleteId);
+    if (error) {
+      toast.error("Error deleting event.");
+    } else {
+      toast.success("Event deleted successfully!");
+      fetchEvents();
+    }
+    setShowConfirmModal(false);
+    setEventToDeleteId(null);
   }
 
   
@@ -119,6 +144,14 @@ export default function EventsPage() {
           </tbody>
         </table>
       </div>
+    <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this event entry? This action cannot be undone."
+      />
+      <Toaster />
     </div>
   );
 }

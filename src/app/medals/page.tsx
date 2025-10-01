@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import Image from "next/image";
+import { calculateTotalPoints } from "@/utils/scoring";
 
 interface Tally {
   department_id: string;
   department_name: string;
+  image_url?: string;
   gold: number;
   silver: number;
   bronze: number;
@@ -31,9 +34,53 @@ export default function MedalTallyPage() {
   }, []);
 
   async function fetchTally() {
-    const { data, error } = await supabase.rpc("get_medal_tally");
-    if (error) console.error(error);
-    if (data) setTally(data);
+    const { data: departmentsData, error: departmentsError } = await supabase
+      .from("departments")
+      .select("id, name, image_url");
+
+    if (departmentsError) {
+      console.error("Error fetching departments:", departmentsError);
+      return;
+    }
+
+    const { data: resultsData, error: resultsError } = await supabase
+      .from("results")
+      .select("department_id, medal_type");
+
+    if (resultsError) {
+      console.error("Error fetching results:", resultsError);
+      return;
+    }
+
+    const departmentMap = new Map<string, Omit<Tally, "total_points" | "gold" | "silver" | "bronze">>();
+    departmentsData.forEach(dept => {
+      departmentMap.set(dept.id, {
+        department_id: dept.id,
+        department_name: dept.name,
+        image_url: dept.image_url || undefined,
+        gold: 0,
+        silver: 0,
+        bronze: 0,
+      });
+    });
+
+    resultsData.forEach(result => {
+      const dept = departmentMap.get(result.department_id);
+      if (dept) {
+        if (result.medal_type === "gold") dept.gold++;
+        else if (result.medal_type === "silver") dept.silver++;
+        else if (result.medal_type === "bronze") dept.bronze++;
+      }
+    });
+
+    const calculatedTally: Tally[] = Array.from(departmentMap.values()).map(dept => ({
+      ...dept,
+      total_points: calculateTotalPoints(dept.gold, dept.silver, dept.bronze),
+    }));
+
+    calculatedTally.sort((a, b) => b.total_points - a.total_points);
+
+    setTally(calculatedTally);
   }
 
   return (
@@ -49,6 +96,7 @@ export default function MedalTallyPage() {
             <thead className="table-header">
               <tr>
                 <th className="table-cell text-left font-semibold">Rank</th>
+                <th className="table-cell text-left font-semibold"></th> {/* For Image */}
                 <th className="table-cell text-left font-semibold">Department</th>
                 <th className="table-cell text-center font-semibold">🥇 Gold</th>
                 <th className="table-cell text-center font-semibold">🥈 Silver</th>
@@ -60,6 +108,21 @@ export default function MedalTallyPage() {
               {tally.map((row, idx) => (
                 <tr key={row.department_id} className="table-row animate-fadeIn">
                   <td className="table-cell font-bold">{idx + 1}</td>
+                  <td className="table-cell">
+                    {row.image_url ? (
+                      <Image
+                        src={row.image_url}
+                        alt={row.department_name}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 object-cover rounded-full shadow-md"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shadow-md">
+                        <span className="text-xl">🏫</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="table-cell font-semibold">{row.department_name}</td>
                   <td className="table-cell text-center text-yellow-500 font-bold">{row.gold}</td>
                   <td className="table-cell text-center text-gray-400">{row.silver}</td>
