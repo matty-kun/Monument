@@ -52,7 +52,7 @@ export default function MedalTallyPage() {
       return;
     }
 
-    const departmentMap = new Map<string, Omit<Tally, "total_points" | "gold" | "silver" | "bronze">>();
+    const departmentMap = new Map<string, Tally>();
     departmentsData.forEach(dept => {
       departmentMap.set(dept.id, {
         department_id: dept.id,
@@ -61,6 +61,7 @@ export default function MedalTallyPage() {
         gold: 0,
         silver: 0,
         bronze: 0,
+        total_points: 0,
       });
     });
 
