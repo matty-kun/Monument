@@ -24,9 +24,13 @@ interface Result {
   points: number;
 }
 
-export default function EditResultPage({ params }: { params: { id: string } }) {
+type PageProps = {
+  params: { id: string }
+};
+
+export default function EditResultPage({ params }: PageProps) {
   const router = useRouter();
-  const { id } = React.use(params);
+  const { id } = params;
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
