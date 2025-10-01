@@ -18,13 +18,13 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      setErrorMsg(error.message);
+      setErrorMsg(error.message || 'Login failed.');
     } else {
       router.push('/admin/dashboard');
     }
@@ -117,7 +117,7 @@ export default function AdminLoginPage() {
           </form>
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <a href="/admin/register" className="font-medium text-monument-green hover:underline">
                 Register
               </a>

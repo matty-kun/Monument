@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 
 
 import { useState, useEffect } from "react";
@@ -158,10 +159,12 @@ export default function DepartmentsPage() {
           />
           {imagePreview && (
             <div className="mt-2">
-              <img 
+              <Image 
                 src={imagePreview} 
                 alt="Preview" 
-                className="w-20 h-20 object-cover rounded border"
+                width={80}
+                height={80}
+                className="object-cover rounded border"
               />
             </div>
           )}
@@ -201,10 +204,12 @@ export default function DepartmentsPage() {
               <tr key={dept.id} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-2">
                   {dept.image_url ? (
-                    <img 
+                    <Image 
                       src={dept.image_url} 
                       alt={dept.name}
-                      className="w-12 h-12 object-cover rounded border"
+                      width={48}
+                      height={48}
+                      className="object-cover rounded border"
                     />
                   ) : (
                     <div className="w-12 h-12 bg-gray-200 rounded border flex items-center justify-center">

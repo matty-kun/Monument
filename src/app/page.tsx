@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
@@ -69,11 +70,14 @@ export default function HomePage() { // Renamed to HomePage
                 {/* Department Image */}
                 <div className="flex-shrink-0">
                   {dept.image_url ? (
-                    <img
-                      src={dept.image_url}
-                      alt={dept.name}
-                      className="w-12 h-12 md:w-20 md:h-20 object-cover rounded-full border-2 md:border-4 border-white shadow-lg"
-                    />
+                    <div className="relative w-12 h-12 md:w-20 md:h-20">
+                      <Image
+                        src={dept.image_url}
+                        alt={dept.name}
+                        fill
+                        className="object-cover rounded-full border-2 md:border-4 border-white shadow-lg"
+                      />
+                    </div>
                   ) : (
                     <div className="w-12 h-12 md:w-20 md:h-20 bg-gray-600 rounded-full border-2 md:border-4 border-white flex items-center justify-center">
                       <span className="text-xl md:text-2xl">🏫</span>

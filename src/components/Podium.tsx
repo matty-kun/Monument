@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 
 import { motion } from "framer-motion";
 
@@ -45,9 +46,9 @@ export default function Podium({ leaderboard }: PodiumProps) {
             <div className="text-2xl md:text-3xl">
               {medalEmoji}
             </div>
-            <div className="w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-300 mb-2 md:mb-4">
+            <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-300 mb-2 md:mb-4">
               {dept.image_url ? (
-                <img src={dept.image_url} alt={dept.name} className="w-full h-full object-cover" />
+                <Image src={dept.image_url} alt={dept.name} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full bg-gray-300 flex items-center justify-center">
                   <span className="text-3xl md:text-4xl">🏫</span>
