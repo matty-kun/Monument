@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function NotAuthorizedPage() {
   return (
@@ -14,7 +15,7 @@ export default function NotAuthorizedPage() {
       />
       <h1 className="text-3xl font-bold text-red-600 mb-4">🚫 Not Authorized</h1>
       <p className="text-gray-700 mb-4">You do not have permission to view this page.</p>
-      <a href="/" className="text-monument-green underline">Go back to home</a>
+      <Link href="/" className="text-monument-green underline">Go back to home</Link>
     </div>
   );
 }

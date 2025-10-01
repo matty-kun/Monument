@@ -31,7 +31,8 @@ export default function EventsPage() {
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
-    e.preventDefault();
+      e.preventDefault(); // Prevent default form submission
+      const handleSubmit = async (e: unknown) => {
     try {
       if (editingId) {
         const { error } = await supabase.from("events").update({ name, category }).eq("id", editingId);
@@ -154,4 +155,5 @@ export default function EventsPage() {
       <Toaster />
     </div>
   );
+}
 }

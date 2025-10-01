@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 className="text-9xl font-extrabold text-monument-green">404</h1>
       <h2 className="text-3xl font-bold text-gray-800 mb-4">Page Not Found</h2>
       <p className="text-lg text-gray-600 mb-8">
-        Oops! The page you're looking for doesn't exist.
+        Oops! The page you&apos;re looking for doesn&apos;t exist.
       </p>
       {/* Meme Image Placeholder */}
       <div className="mb-8">

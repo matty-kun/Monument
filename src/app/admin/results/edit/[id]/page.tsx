@@ -16,13 +16,7 @@ interface Event {
   name: string;
 }
 
-interface Result {
-  id: string;
-  event_id: string;
-  department_id: string;
-  medal_type: string;
-  points: number;
-}
+
 
 type PageProps = {
   params: { id: string }
@@ -44,6 +38,7 @@ export default function EditResultPage({ params }: PageProps) {
   useEffect(() => {
     fetchDropdownData();
     fetchResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function fetchDropdownData() {
@@ -81,19 +76,13 @@ export default function EditResultPage({ params }: PageProps) {
     e.preventDefault();
     setMessage("");
 
-    // Calculate points based on medal type (if needed, or use existing points)
-    let calculatedPoints = 0;
-    if (medalType === "gold") calculatedPoints = 1;
-    else if (medalType === "silver") calculatedPoints = 0.20;
-    else if (medalType === "bronze") calculatedPoints = 0.04;
-
     const { error } = await supabase
       .from("results")
       .update({
         event_id: eventId,
         department_id: departmentId,
         medal_type: medalType,
-        points: calculatedPoints,
+        points: points,
       })
       .eq("id", id);
 
