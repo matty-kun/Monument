@@ -8,7 +8,7 @@
   }
 
   h1 {
-    @apply text-4xl font-bold text-ndmc-green mb-4;
+    @apply text-4xl font-bold text-monument-green mb-4;
   }
 
   h2 {
@@ -24,7 +24,7 @@
   }
 
   a {
-    @apply text-ndmc-green;
+    @apply text-monument-green;
   }
 }
 
@@ -34,15 +34,15 @@
   }
 
   .btn-primary {
-    @apply bg-ndmc-green text-white hover:bg-green-700 focus:ring-ndmc-green;
+    @apply bg-monument-green text-white hover:bg-monument-dark focus:ring-monument-green;
   }
 
   .btn-secondary {
-    @apply bg-ndmc-yellow text-gray-900 hover:bg-yellow-400 focus:ring-ndmc-yellow;
+    @apply bg-monument-gold text-gray-900 hover:bg-yellow-400 focus:ring-monument-gold;
   }
   
   .btn-outline {
-    @apply bg-transparent border-2 border-ndmc-green text-ndmc-green hover:bg-ndmc-green hover:text-white focus:ring-ndmc-green;
+    @apply bg-transparent border-2 border-monument-green text-monument-green hover:bg-monument-green hover:text-white focus:ring-monument-green;
   }
 
   .btn-danger {
@@ -62,7 +62,7 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ndmc-green focus:border-transparent transition-colors;
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-monument-green focus:border-transparent transition-colors;
   }
 
   .input-error {
@@ -74,7 +74,7 @@
   }
 
   .table-header {
-    @apply bg-gradient-to-r from-ndmc-green to-green-600 text-white;
+    @apply bg-gradient-to-r from-monument-green to-monument-dark text-white;
   }
 
   .table-row {
@@ -102,7 +102,7 @@
   }
 
   .spinner {
-    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-ndmc-green;
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-monument-green;
   }
 
   .spinner-sm {
@@ -110,11 +110,11 @@
   }
 
   .gradient-primary {
-    @apply bg-gradient-to-r from-ndmc-green to-green-600;
+    @apply bg-gradient-to-r from-monument-green to-monument-dark;
   }
 
   .gradient-secondary {
-    @apply bg-gradient-to-r from-ndmc-yellow to-yellow-400;
+    @apply bg-gradient-to-r from-monument-gold to-yellow-400;
   }
 }
 

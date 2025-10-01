@@ -8,10 +8,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'ndmc-green': '#006747',
-        'ndmc-yellow': '#FFD100',
-        'ndmc-light': '#F7F9F8',
-        'ndmc-dark': '#1A1A1A',
+        'monument-green': '#269a7a',
+        'monument-gold': '#d6b14e',
+        'monument-dark': '#33404e',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

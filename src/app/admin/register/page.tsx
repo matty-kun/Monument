@@ -1,32 +1,33 @@
+// src/app/admin/register/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-export default function AdminLoginPage() {
-  const router = useRouter();
+export default function RegisterAdminPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg('');
-    const { data, error } = await supabase.auth.signInWithPassword({
+    setMessage('');
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/admin/dashboard`,
+      },
     });
-
     if (error) {
-      setErrorMsg(error.message);
+      setMessage(error.message);
     } else {
-      router.push('/admin/dashboard');
+      setMessage('Admin registered! Check your email for confirmation.');
     }
     setLoading(false);
   }
@@ -49,10 +50,10 @@ export default function AdminLoginPage() {
         <div className="card bg-white/80 backdrop-blur-sm p-8 shadow-2xl rounded-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-ndmc-green">Admin Portal</h2>
-            <p className="text-gray-600">Sign in to manage the system</p>
+            <p className="text-gray-600">Register a new admin account</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleRegister} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -97,9 +98,9 @@ export default function AdminLoginPage() {
               </button>
             </div>
 
-            {errorMsg && (
-              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
-                <p>{errorMsg}</p>
+            {message && (
+              <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                <p>{message}</p>
               </div>
             )}
 
@@ -111,15 +112,15 @@ export default function AdminLoginPage() {
               {loading ? (
                 <div className="spinner-sm mx-auto"></div>
               ) : (
-                '🚀 Sign In'
+                '🚀 Register'
               )}
             </button>
           </form>
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="/admin/register" className="font-medium text-ndmc-green hover:underline">
-                Register
+              Already have an account?{' '}
+              <a href="/admin/login" className="font-medium text-ndmc-green hover:underline">
+                Sign In
               </a>
             </p>
           </div>
