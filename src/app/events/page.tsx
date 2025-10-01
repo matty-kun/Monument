@@ -47,7 +47,7 @@ export default function EventsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏟️ Event Results</h1>
+  <h1 className="text-4xl font-bold text-monument-green mb-2">🏟️ Event Results</h1>
         <p className="text-gray-600">Competition results and winners by event</p>
       </div>
       

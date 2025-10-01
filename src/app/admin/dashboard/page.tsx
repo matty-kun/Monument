@@ -2,25 +2,15 @@
 
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  // ...existing code...
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // router.push("/admin/login"); // Temporarily bypass login
-      } else {
-        setUser(session.user);
-      }
-    };
-
-    fetchUser();
+    // ...existing code...
   }, [router]);
 
   async function handleLogout() {
@@ -34,7 +24,7 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-ndmc-green mb-2">⚙️ Admin Dashboard</h1>
+          <h1 className="text-4xl font-bold text-monument-green mb-2">⚙️ Admin Dashboard</h1>
           <p className="text-gray-600">Manage your intramurals system</p>
         </div>
         <button

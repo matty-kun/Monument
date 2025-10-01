@@ -39,7 +39,7 @@ export default function MedalTallyPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🏆 Medal Tally</h1>
+  <h1 className="text-4xl font-bold text-monument-green mb-2">🏆 Medal Tally</h1>
         <p className="text-gray-600">Overall department rankings and medal counts</p>
       </div>
 

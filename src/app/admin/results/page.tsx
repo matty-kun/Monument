@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js";
-import { calculateTotalPoints } from "@/utils/scoring";
+// ...existing code...
 
 interface Department {
   id: string;
@@ -16,8 +14,7 @@ interface Event {
 }
 
 export default function AddResultPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null); // Update useState type
+  // ...existing code...
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState("");
@@ -28,18 +25,8 @@ export default function AddResultPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // router.push("/admin/login"); // Temporarily bypass login
-      } else {
-        setUser(session.user);
-      }
-    };
-
-    fetchUser();
     fetchDropdownData();
-  }, [router]);
+  }, []);
 
   async function fetchDropdownData() {
     const { data: deptData } = await supabase.from("departments").select("id, name");
@@ -78,7 +65,7 @@ export default function AddResultPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-ndmc-green mb-2">➕ Add Result</h1>
+  <h1 className="text-4xl font-bold text-monument-green mb-2">➕ Add Result</h1>
         <p className="text-gray-600">Record competition results and award medals to departments</p>
       </div>
       
@@ -134,7 +121,7 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(5);
               }}
-              className="text-ndmc-green focus:ring-ndmc-green"
+              className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-gold">🥇 Gold (1 pt)</span>
           </label>
@@ -147,7 +134,7 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(3);
               }}
-              className="text-ndmc-green focus:ring-ndmc-green"
+              className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
           </label>
@@ -160,7 +147,7 @@ export default function AddResultPage() {
                 setMedalType(e.target.value);
                 setPoints(1);
               }}
-              className="text-ndmc-green focus:ring-ndmc-green"
+              className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
           </label>

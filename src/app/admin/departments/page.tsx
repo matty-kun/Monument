@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js"; // Import User type
+// ...existing code...
 
 type DepartmentInsert = { name: string; image_url?: string };
 
@@ -15,8 +14,7 @@ interface Department {
 }
 
 export default function DepartmentsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  // ...existing code...
   const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -25,18 +23,8 @@ export default function DepartmentsPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // router.push("/admin/login"); // Temporarily bypass login
-      } else {
-        setUser(session.user);
-      }
-    };
-
-    fetchUser();
     fetchDepartments();
-  }, [router]);
+  }, []);
 
   async function fetchDepartments() {
     const { data, error } = await supabase.from("departments").select("*").order("name");

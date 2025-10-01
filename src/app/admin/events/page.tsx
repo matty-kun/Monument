@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js"; // Import User type
+import { supabase } from "../../../lib/supabaseClient";
+// Removed unused imports
 
 interface Event {
   id: string;
@@ -13,24 +13,12 @@ interface Event {
 
 export default function EventsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null); // Update useState type
   const [events, setEvents] = useState<Event[]>([]);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // router.push("/admin/login"); // Temporarily bypass login
-      }
-      else {
-        setUser(session.user);
-      }
-    };
-
-    fetchUser();
     fetchEvents();
   }, [router]);
 
@@ -91,8 +79,8 @@ export default function EventsPage() {
         <table className="min-w-full">
           <thead className="bg-green-600 text-white">
             <tr>
-              <th className="px-4 py-2 text-left">Event</th>
-              <th className="px-4 py-2 text-left">Category</th>
+              <th className="px-4 py-2">Event</th>
+              <th className="px-4 py-2">Category</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>

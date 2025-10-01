@@ -41,14 +41,14 @@ export default function AdminLoginPage() {
           height={150}
           className="mb-4"
         />
-        <h1 className="text-5xl font-bold text-ndmc-green">MONUMENT</h1>
+  <h1 className="text-5xl font-bold text-monument-green">MONUMENT</h1>
         <p className="text-gray-600 mt-2">Notre Dame of Midsayap College Score Tracking System</p>
       </div>
 
       <div className="md:w-1/2 max-w-md w-full">
         <div className="card bg-white/80 backdrop-blur-sm p-8 shadow-2xl rounded-2xl">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-ndmc-green">Admin Portal</h2>
+            <h2 className="text-3xl font-bold text-monument-green">Admin Portal</h2>
             <p className="text-gray-600">Sign in to manage the system</p>
           </div>
 
@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-ndmc-green"
+                className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-monument-green"
                 tabIndex={-1}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -118,7 +118,7 @@ export default function AdminLoginPage() {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/admin/register" className="font-medium text-ndmc-green hover:underline">
+              <a href="/admin/register" className="font-medium text-monument-green hover:underline">
                 Register
               </a>
             </p>

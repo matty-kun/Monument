@@ -30,7 +30,7 @@ export default function Navbar() {
     <nav className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center text-2xl font-bold text-ndmc-green hover:text-green-700 transition-colors no-underline">
+          <Link href="/" className="flex items-center text-2xl font-bold text-monument-green hover:text-green-700 transition-colors no-underline">
             <Image 
               src={Logo} 
               alt="Monument Logo" 
@@ -45,26 +45,26 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-1">
-          <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
+          <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             📊 Leaderboard
           </Link>
-          <Link href="/medals" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
+          <Link href="/medals" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🏅 Medals
           </Link>
-          <Link href="/events" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
+          <Link href="/events" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🏟️ Events
           </Link>
-          <Link href="/schedule" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-ndmc-green transition-all">
+          <Link href="/schedule" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🗓️ Schedule
           </Link>
           {role === "admin" && (
-            <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-ndmc-green hover:bg-green-700 transition-all shadow-sm">
+            <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm">
               ⚙️ Admin
             </Link>
           )}
         </div>
         <div className="md:hidden flex items-center">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-700 hover:text-ndmc-green focus:outline-none">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-gray-700 hover:text-monument-green focus:outline-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
             </svg>
@@ -74,12 +74,12 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">📊 Leaderboard</Link>
-            <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🏅 Medals</Link>
-            <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🏟️ Events</Link>
-            <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-ndmc-green hover:bg-gray-50">🗓️ Schedule</Link>
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">📊 Leaderboard</Link>
+            <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏅 Medals</Link>
+            <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏟️ Events</Link>
+            <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🗓️ Schedule</Link>
             {role === "admin" && (
-              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-ndmc-green hover:bg-green-700">⚙️ Admin</Link>
+              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700">⚙️ Admin</Link>
             )}
           </div>
         </div>

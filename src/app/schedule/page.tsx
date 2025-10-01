@@ -31,7 +31,7 @@ const SchedulePage: NextPage = () => {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-ndmc-green mb-2">🗓️ Schedule</h1>
+  <h1 className="text-4xl font-bold text-monument-green mb-2">🗓️ Schedule</h1>
         <p className="text-gray-600">Upcoming, ongoing, and finished events</p>
       </div>
 
