@@ -16,6 +16,7 @@ interface Department {
 interface Event {
   id: string;
   name: string;
+  icon?: string;
 }
 
 
@@ -41,7 +42,7 @@ export default function Page({ params }: { params: React.Usable<{ id: string }> 
 
   async function fetchDropdownData() {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
-    const { data: eventData } = await supabase.from("events").select("id, name").order("name");
+    const { data: eventData } = await supabase.from("events").select("id, name, icon").order("name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
   }
@@ -121,7 +122,7 @@ export default function Page({ params }: { params: React.Usable<{ id: string }> 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
             <SingleSelectDropdown
-              options={events.map(e => ({ id: e.id, name: e.name }))}
+              options={events.map(e => ({ id: e.id, name: e.name, icon: e.icon }))}
               selectedValue={eventId}
               onChange={setEventId}
               placeholder="Select Event"

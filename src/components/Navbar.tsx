@@ -54,6 +54,12 @@ export default function Navbar() {
           <Link href="/schedule" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🗓️ Schedule
           </Link>
+          {/* This is a temporary link for categories, you might want to move it to a dropdown in the dashboard */}
+          {role === "admin" && (
+            <Link href="/admin/categories" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
+              🏷️ Categories
+            </Link>
+          )}
           {role === "admin" && (
             <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm">
               📊 Dashboard
@@ -74,6 +80,11 @@ export default function Navbar() {
             <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏅 Medals</Link>
             <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏟️ Events</Link>
             <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🗓️ Schedule</Link>
+            {role === "admin" && (
+              <Link href="/admin/categories" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">
+                🏷️ Categories
+              </Link>
+            )}
             {role === "admin" && (
               <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700">📊 Dashboard</Link>
             )}

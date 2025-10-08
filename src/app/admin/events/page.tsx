@@ -1,44 +1,66 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabaseClient";
-import toast, { Toaster } from 'react-hot-toast';
-import ConfirmModal from '../../../components/ConfirmModal';
+import toast, { Toaster } from "react-hot-toast";
+import ConfirmModal from "../../../components/ConfirmModal";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 
+interface Category {
+  id: string;
+  name: string;
+}
 interface Event {
   id: string;
   name: string;
   category: string | null;
+  icon?: string;
 }
 
 export default function EventsPage() {
-  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const [icon, setIcon] = useState<string | undefined>("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     fetchEvents();
-  }, [router]);
+    fetchCategories();
+  }, []);
 
   async function fetchEvents() {
   const { data, error } = await supabase.from("events").select("*").order("name"); // data: Event[] | null
     if (!error && data) setEvents(data);
   }
 
+  async function fetchCategories() {
+    const { data, error } = await supabase
+      .from("event_categories")
+      .select("id, name")
+      .order("name");
+    if (!error && data) setCategories(data);
+  }
+
+  function onEmojiClick(emojiData: EmojiClickData) {
+    setIcon(emojiData.emoji);
+    setShowEmojiPicker(false);
+  }
+
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault(); // Prevent default form submission
     try {
       if (editingId) {
-        const { error } = await supabase.from("events").update({ name, category }).eq("id", editingId);
+        const { error } = await supabase.from("events").update({ name, category, icon }).eq("id", editingId);
         if (error) throw error;
         toast.success("Event updated successfully!");
       } else {
-        const { error } = await supabase.from("events").insert([{ name, category }]);
+        const { error } = await supabase.from("events").insert([{ name, category, icon }]);
         if (error) throw error;
         toast.success("Event added successfully!");
       }
@@ -47,11 +69,16 @@ export default function EventsPage() {
       toast.error(`Error saving event: ${err.message}`);
     }
     finally {
-      setName("");
-      setCategory("");
-      setEditingId(null);
+      resetForm();
       fetchEvents();
     }
+  }
+
+  function resetForm() {
+    setName("");
+    setCategory("");
+    setIcon("");
+    setEditingId(null);
   }
 
   async function handleDelete(id: string) {
@@ -73,74 +100,111 @@ export default function EventsPage() {
     setEventToDeleteId(null);
   }
 
-  
+  function handleEdit(event: Event) {
+    setEditingId(event.id);
+    setName(event.name);
+    setCategory(event.category || "");
+    setIcon(event.icon);
+  }
 
   return (
-    <div className="max-w-xl mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Manage Events</h1>
+    <div className="max-w-4xl mx-auto mt-10">
+      <h1 className="text-2xl font-bold mb-4">🗓️ Manage Events</h1>
+      <form
+        onSubmit={handleAddOrUpdate}
+        className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="w-full h-full border rounded px-3 py-2 bg-white flex items-center justify-center"
+            >
+              {icon ? <span className="text-2xl">{icon}</span> : "Select Icon"}
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute z-10">
+                <EmojiPicker onEmojiClick={onEmojiClick} />
+              </div>
+            )}
+          </div>
+          <input
+            type="text"
+            placeholder="Enter event name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            required
+          />
+          <SingleSelectDropdown
+            options={categories.map(c => ({ id: c.name, name: c.name }))}
+            selectedValue={category}
+            onChange={setCategory}
+            placeholder="Select a Category"
+          />
+        </div>
 
-      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6">
-        <input
-          type="text"
-          placeholder="Event name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Category (optional)"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-        />
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
-          {editingId ? "Update Event" : "Add Event"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {editingId ? "Update Event" : "Add Event"}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-green-600 text-white">
             <tr>
-              <th className="px-4 py-2">Event</th>
-              <th className="px-4 py-2">Category</th>
+              <th className="px-4 py-2 text-left">Icon</th>
+              <th className="px-4 py-2 text-left">Event</th>
+              <th className="px-4 py-2 text-left">Category</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {events.map((event) => (
-              <tr key={event.id} className="border-b">
-                <td className="px-4 py-2">{event.name}</td>
-                <td className="px-4 py-2">{event.category || "-"}</td>
-                <td className="px-4 py-2 flex gap-2">
-                  <button
-                    onClick={() => {
-                      setEditingId(event.id);
-                      setName(event.name);
-                      setCategory(event.category || "");
-                    }}
-                    className="px-3 py-1 bg-yellow-400 rounded hover:bg-yellow-500"
-                  >
-                    Edit
-                  </button>
+              <tr key={event.id} className="border-b hover:bg-gray-50">
+                <td className="px-4 py-2 text-2xl">{event.icon}</td>
+                <td className="px-4 py-2 font-medium">{event.name}</td>
+                <td className="px-4 py-2">{event.category || "—"}</td>
+                <td className="px-4 py-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(event)}
+                      className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500 transition-colors"
+                    >
+                      ✏️ Edit
+                    </button>
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                   >
-                    Delete
+                    🗑️ Delete
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}
             {events.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center py-4 text-gray-500">
-                  No events yet.
+                <td colSpan={4} className="text-center py-8 text-gray-500">
+                  <div className="flex flex-col items-center">
+                    <span className="text-4xl mb-2">🗓️</span>
+                    <span>No events yet. Add your first event!</span>
+                  </div>
                 </td>
               </tr>
             )}
@@ -158,4 +222,3 @@ export default function EventsPage() {
     </div>
   );
 }
-

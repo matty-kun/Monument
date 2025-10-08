@@ -1,16 +1,21 @@
 "use client";
-
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import Image from "next/image";
 
-export interface DropdownOption {
+interface Option {
   id: string;
   name: string;
   image_url?: string;
+  icon?: string;
+}
+
+interface GroupedOption {
+  label: string;
+  options: Option[];
 }
 
 interface SingleSelectDropdownProps {
-  options: DropdownOption[];
+  options: (Option | GroupedOption)[];
   selectedValue: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -25,7 +30,9 @@ export default function SingleSelectDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find(opt => opt.id === selectedValue);
+  const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : opt);
+
+  const selectedOption = allOptions.find(opt => opt.id === selectedValue);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,38 +59,47 @@ export default function SingleSelectDropdown({
         className="w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2 min-h-[42px]"
       >
         {selectedOption ? (
-          <div className="flex items-center gap-3">
-            {selectedOption.image_url ? (
+          <div className="flex items-center gap-2">
+            {selectedOption.icon ? (
+              <span className="text-xl w-6 h-6 flex items-center justify-center">{selectedOption.icon}</span>
+            ) : selectedOption.image_url ? (
               <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
             ) : (
               <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{selectedOption.name.substring(0,2)}</div>
             )}
-            <span>{selectedOption.name}</span>
+            <span className="ml-1">{selectedOption.name}</span>
           </div>
         ) : placeholder}
       </button>
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {options.map((option) => (
-            <div
-              key={option.id}
-              onClick={() => handleSelect(option.id)}
-              className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
-            >
-              {option.image_url ? (
-                <Image
-                  src={option.image_url}
-                  alt={option.name}
-                  width={24}
-                  height={24}
-                  className="w-6 h-6 object-cover rounded-full mr-3"
-                />
-              ) : (
-                <div className="w-6 h-6 bg-gray-200 rounded-full mr-3 flex items-center justify-center text-xs font-bold text-gray-500">{option.name.substring(0,2)}</div>
-              )}
-              <span>{option.name}</span>
-            </div>
-          ))}
+          {options.map((option, index) => {
+            if ('label' in option) {
+              return (
+                <div key={option.label}>
+                  <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-50">{option.label}</div>
+                  {option.options.map(subOption => (
+                    <div key={subOption.id} onClick={() => handleSelect(subOption.id)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer pl-6">
+                      {subOption.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{subOption.icon}</span> : <div className="w-6 h-6" />}
+                      <span className="ml-1">{subOption.name}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return (
+              <div key={option.id} onClick={() => handleSelect(option.id)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                {option.icon ? (
+                  <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span>
+                ) : option.image_url ? (
+                  <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
+                ) : (
+                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{option.name.substring(0,2)}</div>
+                )}
+                <span className="ml-1">{option.name}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

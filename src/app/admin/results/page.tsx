@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import Link from "next/link";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
@@ -14,6 +14,8 @@ interface Department {
 interface Event {
   id: string;
   name: string;
+  icon?: string;
+  category?: string | null;
 }
 
 export default function AddResultPage() {
@@ -31,7 +33,7 @@ export default function AddResultPage() {
 
   async function fetchDropdownData() {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
-    const { data: eventData } = await supabase.from("events").select("id, name").order("name");
+    const { data: eventData } = await supabase.from("events").select("id, name, icon, category").order("category,name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
   }
@@ -66,6 +68,22 @@ export default function AddResultPage() {
     }
   }
 
+  const groupedEvents = useMemo(() => {
+    if (!events.length) return [];
+
+    const groups: { [key: string]: Event[] } = events.reduce((acc, event) => {
+      const category = event.category || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(event);
+      return acc;
+    }, {} as { [key: string]: Event[] });
+
+    return Object.entries(groups).map(([category, events]) => ({
+      label: category, options: events
+    }));
+  }, [events]);
   
 
   return (
@@ -88,19 +106,12 @@ export default function AddResultPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
-        <select
-          value={eventId}
-          onChange={(e) => setEventId(e.target.value)}
-          className="input"
-          required
-        >
-          <option value="">Select Event</option>
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.name}
-            </option>
-          ))}
-        </select>
+          <SingleSelectDropdown
+            options={groupedEvents}
+            selectedValue={eventId}
+            onChange={setEventId}
+            placeholder="Select Event"
+          />
         </div>
 
         <div>
