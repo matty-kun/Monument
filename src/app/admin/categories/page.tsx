@@ -1,0 +1,176 @@
+"use client";
+
+import { useState, useEffect, FormEvent } from "react";
+import { supabase } from "../../../lib/supabaseClient";
+import toast, { Toaster } from 'react-hot-toast';
+import ConfirmModal from '../../../components/ConfirmModal';
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+export default function CategoriesPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [categoryToDeleteId, setCategoryToDeleteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name", { ascending: true });
+
+    if (error) {
+      toast.error("Error fetching categories.");
+      console.error("Error fetching categories:", error);
+    } else {
+      setCategories(data);
+    }
+    setLoading(false);
+  };
+
+  const handleFormSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const nameToSubmit = editingCategory ? editingCategory.name : newCategoryName;
+
+    if (!nameToSubmit.trim()) {
+      toast.error("Category name cannot be empty.");
+      return;
+    }
+
+    if (editingCategory) {
+      // Update existing category
+      const { error } = await supabase
+        .from("categories")
+        .update({ name: nameToSubmit.trim() })
+        .eq("id", editingCategory.id);
+
+      if (error) {
+        toast.error(`Error updating category: ${error.message}`);
+      } else {
+        toast.success("Category updated successfully!");
+        setEditingCategory(null);
+        fetchCategories();
+      }
+    } else {
+      // Add new category
+      const { error } = await supabase
+        .from("categories")
+        .insert([{ name: nameToSubmit.trim() }]);
+
+      if (error) {
+        toast.error(`Error adding category: ${error.message}`);
+      } else {
+        toast.success("Category added successfully!");
+        setNewCategoryName("");
+        fetchCategories();
+      }
+    }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setCategoryToDeleteId(id);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDeleteId) return;
+
+    const { error } = await supabase.from("categories").delete().eq("id", categoryToDeleteId);
+
+    if (error) {
+      toast.error("Error deleting category. It might be in use by some events.");
+    } else {
+      toast.success("Category deleted successfully!");
+      fetchCategories();
+    }
+    setShowConfirmModal(false);
+    setCategoryToDeleteId(null);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <Toaster position="top-center" />
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-monument-green mb-2">🏷️ Manage Categories</h1>
+        <p className="text-gray-600">Add, edit, or delete event categories.</p>
+      </div>
+
+      <div className="card mb-8">
+        <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-grow w-full">
+            <label htmlFor="category-name" className="block text-sm font-medium text-gray-700 mb-1">
+              {editingCategory ? "Edit Category Name" : "New Category Name"}
+            </label>
+            <input
+              id="category-name"
+              type="text"
+              placeholder="e.g., Sports, Socio-Cultural"
+              className="input"
+              value={editingCategory ? editingCategory.name : newCategoryName}
+              onChange={(e) =>
+                editingCategory
+                  ? setEditingCategory({ ...editingCategory, name: e.target.value })
+                  : setNewCategoryName(e.target.value)
+              }
+              required
+            />
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {editingCategory && (
+              <button type="button" onClick={() => setEditingCategory(null)} className="btn btn-secondary w-1/2 sm:w-auto">
+                Cancel
+              </button>
+            )}
+            <button type="submit" className="btn btn-primary w-full sm:w-auto">
+              {editingCategory ? "💾 Save" : "➕ Add"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {loading ? (
+        <div className="text-center p-10"><div className="spinner mx-auto"></div></div>
+      ) : (
+        <div className="table-container">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="table-header">
+              <tr>
+                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider">Category Name</th>
+                <th className="table-cell text-right text-xs font-medium uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {categories.map((category) => (
+                <tr key={category.id} className="table-row">
+                  <td className="table-cell font-medium text-gray-900">{category.name}</td>
+                  <td className="table-cell text-right text-sm font-medium">
+                    <button onClick={() => setEditingCategory(category)} className="btn-outline py-1 px-3 text-sm">Edit</button>
+                    <button onClick={() => handleDeleteClick(category.id)} className="btn-danger py-1 px-3 text-sm ml-2">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        message="Are you sure you want to delete this category? This action cannot be undone."
+      />
+    </div>
+  );
+}

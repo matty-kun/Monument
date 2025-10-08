@@ -41,7 +41,7 @@ export default function EventsPage() {
 
   async function fetchCategories() {
     const { data, error } = await supabase
-      .from("event_categories")
+      .from("categories")
       .select("id, name")
       .order("name");
     if (!error && data) setCategories(data);
@@ -171,7 +171,7 @@ export default function EventsPage() {
               <th className="px-4 py-2 text-left">Icon</th>
               <th className="px-4 py-2 text-left">Event</th>
               <th className="px-4 py-2 text-left">Category</th>
-              <th className="px-4 py-2">Actions</th>
+              <th className="px-4 py-2 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -181,7 +181,7 @@ export default function EventsPage() {
                 <td className="px-4 py-2 font-medium">{event.name}</td>
                 <td className="px-4 py-2">{event.category || "—"}</td>
                 <td className="px-4 py-2">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => handleEdit(event)}
                       className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500 transition-colors"

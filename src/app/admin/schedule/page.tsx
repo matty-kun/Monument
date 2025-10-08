@@ -6,6 +6,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
+import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 
 interface Department {
   id: string;
@@ -16,11 +17,13 @@ interface Department {
 interface Event {
   id: string;
   name: string;
+  icon?: string;
+  category?: string | null;
 }
 
 interface Schedule {
   id: string;
-  name: string;
+  event_id: string;
   departments: string[];
   location: string;
   time: string;
@@ -32,7 +35,7 @@ export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [name, setName] = useState("");
+  const [eventId, setEventId] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [location, setLocation] = useState("");
   const [time, setTime] = useState("");
@@ -63,7 +66,7 @@ export default function SchedulePage() {
   }
 
   async function fetchAllEvents() {
-    const { data, error } = await supabase.from("events").select("id, name").order("name");
+    const { data, error } = await supabase.from("events").select("id, name, icon, category").order("category,name");
     if (error) {
       toast.error("Could not fetch events.");
     } else if (data) {
@@ -77,12 +80,12 @@ export default function SchedulePage() {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ name, departments: selectedDepartments, location, time, date, status })
+          .update({ event_id: eventId, departments: selectedDepartments, location, time, date, status })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ name, departments: selectedDepartments, location, time, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, location, time, date, status }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
@@ -90,7 +93,7 @@ export default function SchedulePage() {
       const err = error as Error;
       toast.error(`Error saving schedule: ${err.message}`);
     }
-    setName("");
+    setEventId("");
     setSelectedDepartments([]);
     setLocation("");
     setTime("");
@@ -131,7 +134,21 @@ export default function SchedulePage() {
     return new Map(allDepartments.map(dept => [dept.name, dept]));
   }, [allDepartments]);
 
-  
+  const eventMap = useMemo(() => {
+    return new Map(allEvents.map(event => [event.id, event]));
+  }, [allEvents]);
+
+  const groupedEvents = useMemo(() => {
+    if (!allEvents.length) return [];
+    const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
+      const category = event.category || "Uncategorized";
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(event);
+      return acc;
+    }, {} as { [key: string]: Event[] });
+
+    return Object.entries(groups).map(([category, events]) => ({ label: category, options: events }));
+  }, [allEvents]);
 
   return (
     <div className="max-w-4xl mx-auto mt-10">
@@ -139,19 +156,12 @@ export default function SchedulePage() {
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-          >
-            <option value="" disabled>Select an Event</option>
-            {allEvents.map((event) => (
-              <option key={event.id} value={event.name}>
-                {event.name}
-              </option>
-            ))}
-          </select>
+          <SingleSelectDropdown
+            options={groupedEvents}
+            selectedValue={eventId}
+            onChange={setEventId}
+            placeholder="Select Event"
+          />
 
           <MultiSelectDropdown
             options={allDepartments}
@@ -219,7 +229,10 @@ export default function SchedulePage() {
           <tbody>
             {schedules.map((schedule) => (
               <tr key={schedule.id} className="border-b">
-                <td className="px-4 py-2">{schedule.name}</td>
+                <td className="px-4 py-2 flex items-center gap-2">
+                  <span className="text-xl">{eventMap.get(schedule.event_id)?.icon}</span>
+                  <span>{eventMap.get(schedule.event_id)?.name}</span>
+                </td>
                 <td className="px-4 py-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {schedule.departments.map((deptName, index) => {
@@ -257,7 +270,7 @@ export default function SchedulePage() {
                     onClick={() => {
                       console.log("Editing schedule:", schedule);
                       setEditingId(schedule.id);
-                      setName(schedule.name);
+                      setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
                       setLocation(schedule.location);
                       setTime(schedule.time);
@@ -265,7 +278,7 @@ export default function SchedulePage() {
                       setStatus(schedule.status);
                       console.log("State after edit click:", {
                         editingId: schedule.id,
-                        name: schedule.name,
+                        eventId: schedule.event_id,
                         departments: schedule.departments,
                         location: schedule.location,
                         time: schedule.time,
