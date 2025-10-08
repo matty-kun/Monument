@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import Link from "next/link";
+import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 // ...existing code...
 
 interface Department {
   id: string;
   name: string;
+  image_url?: string;
 }
 interface Event {
   id: string;
@@ -21,8 +23,6 @@ export default function AddResultPage() {
   const [eventId, setEventId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [medalType, setMedalType] = useState("gold");
-  // Points are now calculated based on medal type
-  const [points, setPoints] = useState(1);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -30,14 +30,20 @@ export default function AddResultPage() {
   }, []);
 
   async function fetchDropdownData() {
-    const { data: deptData } = await supabase.from("departments").select("id, name");
-    const { data: eventData } = await supabase.from("events").select("id, name");
+    const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
+    const { data: eventData } = await supabase.from("events").select("id, name").order("name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!eventId || !departmentId) {
+      setMessage("❌ Please select both an event and a department.");
+      return;
+    }
+
     // Calculate points based on medal type
     let calculatedPoints = 0;
     if (medalType === "gold") calculatedPoints = 1;
@@ -57,7 +63,6 @@ export default function AddResultPage() {
       setEventId("");
       setDepartmentId("");
       setMedalType("gold");
-      setPoints(5);
     }
   }
 
@@ -100,19 +105,12 @@ export default function AddResultPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-        <select
-          value={departmentId}
-          onChange={(e) => setDepartmentId(e.target.value)}
-          className="input"
-          required
-        >
-          <option value="">Select Department</option>
-          {departments.map((dept) => (
-            <option key={dept.id} value={dept.id}>
-              {dept.name}
-            </option>
-          ))}
-        </select>
+          <SingleSelectDropdown
+            options={departments}
+            selectedValue={departmentId}
+            onChange={setDepartmentId}
+            placeholder="Select Department"
+          />
         </div>
 
         <div>
@@ -123,10 +121,7 @@ export default function AddResultPage() {
               type="radio"
               value="gold"
               checked={medalType === "gold"}
-              onChange={(e) => {
-                setMedalType(e.target.value);
-                setPoints(1);
-              }}
+              onChange={(e) => setMedalType(e.target.value)}
               className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-gold">🥇 Gold (1 pt)</span>
@@ -136,10 +131,7 @@ export default function AddResultPage() {
               type="radio"
               value="silver"
               checked={medalType === "silver"}
-              onChange={(e) => {
-                setMedalType(e.target.value);
-                setPoints(0.20);
-              }}
+              onChange={(e) => setMedalType(e.target.value)}
               className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
@@ -149,29 +141,12 @@ export default function AddResultPage() {
               type="radio"
               value="bronze"
               checked={medalType === "bronze"}
-              onChange={(e) => {
-                setMedalType(e.target.value);
-                setPoints(0.04);
-              }}
+              onChange={(e) => setMedalType(e.target.value)}
               className="text-monument-green focus:ring-monument-green"
             />
             <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
           </label>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
-        <input
-          type="number"
-          step="any"
-          value={points}
-          onChange={(e) => setPoints(Number(e.target.value))}
-          className="input"
-          placeholder="Points"
-          required
-          min="0"
-        />
         </div>
 
         <button

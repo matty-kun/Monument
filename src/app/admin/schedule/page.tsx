@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import Image from "next/image";
 import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
+import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 
 interface Department {
   id: string;
   name: string;
   image_url?: string;
+}
+
+interface Event {
+  id: string;
+  name: string;
 }
 
 interface Schedule {
@@ -25,6 +31,7 @@ interface Schedule {
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [name, setName] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [location, setLocation] = useState("");
@@ -34,27 +41,12 @@ export default function SchedulePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
-  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
-  const deptDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSchedules();
     fetchAllDepartments();
+    fetchAllEvents();
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (deptDropdownRef.current && !deptDropdownRef.current.contains(event.target as Node)) {
-        setIsDeptDropdownOpen(false);
-      }
-    }
-    // Bind the event listener
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      // Unbind the event listener on clean up
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [deptDropdownRef]);
 
   async function fetchSchedules() {
   const { data, error } = await supabase.from("schedules").select("*").order("date"); // data: Schedule[] | null
@@ -67,6 +59,15 @@ export default function SchedulePage() {
       toast.error("Could not fetch departments.");
     } else if (data) {
       setAllDepartments(data);
+    }
+  }
+
+  async function fetchAllEvents() {
+    const { data, error } = await supabase.from("events").select("id, name").order("name");
+    if (error) {
+      toast.error("Could not fetch events.");
+    } else if (data) {
+      setAllEvents(data);
     }
   }
 
@@ -138,77 +139,26 @@ export default function SchedulePage() {
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Event name"
+          <select
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full border rounded px-3 py-2"
             required
+          >
+            <option value="" disabled>Select an Event</option>
+            {allEvents.map((event) => (
+              <option key={event.id} value={event.name}>
+                {event.name}
+              </option>
+            ))}
+          </select>
+
+          <MultiSelectDropdown
+            options={allDepartments}
+            selectedValues={selectedDepartments}
+            onChange={handleDeptSelection}
+            placeholder="Select Departments"
           />
-          <div className="relative" ref={deptDropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsDeptDropdownOpen(!isDeptDropdownOpen)}
-              className="w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2"
-            >
-              {selectedDepartments.length > 0 ? (
-                <div className="flex items-center gap-2">
-                  {selectedDepartments.map((deptName, index) => {
-                    const dept = departmentMap.get(deptName);
-                    if (!dept) return null;
-                    return (
-                      <Fragment key={dept.id}>
-                        {dept.image_url ? (
-                          <Image
-                            src={dept.image_url}
-                            alt={dept.name}
-                            width={24}
-                            height={24}
-                            className="w-6 h-6 object-cover rounded-full"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{dept.name.substring(0,2)}</div>
-                        )}
-                        {index < selectedDepartments.length - 1 && <span className="font-bold text-gray-400">vs</span>}
-                      </Fragment>
-                    );
-                  })}
-                </div>
-              ) : "Select Departments"}
-            </button>
-            {isDeptDropdownOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {allDepartments.map((dept) => (
-                  <label
-                    key={dept.id}
-                    className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    {dept.image_url ? (
-                      <Image
-                        src={dept.image_url}
-                        alt={dept.name}
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 object-cover rounded-full mr-3"
-                      />
-                    ) : (
-                      <div className="w-6 h-6 bg-gray-200 rounded-full mr-3 flex items-center justify-center text-xs font-bold text-gray-500">
-                        {dept.name.substring(0, 2)}
-                      </div>
-                    )}
-                    <input
-                      type="checkbox"
-                      checked={selectedDepartments.includes(dept.name)}
-                      onChange={() => handleDeptSelection(dept.name)}
-                      className="mr-3"
-                    />
-                    {dept.name}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
 
           <input
             type="text"

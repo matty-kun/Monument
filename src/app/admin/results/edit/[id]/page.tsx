@@ -6,10 +6,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
+import SingleSelectDropdown from '../../../../../components/SingleSelectDropdown';
 
 interface Department {
   id: string;
   name: string;
+  image_url?: string;
 }
 interface Event {
   id: string;
@@ -19,16 +21,15 @@ interface Event {
 
 
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: React.Usable<{ id: string }> }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = React.use(params);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [medalType, setMedalType] = useState("gold");
-  const [points, setPoints] = useState(1);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -39,8 +40,8 @@ export default function Page({ params }: { params: { id: string } }) {
   }, [id]);
 
   async function fetchDropdownData() {
-    const { data: deptData } = await supabase.from("departments").select("id, name");
-    const { data: eventData } = await supabase.from("events").select("id, name");
+    const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
+    const { data: eventData } = await supabase.from("events").select("id, name").order("name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
   }
@@ -64,7 +65,6 @@ export default function Page({ params }: { params: { id: string } }) {
       setEventId(data.event_id);
       setDepartmentId(data.department_id);
       setMedalType(data.medal_type);
-      setPoints(data.points);
     }
     setLoading(false);
   }
@@ -73,13 +73,19 @@ export default function Page({ params }: { params: { id: string } }) {
     e.preventDefault();
     setMessage("");
 
+    // Calculate points based on medal type
+    let calculatedPoints = 0;
+    if (medalType === "gold") calculatedPoints = 1;
+    else if (medalType === "silver") calculatedPoints = 0.20;
+    else if (medalType === "bronze") calculatedPoints = 0.04;
+
     const { error } = await supabase
       .from("results")
       .update({
         event_id: eventId,
         department_id: departmentId,
         medal_type: medalType,
-        points: points,
+        points: calculatedPoints,
       })
       .eq("id", id);
 
@@ -114,36 +120,22 @@ export default function Page({ params }: { params: { id: string } }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
-            <select
-              value={eventId}
-              onChange={(e) => setEventId(e.target.value)}
-              className="input"
-              required
-            >
-              <option value="">Select Event</option>
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.name}
-                </option>
-              ))}
-            </select>
+            <SingleSelectDropdown
+              options={events.map(e => ({ id: e.id, name: e.name }))}
+              selectedValue={eventId}
+              onChange={setEventId}
+              placeholder="Select Event"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
-            <select
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              className="input"
-              required
-            >
-              <option value="">Select Department</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
+            <SingleSelectDropdown
+              options={departments}
+              selectedValue={departmentId}
+              onChange={setDepartmentId}
+              placeholder="Select Department"
+            />
           </div>
 
           <div>
@@ -156,7 +148,6 @@ export default function Page({ params }: { params: { id: string } }) {
                   checked={medalType === "gold"}
                   onChange={(e) => {
                     setMedalType(e.target.value);
-                    setPoints(1); // Update points based on medal type
                   }}
                   className="text-monument-green focus:ring-monument-green"
                 />
@@ -169,7 +160,6 @@ export default function Page({ params }: { params: { id: string } }) {
                   checked={medalType === "silver"}
                   onChange={(e) => {
                     setMedalType(e.target.value);
-                    setPoints(0.20); // Update points based on medal type
                   }}
                   className="text-monument-green focus:ring-monument-green"
                 />
@@ -182,26 +172,12 @@ export default function Page({ params }: { params: { id: string } }) {
                   checked={medalType === "bronze"}
                   onChange={(e) => {
                     setMedalType(e.target.value);
-                    setPoints(0.04); // Update points based on medal type
                   }}
                   className="text-monument-green focus:ring-monument-green"
                 />
                 <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
               </label>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Points</label>
-            <input
-              type="number"
-              value={points}
-              onChange={(e) => setPoints(Number(e.target.value))}
-              className="input"
-              placeholder="Points"
-              required
-              min="0"
-            />
           </div>
 
           <button
