@@ -146,16 +146,22 @@ export default function CategoriesPage() {
             <thead className="table-header">
               <tr>
                 <th className="table-cell text-left text-xs font-medium uppercase tracking-wider">Category Name</th>
-                <th className="table-cell text-right text-xs font-medium uppercase tracking-wider">Actions</th>
+                <th className="table-cell text-center text-xs font-medium uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {categories.map((category) => (
                 <tr key={category.id} className="table-row">
-                  <td className="table-cell font-medium text-gray-900">{category.name}</td>
-                  <td className="table-cell text-right text-sm font-medium">
-                    <button onClick={() => setEditingCategory(category)} className="btn-outline py-1 px-3 text-sm">Edit</button>
-                    <button onClick={() => handleDeleteClick(category.id)} className="btn-danger py-1 px-3 text-sm ml-2">Delete</button>
+                  <td className="table-cell font-medium text-gray-900">{category.name}</td>                  
+                  <td className="table-cell text-center text-sm font-medium">
+                    <div className="flex gap-2 justify-center">
+                      <button onClick={() => setEditingCategory(category)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => handleDeleteClick(category.id)} className="btn-danger py-1 px-3 text-sm rounded">
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

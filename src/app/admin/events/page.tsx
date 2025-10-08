@@ -184,13 +184,13 @@ export default function EventsPage() {
                   <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => handleEdit(event)}
-                      className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500 transition-colors"
+                      className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
                     >
                       ✏️ Edit
                     </button>
                   <button
                     onClick={() => handleDelete(event.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    className="btn-danger py-1 px-3 text-sm rounded"
                   >
                     🗑️ Delete
                   </button>

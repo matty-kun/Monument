@@ -237,23 +237,23 @@ export default function DepartmentsPage() {
                       className="object-cover rounded border"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded border flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
                       <span className="text-gray-400 text-xs">No img</span>
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-2 font-medium">{dept.name}</td>
-                <td className="px-4 py-2">
-                  <div className="flex gap-2">
+                <td className="px-4 py-2 text-center">
+                  <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => handleEdit(dept)}
-                      className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500 transition-colors"
+                      className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
                     >
                       ✏️ Edit
                     </button>
                     <button
                       onClick={() => handleDelete(dept.id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                      className="btn-danger py-1 px-3 text-sm rounded"
                     >
                       🗑️ Delete
                     </button>

@@ -89,18 +89,18 @@ export default function SchedulePage() {
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
+      setEventId("");
+      setSelectedDepartments([]);
+      setLocation("");
+      setTime("");
+      setDate("");
+      setStatus("upcoming");
+      setEditingId(null);
+      fetchSchedules();
     } catch (error: unknown) {
       const err = error as Error;
       toast.error(`Error saving schedule: ${err.message}`);
     }
-    setEventId("");
-    setSelectedDepartments([]);
-    setLocation("");
-    setTime("");
-    setDate("");
-    setStatus("upcoming");
-    setEditingId(null);
-    fetchSchedules();
   }
 
   async function handleDelete(id: string) {
@@ -265,10 +265,10 @@ export default function SchedulePage() {
                 <td className="px-4 py-2">{schedule.time}</td>
                 <td className="px-4 py-2">{schedule.date}</td>
                 <td className="px-4 py-2">{schedule.status}</td>
-                <td className="px-4 py-2 flex gap-2">
+                <td className="px-4 py-2 text-center">
+                  <div className="flex gap-2 justify-center">
                   <button
                     onClick={() => {
-                      console.log("Editing schedule:", schedule);
                       setEditingId(schedule.id);
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
@@ -276,26 +276,18 @@ export default function SchedulePage() {
                       setTime(schedule.time);
                       setDate(schedule.date);
                       setStatus(schedule.status);
-                      console.log("State after edit click:", {
-                        editingId: schedule.id,
-                        eventId: schedule.event_id,
-                        departments: schedule.departments,
-                        location: schedule.location,
-                        time: schedule.time,
-                        date: schedule.date,
-                        status: schedule.status,
-                      });
                     }}
-                    className="px-3 py-1 bg-yellow-400 rounded hover:bg-yellow-500"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
                   >
-                    Edit
+                    ✏️ Edit
                   </button>
                   <button
                     onClick={() => handleDelete(schedule.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="btn-danger py-1 px-3 text-sm rounded"
                   >
-                    Delete
+                    🗑️ Delete
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}

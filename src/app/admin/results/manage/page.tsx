@@ -12,8 +12,8 @@ interface Result {
   department_id: string;
   medal_type: string;
   points: number;
-  events: { name: string }; // Joined from events table
-  departments: { name: string }; // Joined from departments table
+  events: { name: string } | null; // Joined from events table
+  departments: { name: string } | null; // Joined from departments table
 }
 
 export default function ManageResultsPage() {
@@ -46,7 +46,10 @@ export default function ManageResultsPage() {
       console.error("Error fetching results:", JSON.stringify(error, null, 2));
       setMessage("Error fetching results.");
     } else {
-      setResults(data as Result[]);
+      // Supabase returns joined tables as single objects if the relationship is one-to-one.
+      // We cast to `any` first then to `Result[]` to satisfy TypeScript.
+      // This is safe because we know the shape of the data from the query.
+      setResults(data as any as Result[]);
     }
     setLoading(false);
   }
@@ -112,14 +115,14 @@ export default function ManageResultsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Medal</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Points</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {results.map((result) => (
                 <tr key={result.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{result.events.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.departments.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{result.events?.name || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.departments?.name || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       result.medal_type === 'gold' ? 'bg-yellow-100 text-yellow-800' :
@@ -130,16 +133,18 @@ export default function ManageResultsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.points}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link href={`/admin/results/edit/${result.id}`} className="text-indigo-600 hover:text-indigo-900">
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(result.id)}
-                      className="text-red-600 hover:text-red-900 ml-4"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <div className="flex gap-2 justify-center">
+                      <Link href={`/admin/results/edit/${result.id}`} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm no-underline transition-colors">
+                        ✏️ Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(result.id)}
+                        className="btn-danger py-1 px-3 text-sm rounded"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
