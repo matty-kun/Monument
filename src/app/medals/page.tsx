@@ -95,15 +95,7 @@ export default function MedalTallyPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="table-header">
-              <tr>
-                <th className="table-cell text-left font-semibold">Rank</th>
-                <th className="table-cell text-left font-semibold"></th> {/* For Image */}
-                <th className="table-cell text-left font-semibold">Department</th>
-                <th className="table-cell text-center font-semibold">🥇 Gold</th>
-                <th className="table-cell text-center font-semibold">🥈 Silver</th>
-                <th className="table-cell text-center font-semibold">🥉 Bronze</th>
-                <th className="table-cell text-center font-semibold">Total Points</th>
-              </tr>
+              <tr><th className="table-cell text-left font-semibold">Rank</th><th className="table-cell text-left font-semibold"></th><th className="table-cell text-left font-semibold">Department</th><th className="table-cell text-center font-semibold">🥇 Gold</th><th className="table-cell text-center font-semibold">🥈 Silver</th><th className="table-cell text-center font-semibold">🥉 Bronze</th><th className="table-cell text-center font-semibold">Total Points</th></tr>
             </thead>
             <tbody>
               {tally.map((row, idx) => (
@@ -133,7 +125,7 @@ export default function MedalTallyPage() {
               ))}
               {tally.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500">
+                  <td colSpan={7} className="table-cell text-center py-12 text-gray-500">
                     <div className="flex flex-col items-center">
                       <div className="text-4xl mb-2">🏆</div>
                       <p>No medal tally yet. Check back soon!</p>

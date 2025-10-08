@@ -26,13 +26,12 @@ export default function EventsPage() {
   }, [router]);
 
   async function fetchEvents() {
-    const { data, error } = await supabase.from("events").select("*").order("name");
+  const { data, error } = await supabase.from("events").select("*").order("name"); // data: Event[] | null
     if (!error && data) setEvents(data);
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
-      e.preventDefault(); // Prevent default form submission
-      const handleSubmit = async (e: unknown) => {
+    e.preventDefault(); // Prevent default form submission
     try {
       if (editingId) {
         const { error } = await supabase.from("events").update({ name, category }).eq("id", editingId);
@@ -43,13 +42,16 @@ export default function EventsPage() {
         if (error) throw error;
         toast.success("Event added successfully!");
       }
-    } catch (error: any) {
-      toast.error(`Error saving event: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(`Error saving event: ${err.message}`);
     }
-    setName("");
-    setCategory("");
-    setEditingId(null);
-    fetchEvents();
+    finally {
+      setName("");
+      setCategory("");
+      setEditingId(null);
+      fetchEvents();
+    }
   }
 
   async function handleDelete(id: string) {
@@ -156,4 +158,4 @@ export default function EventsPage() {
     </div>
   );
 }
-}
+

@@ -18,11 +18,8 @@ interface Event {
 
 
 
-type PageProps = {
-  params: { id: string }
-};
 
-export default function EditResultPage({ params }: PageProps) {
+export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { id } = params;
 

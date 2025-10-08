@@ -33,8 +33,12 @@ export default function EventsPage() {
 
   async function fetchResults() {
     const { data, error } = await supabase.rpc("get_event_results");
-    if (error) console.error(error);
-    else setResults(data);
+    if (error) {
+      console.error("Error fetching event results:", error);
+    } else {
+      console.log("Event results data:", data);
+      setResults(data);
+    }
   }
 
   // Group results by event_name for display

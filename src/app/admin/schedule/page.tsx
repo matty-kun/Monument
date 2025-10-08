@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, Fragment } from "react";
+import Image from "next/image";
 import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
+
+interface Department {
+  id: string;
+  name: string;
+  image_url?: string;
+}
 
 interface Schedule {
   id: string;
@@ -17,8 +24,9 @@ interface Schedule {
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
-  const [departments, setDepartments] = useState("");
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [location, setLocation] = useState("");
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
@@ -26,37 +34,63 @@ export default function SchedulePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
+  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
+  const deptDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSchedules();
+    fetchAllDepartments();
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (deptDropdownRef.current && !deptDropdownRef.current.contains(event.target as Node)) {
+        setIsDeptDropdownOpen(false);
+      }
+    }
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [deptDropdownRef]);
+
   async function fetchSchedules() {
-    const { data, error } = await supabase.from("schedules").select("*").order("date");
+  const { data, error } = await supabase.from("schedules").select("*").order("date"); // data: Schedule[] | null
     if (!error && data) setSchedules(data);
+  }
+
+  async function fetchAllDepartments() {
+    const { data, error } = await supabase.from("departments").select("id, name, image_url").order("name");
+    if (error) {
+      toast.error("Could not fetch departments.");
+    } else if (data) {
+      setAllDepartments(data);
+    }
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
-    const departmentsArray = departments.split(",").map((d) => d.trim());
     try {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ name, departments: departmentsArray, location, time, date, status })
+          .update({ name, departments: selectedDepartments, location, time, date, status })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ name, departments: departmentsArray, location, time, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ name, departments: selectedDepartments, location, time, date, status }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
-    } catch (error: any) {
-      toast.error(`Error saving schedule: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(`Error saving schedule: ${err.message}`);
     }
     setName("");
-    setDepartments("");
+    setSelectedDepartments([]);
     setLocation("");
     setTime("");
     setDate("");
@@ -84,6 +118,18 @@ export default function SchedulePage() {
     setScheduleToDeleteId(null);
   }
 
+  const handleDeptSelection = (deptName: string) => {
+    setSelectedDepartments(prev =>
+      prev.includes(deptName)
+        ? prev.filter(d => d !== deptName)
+        : [...prev, deptName]
+    );
+  };
+
+  const departmentMap = useMemo(() => {
+    return new Map(allDepartments.map(dept => [dept.name, dept]));
+  }, [allDepartments]);
+
   
 
   return (
@@ -100,14 +146,70 @@ export default function SchedulePage() {
             className="w-full border rounded px-3 py-2"
             required
           />
-          <input
-            type="text"
-            placeholder="Departments (comma-separated)"
-            value={departments}
-            onChange={(e) => setDepartments(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
+          <div className="relative" ref={deptDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsDeptDropdownOpen(!isDeptDropdownOpen)}
+              className="w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2"
+            >
+              {selectedDepartments.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  {selectedDepartments.map((deptName, index) => {
+                    const dept = departmentMap.get(deptName);
+                    if (!dept) return null;
+                    return (
+                      <Fragment key={dept.id}>
+                        {dept.image_url ? (
+                          <Image
+                            src={dept.image_url}
+                            alt={dept.name}
+                            width={24}
+                            height={24}
+                            className="w-6 h-6 object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{dept.name.substring(0,2)}</div>
+                        )}
+                        {index < selectedDepartments.length - 1 && <span className="font-bold text-gray-400">vs</span>}
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              ) : "Select Departments"}
+            </button>
+            {isDeptDropdownOpen && (
+              <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {allDepartments.map((dept) => (
+                  <label
+                    key={dept.id}
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {dept.image_url ? (
+                      <Image
+                        src={dept.image_url}
+                        alt={dept.name}
+                        width={24}
+                        height={24}
+                        className="w-6 h-6 object-cover rounded-full mr-3"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-gray-200 rounded-full mr-3 flex items-center justify-center text-xs font-bold text-gray-500">
+                        {dept.name.substring(0, 2)}
+                      </div>
+                    )}
+                    <input
+                      type="checkbox"
+                      checked={selectedDepartments.includes(dept.name)}
+                      onChange={() => handleDeptSelection(dept.name)}
+                      className="mr-3"
+                    />
+                    {dept.name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
           <input
             type="text"
             placeholder="Location"
@@ -168,7 +270,34 @@ export default function SchedulePage() {
             {schedules.map((schedule) => (
               <tr key={schedule.id} className="border-b">
                 <td className="px-4 py-2">{schedule.name}</td>
-                <td className="px-4 py-2">{schedule.departments.join(", ")}</td>
+                <td className="px-4 py-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {schedule.departments.map((deptName, index) => {
+                      const dept = departmentMap.get(deptName);
+                      if (!dept) return null;
+                      return (
+                        <Fragment key={dept.id}>
+                          <div title={dept.name}>
+                            {dept.image_url ? (
+                              <Image
+                                src={dept.image_url}
+                                alt={dept.name}
+                                width={32}
+                                height={32}
+                                className="w-8 h-8 object-cover rounded-full"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500" title={dept.name}>
+                                {dept.name.substring(0, 2)}
+                              </div>
+                            )}
+                          </div>
+                          {index < schedule.departments.length - 1 && <span className="font-bold text-gray-400">vs</span>}
+                        </Fragment>
+                      );
+                    })}
+                  </div>
+                </td>
                 <td className="px-4 py-2">{schedule.location}</td>
                 <td className="px-4 py-2">{schedule.time}</td>
                 <td className="px-4 py-2">{schedule.date}</td>
@@ -179,7 +308,7 @@ export default function SchedulePage() {
                       console.log("Editing schedule:", schedule);
                       setEditingId(schedule.id);
                       setName(schedule.name);
-                      setDepartments(schedule.departments.join(", "));
+                      setSelectedDepartments(schedule.departments);
                       setLocation(schedule.location);
                       setTime(schedule.time);
                       setDate(schedule.date);
@@ -187,7 +316,7 @@ export default function SchedulePage() {
                       console.log("State after edit click:", {
                         editingId: schedule.id,
                         name: schedule.name,
-                        departments: schedule.departments.join(", "),
+                        departments: schedule.departments,
                         location: schedule.location,
                         time: schedule.time,
                         date: schedule.date,

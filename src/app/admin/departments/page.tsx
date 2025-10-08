@@ -98,8 +98,9 @@ export default function DepartmentsPage() {
       
       resetForm();
       fetchDepartments();
-    } catch (error: any) {
-      toast.error(`Error saving department: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(`Error saving department: ${err.message}`);
     } finally {
       setUploading(false);
     }
@@ -134,8 +135,9 @@ export default function DepartmentsPage() {
       if (error) throw error;
       toast.success("Department deleted successfully!");
       fetchDepartments();
-    } catch (error: any) {
-      toast.error(`Error deleting department: ${error.message}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(`Error deleting department: ${err.message}`);
     } finally {
       setShowConfirmModal(false);
       setDepartmentToDeleteId(null);
