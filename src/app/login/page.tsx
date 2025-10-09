@@ -1,34 +1,33 @@
-// src/app/admin/register/page.tsx
 'use client';
-import monumentLogo from '../../../assets/monument-logo.png';
+import monumentLogo from '@/assets/monument-logo.png';
 
 import { useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-export default function RegisterAdminPage() {
+export default function AdminLoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  async function handleRegister(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
-    const { error } = await supabase.auth.signUp({
+    setErrorMsg('');
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/admin/dashboard`,
-      },
     });
+
     if (error) {
-      setMessage(error.message);
+      setErrorMsg(error.message || 'Login failed.');
     } else {
-      setMessage('Admin registered! Check your email for confirmation.');
+      router.push('/admin/dashboard');
     }
     setLoading(false);
   }
@@ -38,9 +37,9 @@ export default function RegisterAdminPage() {
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
           src={monumentLogo}
-          alt="SIDLAK Logo"
-          width={150}
-          height={150}
+          alt="Monument Logo"
+          width={300}
+          height={300}
           className="mb-4"
         />
   <h1 className="text-5xl font-bold text-monument-green">MONUMENT</h1>
@@ -51,10 +50,10 @@ export default function RegisterAdminPage() {
         <div className="card bg-white/80 backdrop-blur-sm p-8 shadow-2xl rounded-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-monument-green">Admin Portal</h2>
-            <p className="text-gray-600">Register a new admin account</p>
+            <p className="text-gray-600">Sign in to manage the system</p>
           </div>
 
-          <form onSubmit={handleRegister} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -99,9 +98,9 @@ export default function RegisterAdminPage() {
               </button>
             </div>
 
-            {message && (
-              <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
-                <p>{message}</p>
+            {errorMsg && (
+              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <p>{errorMsg}</p>
               </div>
             )}
 
@@ -113,15 +112,15 @@ export default function RegisterAdminPage() {
               {loading ? (
                 <div className="spinner-sm mx-auto"></div>
               ) : (
-                '🚀 Register'
+                '🚀 Sign In'
               )}
             </button>
           </form>
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <a href="/admin/login" className="font-medium text-monument-green hover:underline">
-                Sign In
+              Don&apos;t have an account?{' '}
+              <a href="/register" className="font-medium text-monument-green hover:underline">
+                Register
               </a>
             </p>
           </div>

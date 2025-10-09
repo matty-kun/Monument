@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import Image from "next/image";
@@ -45,6 +45,9 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-1">
+          <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
+            🏆 Podium
+          </Link>
           <Link href="/medals" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
             🏅 Medals
           </Link>
@@ -55,11 +58,6 @@ export default function Navbar() {
             🗓️ Schedule
           </Link>
           {/* This is a temporary link for categories, you might want to move it to a dropdown in the dashboard */}
-          {role === "admin" && (
-            <Link href="/admin/categories" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-              🏷️ Categories
-            </Link>
-          )}
           {role === "admin" && (
             <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm">
               📊 Dashboard
@@ -77,6 +75,7 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏆 Podium</Link>
             <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏅 Medals</Link>
             <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏟️ Events</Link>
             <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🗓️ Schedule</Link>
