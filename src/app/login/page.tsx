@@ -19,17 +19,42 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       setErrorMsg(error.message || 'Login failed.');
-    } else {
-      router.push('/admin/dashboard');
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    // After successful login, check the user's role
+    if (data.user) {
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        setErrorMsg(profileError.message);
+        setLoading(false);
+      } else if (profiles.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (profiles) {
+        setErrorMsg('You are not authorized to access this page.');
+        setLoading(false);
+        // router.push('/not-authorized'); // Optional: redirect to a 'not authorized' page
+      } else {
+        setErrorMsg('Profile not found.');
+        setLoading(false);
+      }
+    } else {
+      setErrorMsg('Login failed. Please try again.');
+      setLoading(false);
+    }
   }
 
   return (

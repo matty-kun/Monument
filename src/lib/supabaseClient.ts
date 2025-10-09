@@ -1,11 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  db: {
-    // This helps invalidate the cache when you change the schema.
-    schema: 'public',
+  auth: {
+    persistSession: true, 
+    storageKey: 'supabase.auth.token', 
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined, 
   },
-});
+})

@@ -16,13 +16,8 @@ export default function Navbar() {
 
   async function getRole() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      if (profile) setRole(profile.role);
+    if (user && user.user_metadata && user.user_metadata.role) {
+      setRole(user.user_metadata.role);
     }
   }
 

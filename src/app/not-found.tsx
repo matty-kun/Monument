@@ -9,16 +9,6 @@ export default function NotFound() {
        <p className="text-lg text-gray-600 mb-8">
         Oops! The page you couldn&apos;t find the page you&apos;re looking for.
       </p>
-      {/* Meme Image Placeholder */}
-      <div className="mb-8">
-        <Image
-          src="https://placehold.co/400x200?text=Meme+Here"
-          alt="Meme Placeholder"
-          width={400}
-          height={200}
-          className="rounded-lg shadow-md"
-        />
-      </div>
       <Link href="/" className="px-6 py-3 bg-monument-green text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors duration-300">
         Go to Homepage
       </Link>

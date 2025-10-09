@@ -31,7 +31,6 @@ export default function EventsPage() {
     fetchResults();
     fetchDepartmentData();
 
-    // Realtime update on results change
     const channel = supabase
       .channel("events-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
@@ -53,9 +52,8 @@ export default function EventsPage() {
       setResults(data);
       setFilteredResults(data);
       
-      // Extract unique categories and departments for filters
-      const categories = [...new Set(data.map((result: EventResult) => result.category).filter(Boolean))];
-      const departments = [...new Set(data.map((result: EventResult) => result.department_name))];
+      const categories = [...new Set(data.map((result: EventResult) => result.category).filter(Boolean))] as string[];
+      const departments = [...new Set(data.map((result: EventResult) => result.department_name))] as string[];
       setAllCategories(categories);
       setAllDepartments(departments);
     }
@@ -67,15 +65,18 @@ export default function EventsPage() {
       .select("id, name, image_url");
 
     if (!error && data) {
+      console.log("Department data from DB:", data); // Debug log
       const deptMap: {[key: string]: {name: string, image_url?: string}} = {};
       data.forEach(dept => {
         deptMap[dept.id] = { name: dept.name, image_url: dept.image_url };
       });
+      console.log("Department map created:", deptMap); // Debug log
       setDepartmentData(deptMap);
+    } else {
+      console.error("Error fetching departments:", error);
     }
   }
 
-  // Filter results based on selected filters
   useEffect(() => {
     let filtered = [...results];
 
@@ -100,15 +101,14 @@ export default function EventsPage() {
     setDepartmentFilter("all");
   };
 
-  // Group filtered results by event_name for display
   const grouped = filteredResults.reduce((acc, row) => {
-    if (!acc[row.event_name]) acc[row.event_name] = {};
-    acc[row.event_name][row.medal_type] = {
+    if (!acc[row.event_id]) acc[row.event_id] = { event_name: row.event_name, winners: {} };
+    acc[row.event_id].winners[row.medal_type] = {
       department_name: row.department_name,
       department_id: row.department_id
     };
     return acc;
-  }, {} as Record<string, Record<string, {department_name: string, department_id: string}>>);
+  }, {} as Record<string, { event_name: string; winners: Record<string, { department_name: string; department_id: string }> }>);
 
   return (
     <div>
@@ -148,54 +148,51 @@ export default function EventsPage() {
         {isFiltersOpen && (
           <div className="p-4 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Category Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="all">All Categories</option>
-              {allCategories.map(category => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="all">All Categories</option>
+                  {allCategories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Medal Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Medal Type</label>
-            <select
-              value={medalFilter}
-              onChange={(e) => setMedalFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="all">All Medals</option>
-              <option value="gold">🥇 Gold</option>
-              <option value="silver">🥈 Silver</option>
-              <option value="bronze">🥉 Bronze</option>
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Medal Type</label>
+                <select
+                  value={medalFilter}
+                  onChange={(e) => setMedalFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="all">All Medals</option>
+                  <option value="gold">🥇 Gold</option>
+                  <option value="silver">🥈 Silver</option>
+                  <option value="bronze">🥉 Bronze</option>
+                </select>
+              </div>
 
-          {/* Department Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="all">All Departments</option>
-              {allDepartments.map(dept => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="all">All Departments</option>
+                  {allDepartments.map(dept => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="mt-4 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md">
@@ -217,14 +214,14 @@ export default function EventsPage() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(grouped).map(([eventName, winners]) => (
-                <tr key={eventName} className="table-row animate-fadeIn">
+              {Object.entries(grouped).map(([eventId, { event_name, winners }]) => (
+                <tr key={eventId} className="table-row animate-fadeIn">
                   <td className="table-cell">
-                    <span className="font-semibold text-gray-900">{eventName}</span>
+                    <span className="font-semibold text-gray-900">{event_name}</span>
                   </td>
                   <td className="table-cell text-center">
                     {winners.gold ? (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2" title={winners.gold.department_name}>
                         {departmentData[winners.gold.department_id]?.image_url ? (
                           <Image
                             src={departmentData[winners.gold.department_id].image_url!}
@@ -232,13 +229,15 @@ export default function EventsPage() {
                             width={32}
                             height={32}
                             className="w-8 h-8 object-cover rounded-full shadow-sm"
-                            title={winners.gold.department_name}
                           />
                         ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm" title={winners.gold.department_name}>
-                            {winners.gold.department_name.substring(0, 2)}
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
+                            {winners.gold.department_name.substring(0, 2).toUpperCase()}
                           </div>
                         )}
+                        <span className="hidden md:inline text-sm text-gray-700">
+                          {winners.gold.department_name}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -246,7 +245,7 @@ export default function EventsPage() {
                   </td>
                   <td className="table-cell text-center">
                     {winners.silver ? (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2" title={winners.silver.department_name}>
                         {departmentData[winners.silver.department_id]?.image_url ? (
                           <Image
                             src={departmentData[winners.silver.department_id].image_url!}
@@ -254,13 +253,15 @@ export default function EventsPage() {
                             width={32}
                             height={32}
                             className="w-8 h-8 object-cover rounded-full shadow-sm"
-                            title={winners.silver.department_name}
                           />
                         ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm" title={winners.silver.department_name}>
-                            {winners.silver.department_name.substring(0, 2)}
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
+                            {winners.silver.department_name.substring(0, 2).toUpperCase()}
                           </div>
                         )}
+                        <span className="hidden md:inline text-sm text-gray-700">
+                          {winners.silver.department_name}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -268,7 +269,7 @@ export default function EventsPage() {
                   </td>
                   <td className="table-cell text-center">
                     {winners.bronze ? (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2" title={winners.bronze.department_name}>
                         {departmentData[winners.bronze.department_id]?.image_url ? (
                           <Image
                             src={departmentData[winners.bronze.department_id].image_url!}
@@ -276,13 +277,15 @@ export default function EventsPage() {
                             width={32}
                             height={32}
                             className="w-8 h-8 object-cover rounded-full shadow-sm"
-                            title={winners.bronze.department_name}
                           />
                         ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm" title={winners.bronze.department_name}>
-                            {winners.bronze.department_name.substring(0, 2)}
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
+                            {winners.bronze.department_name.substring(0, 2).toUpperCase()}
                           </div>
                         )}
+                        <span className="hidden md:inline text-sm text-gray-700">
+                          {winners.bronze.department_name}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>

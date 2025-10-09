@@ -18,17 +18,20 @@ export default function RegisterAdminPage() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/admin/dashboard`,
+        // The role will be 'user' by default due to a trigger in your database.
+        // We should not allow setting roles from the client-side for security.
+        // An admin can promote a user to 'admin' from a secure dashboard.
+        emailRedirectTo: `${window.location.origin}/`,
       },
     });
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage('Admin registered! Check your email for confirmation.');
+      setMessage('Registration successful! Please check your email to confirm your account.');
     }
     setLoading(false);
   }
@@ -38,9 +41,9 @@ export default function RegisterAdminPage() {
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
           src={monumentLogo}
-          alt="SIDLAK Logo"
-          width={150}
-          height={150}
+          alt="Monument Logo"
+          width={300}
+          height={300}
           className="mb-4"
         />
   <h1 className="text-5xl font-bold text-monument-green">MONUMENT</h1>
@@ -50,8 +53,8 @@ export default function RegisterAdminPage() {
       <div className="md:w-1/2 max-w-md w-full">
         <div className="card bg-white/80 backdrop-blur-sm p-8 shadow-2xl rounded-2xl">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-monument-green">Admin Portal</h2>
-            <p className="text-gray-600">Register a new admin account</p>
+            <h2 className="text-3xl font-bold text-monument-green">Create Account</h2>
+            <p className="text-gray-600">Sign up to get started</p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-6">
@@ -113,7 +116,7 @@ export default function RegisterAdminPage() {
               {loading ? (
                 <div className="spinner-sm mx-auto"></div>
               ) : (
-                '🚀 Register'
+                '🚀 Create Account'
               )}
             </button>
           </form>
