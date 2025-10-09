@@ -21,11 +21,19 @@ interface Event {
   category?: string | null;
 }
 
+interface Location {
+  id: string;
+  name: string;
+}
+
 interface Schedule {
   id: string;
-  event_id: string;
+  event_id: string; // Foreign key to events table
+  location_id: string; // Foreign key to locations table
+  // The following is from the related tables
+  events: { name: string; icon: string | null } | null;
+  locations: { name: string } | null;
   departments: string[];
-  location: string;
   time: string;
   date: string;
   status: "upcoming" | "ongoing" | "finished";
@@ -35,9 +43,10 @@ export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [eventId, setEventId] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [location, setLocation] = useState("");
+  const [locationId, setLocationId] = useState("");
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
   const [status, setStatus] = useState<"upcoming" | "ongoing" | "finished">("upcoming");
@@ -49,11 +58,23 @@ export default function SchedulePage() {
     fetchSchedules();
     fetchAllDepartments();
     fetchAllEvents();
+    fetchAllLocations();
   }, []);
 
   async function fetchSchedules() {
-  const { data, error } = await supabase.from("schedules").select("*").order("date"); // data: Schedule[] | null
-    if (!error && data) setSchedules(data);
+    const { data, error } = await supabase
+      .from("schedules")
+      .select(`
+        *,
+        events ( name, icon ),
+        locations ( name )
+      `).order("date");
+    if (error) {
+      console.error("Error fetching schedules:", error);
+      toast.error("Could not fetch schedules.");
+    } else if (data) {
+      setSchedules(data);
+    }
   }
 
   async function fetchAllDepartments() {
@@ -74,33 +95,46 @@ export default function SchedulePage() {
     }
   }
 
+  async function fetchAllLocations() {
+    const { data, error } = await supabase.from("locations").select("id, name").order("name");
+    if (error) {
+      toast.error("Could not fetch locations.");
+    } else if (data) {
+      setAllLocations(data);
+    }
+  }
+
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
     try {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ event_id: eventId, departments: selectedDepartments, location, time, date, status })
+          .update({ event_id: eventId, departments: selectedDepartments, location_id: locationId, time, date, status })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, location, time, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, location_id: locationId, time, date, status }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
-      setEventId("");
-      setSelectedDepartments([]);
-      setLocation("");
-      setTime("");
-      setDate("");
-      setStatus("upcoming");
-      setEditingId(null);
+      resetForm();
       fetchSchedules();
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(`Error saving schedule: ${err.message}`);
+      toast.error(`Error saving schedule: ${err.message.replace('location', 'location_id')}`);
     }
+  }
+
+  function resetForm() {
+    setEventId("");
+    setSelectedDepartments([]);
+    setLocationId("");
+    setTime("");
+    setDate("");
+    setStatus("upcoming");
+    setEditingId(null);
   }
 
   async function handleDelete(id: string) {
@@ -170,13 +204,11 @@ export default function SchedulePage() {
             placeholder="Select Departments"
           />
 
-          <input
-            type="text"
-            placeholder="Location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
+          <SingleSelectDropdown
+            options={allLocations.map(location => ({ id: location.id, name: location.name }))}
+            selectedValue={locationId}
+            onChange={setLocationId}
+            placeholder="Select Location"
           />
           <input
             type="time"
@@ -230,8 +262,8 @@ export default function SchedulePage() {
             {schedules.map((schedule) => (
               <tr key={schedule.id} className="border-b">
                 <td className="px-4 py-2 flex items-center gap-2">
-                  <span className="text-xl">{eventMap.get(schedule.event_id)?.icon}</span>
-                  <span>{eventMap.get(schedule.event_id)?.name}</span>
+                  <span className="text-xl">{schedule.events?.icon}</span>
+                  <span>{schedule.events?.name}</span>
                 </td>
                 <td className="px-4 py-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -261,7 +293,7 @@ export default function SchedulePage() {
                     })}
                   </div>
                 </td>
-                <td className="px-4 py-2">{schedule.location}</td>
+                <td className="px-4 py-2">{schedule.locations?.name || 'N/A'}</td>
                 <td className="px-4 py-2">{schedule.time}</td>
                 <td className="px-4 py-2">{schedule.date}</td>
                 <td className="px-4 py-2">{schedule.status}</td>
@@ -272,7 +304,7 @@ export default function SchedulePage() {
                       setEditingId(schedule.id);
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
-                      setLocation(schedule.location);
+                      setLocationId(schedule.location_id);
                       setTime(schedule.time);
                       setDate(schedule.date);
                       setStatus(schedule.status);

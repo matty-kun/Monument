@@ -1,21 +1,24 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
-import Image from "next/image";
+
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 
 interface Option {
   id: string;
   name: string;
-  image_url?: string;
   icon?: string;
+  image_url?: string;
 }
 
-interface GroupedOption {
+interface OptionGroup {
   label: string;
   options: Option[];
 }
 
+type DropdownOption = Option | OptionGroup;
+
 interface SingleSelectDropdownProps {
-  options: (Option | GroupedOption)[];
+  options: DropdownOption[];
   selectedValue: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -25,13 +28,12 @@ export default function SingleSelectDropdown({
   options,
   selectedValue,
   onChange,
-  placeholder = "Select an option",
+  placeholder = 'Select an option',
 }: SingleSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : opt);
-
+  const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : [opt]);
   const selectedOption = allOptions.find(opt => opt.id === selectedValue);
 
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function SingleSelectDropdown({
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [dropdownRef]);
 
@@ -65,11 +67,13 @@ export default function SingleSelectDropdown({
             ) : selectedOption.image_url ? (
               <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
             ) : (
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{selectedOption.name.substring(0,2)}</div>
+              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{selectedOption.name.substring(0, 2)}</div>
             )}
             <span className="ml-1">{selectedOption.name}</span>
           </div>
-        ) : placeholder}
+        ) : (
+          placeholder
+        )}
       </button>
       {isOpen && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -94,7 +98,7 @@ export default function SingleSelectDropdown({
                 ) : option.image_url ? (
                   <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
                 ) : (
-                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{option.name.substring(0,2)}</div>
+                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{option.name.substring(0, 2)}</div>
                 )}
                 <span className="ml-1">{option.name}</span>
               </div>

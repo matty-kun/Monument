@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import Link from "next/link";
@@ -13,7 +14,7 @@ interface Result {
   medal_type: string;
   points: number;
   events: { name: string } | null; // Joined from events table
-  departments: { name: string } | null; // Joined from departments table
+  departments: { name: string, image_url: string | null } | null; // Joined from departments table
 }
 
 export default function ManageResultsPage() {
@@ -38,7 +39,7 @@ export default function ManageResultsPage() {
         medal_type,
         points,
         events!fk_results_event (name),
-        departments!fk_results_department (name)
+        departments!fk_results_department (name, image_url)
       `)
       .order("id", { ascending: false }); // Order by ID for consistent display
 
@@ -122,14 +123,29 @@ export default function ManageResultsPage() {
               {results.map((result) => (
                 <tr key={result.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{result.events?.name || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.departments?.name || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      {result.departments?.image_url ? (
+                        <Image
+                          src={result.departments.image_url}
+                          alt={result.departments.name || 'Department'}
+                          width={24}
+                          height={24}
+                          className="w-6 h-6 object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{result.departments?.name?.substring(0, 2) || '??'}</div>
+                      )}
+                      <span>{result.departments?.name || 'N/A'}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       result.medal_type === 'gold' ? 'bg-yellow-100 text-yellow-800' :
                       result.medal_type === 'silver' ? 'bg-gray-100 text-gray-800' :
                       'bg-orange-100 text-orange-800'
                     }`}>
-                      {result.medal_type}
+                      {result.medal_type.charAt(0).toUpperCase() + result.medal_type.slice(1)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{result.points}</td>
