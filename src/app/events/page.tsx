@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
@@ -9,8 +9,9 @@ interface Result {
   department_id: string;
   medal_type: "gold" | "silver" | "bronze";
   events: { name: string; category: string | null } | null;
-  departments: { name:string; abbreviation: string | null; image_url: string | null } | null;
+  departments: { name: string; abbreviation: string | null; image_url: string | null } | null;
 }
+
 interface EventResult {
   event_name: string;
   category: string | null;
@@ -26,8 +27,7 @@ export default function EventsPage() {
   const [filteredResults, setFilteredResults] = useState<EventResult[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [allDepartments, setAllDepartments] = useState<string[]>([]);
-  const [departmentData, setDepartmentData] = useState<{[key: string]: {name: string, image_url?: string}}>({});
-  
+
   // Filter states
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [medalFilter, setMedalFilter] = useState<string>("all");
@@ -36,7 +36,6 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetchResults();
-    fetchDepartmentData();
 
     const channel = supabase
       .channel("events-changes")
@@ -67,47 +66,37 @@ export default function EventsPage() {
       const resultsData = data as any as Result[];
       setResults(resultsData);
 
-      const flattenedResults = resultsData.map(r => ({
-        event_name: r.events?.name || 'Unknown Event',
+      const flattenedResults = resultsData.map((r) => ({
+        event_name: r.events?.name || "Unknown Event",
         category: r.events?.category || null,
-        department_name: r.departments?.name || 'Unknown Dept',
+        department_id: r.department_id,
+        department_name: r.departments?.name || "Unknown Dept",
+        department_abbreviation: r.departments?.abbreviation || "",
+        department_image_url: r.departments?.image_url || undefined,
         medal_type: r.medal_type,
       }));
-      
+
       // Extract unique categories and departments for filters
-      const categories = [...new Set(flattenedResults.map((result) => result.category).filter(Boolean) as string[])];
-      const departments = [...new Set(flattenedResults.map((result) => result.department_name))];
+      const categories = [
+        ...new Set(flattenedResults.map((result) => result.category).filter(Boolean) as string[]),
+      ];
+      const departments = [
+        ...new Set(flattenedResults.map((result) => result.department_name)),
+      ];
+
       setAllCategories(categories);
       setAllDepartments(departments);
     }
   }
 
-  async function fetchDepartmentData() {
-    const { data, error } = await supabase
-      .from("departments")
-      .select("id, name, image_url");
-
-    if (!error && data) {
-      console.log("Department data from DB:", data); // Debug log
-      const deptMap: {[key: string]: {name: string, image_url?: string}} = {};
-      data.forEach(dept => {
-        deptMap[dept.id] = { name: dept.name, image_url: dept.image_url };
-      });
-      console.log("Department map created:", deptMap); // Debug log
-      setDepartmentData(deptMap);
-    } else {
-      console.error("Error fetching departments:", error);
-    }
-  }
-
   // Filter results based on selected filters
   useEffect(() => {
-    const flattenedResults = results.map(r => ({
-      event_name: r.events?.name || 'Unknown Event',
+    const flattenedResults = results.map((r) => ({
+      event_name: r.events?.name || "Unknown Event",
       category: r.events?.category || null,
       department_id: r.department_id,
-      department_name: r.departments?.name || 'Unknown Dept',
-      department_abbreviation: r.departments?.abbreviation || '',
+      department_name: r.departments?.name || "Unknown Dept",
+      department_abbreviation: r.departments?.abbreviation || "",
       department_image_url: r.departments?.image_url || undefined,
       medal_type: r.medal_type,
     }));
@@ -115,13 +104,13 @@ export default function EventsPage() {
     let filtered = [...flattenedResults];
 
     if (categoryFilter !== "all") {
-      filtered = filtered.filter(result => result.category === categoryFilter);
+      filtered = filtered.filter((result) => result.category === categoryFilter);
     }
     if (medalFilter !== "all") {
-      filtered = filtered.filter(result => result.medal_type === medalFilter);
+      filtered = filtered.filter((result) => result.medal_type === medalFilter);
     }
     if (departmentFilter !== "all") {
-      filtered = filtered.filter(result => result.department_name === departmentFilter);
+      filtered = filtered.filter((result) => result.department_name === departmentFilter);
     }
 
     setFilteredResults(filtered);
@@ -133,16 +122,17 @@ export default function EventsPage() {
     setDepartmentFilter("all");
   };
 
+  // Group results by event name
   const grouped = filteredResults.reduce((acc, row) => {
-    if (!acc[row.event_name]) acc[row.event_name] = { event_name: row.event_name, winners: {} };
-    acc[row.event_name].winners[row.medal_type] = {
-      department_name: row.department_name,
+    if (!acc[row.event_name]) acc[row.event_name] = {};
+    acc[row.event_name][row.medal_type] = {
       department_id: row.department_id,
-      department_abbreviation: row.department_abbreviation || '',
+      department_name: row.department_name,
+      department_abbreviation: row.department_abbreviation,
       image_url: row.department_image_url,
     };
     return acc;
-  }, {} as Record<string, { event_name: string; winners: Record<string, { department_name: string; department_id: string; department_abbreviation: string; image_url?: string }> }>);
+  }, {} as Record<string, Record<string, { department_id: string; department_name: string; department_abbreviation: string; image_url?: string }>>);
 
   return (
     <div>
@@ -168,17 +158,15 @@ export default function EventsPage() {
               Clear All
             </button>
           </div>
-          <button 
+          <button
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-200"
           >
-            <span className="text-xs">
-              {isFiltersOpen ? '▼' : '▶'}
-            </span>
-            {isFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+            <span className="text-xs">{isFiltersOpen ? "▼" : "▶"}</span>
+            {isFiltersOpen ? "Hide Filters" : "Show Filters"}
           </button>
         </div>
-        
+
         {isFiltersOpen && (
           <div className="p-4 animate-fadeIn">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -190,7 +178,7 @@ export default function EventsPage() {
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="all">All Categories</option>
-                  {allCategories.map(category => (
+                  {allCategories.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
@@ -220,7 +208,7 @@ export default function EventsPage() {
                   className="w-full border rounded px-3 py-2"
                 >
                   <option value="all">All Departments</option>
-                  {allDepartments.map(dept => (
+                  {allDepartments.map((dept) => (
                     <option key={dept} value={dept}>
                       {dept}
                     </option>
@@ -235,7 +223,8 @@ export default function EventsPage() {
           </div>
         )}
       </div>
-      
+
+      {/* Results Table */}
       <div className="table-container">
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -248,93 +237,51 @@ export default function EventsPage() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(grouped).map(([eventId, { event_name, winners }]) => (
-                <tr key={eventId} className="table-row animate-fadeIn">
+              {Object.entries(grouped).map(([eventName, winners]) => (
+                <tr key={eventName} className="table-row animate-fadeIn">
                   <td className="table-cell">
-                    <span className="font-semibold text-gray-900">{event_name}</span>
+                    <span className="font-semibold text-gray-900">{eventName}</span>
                   </td>
-                  <td className="table-cell text-center">
-                    {winners.gold ? (
-                      <div className="flex items-center justify-center gap-2" title={winners.gold.department_name}>
-                        {departmentData[winners.gold.department_id]?.image_url ? (
-                          <Image
-                            src={departmentData[winners.gold.department_id]?.image_url as string}
-                            alt={winners.gold.department_name}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 object-cover rounded-full shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
-                            {winners.gold.department_name.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="hidden md:inline text-sm text-gray-700">
-                          {winners.gold.department_name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="table-cell text-center">
-                    {winners.silver ? (
-                      <div className="flex items-center justify-center gap-2" title={winners.silver.department_name}>
-                        {departmentData[winners.silver.department_id]?.image_url ? (
-                          <Image
-                            src={departmentData[winners.silver.department_id]?.image_url as string}
-                            alt={winners.silver.department_name}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 object-cover rounded-full shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
-                            {winners.silver.department_name.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="hidden md:inline text-sm text-gray-700">
-                          {winners.silver.department_name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="table-cell text-center">
-                    {winners.bronze ? (
-                      <div className="flex items-center justify-center gap-2" title={winners.bronze.department_name}>
-                        {departmentData[winners.bronze.department_id]?.image_url ? (
-                          <Image
-                            src={departmentData[winners.bronze.department_id]?.image_url as string}
-                            alt={winners.bronze.department_name}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 object-cover rounded-full shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
-                            {winners.bronze.department_name.substring(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                        <span className="hidden md:inline text-sm text-gray-700">
-                          {winners.bronze.department_name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
+                  {["gold", "silver", "bronze"].map((medal) => (
+                    <td key={medal} className="table-cell text-center">
+                      {winners[medal] ? (
+                        <div className="flex items-center justify-center gap-2" title={winners[medal].department_name}>
+                          {winners[medal].image_url ? (
+                            <Image
+                              src={winners[medal].image_url}
+                              alt={winners[medal].department_name}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 object-cover rounded-full shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 shadow-sm">
+                              {winners[medal].department_abbreviation ||
+                                winners[medal].department_name.substring(0, 3).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="font-semibold text-sm w-12 text-left">
+                            {winners[medal].department_abbreviation}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                  ))}
                 </tr>
               ))}
+
               {Object.keys(grouped).length === 0 && (
                 <tr>
                   <td colSpan={4} className="table-cell text-center py-12 text-gray-500">
                     <div className="flex flex-col items-center">
                       <div className="text-4xl mb-2">🏟️</div>
-                      <p>{results.length === 0 
-                        ? "No event results yet. Check back soon!" 
-                        : "No events match the current filters. Try adjusting your filter criteria."}</p>
+                      <p>
+                        {results.length === 0
+                          ? "No event results yet. Check back soon!"
+                          : "No events match the current filters. Try adjusting your filter criteria."}
+                      </p>
                     </div>
                   </td>
                 </tr>
