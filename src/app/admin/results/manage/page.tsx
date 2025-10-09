@@ -6,6 +6,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import Link from "next/link";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../../components/ConfirmModal';
+import Breadcrumbs from "../../../../components/Breadcrumbs";
 
 interface Result {
   id: string;
@@ -85,6 +86,7 @@ export default function ManageResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10">
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Results' }]} />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-monument-green">📊 Manage Results</h1>
         <Link href="/admin/results" className="btn btn-primary">

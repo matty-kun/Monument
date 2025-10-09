@@ -7,6 +7,7 @@ import { supabase } from "../../../../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
 import SingleSelectDropdown from '../../../../../components/SingleSelectDropdown';
+import Breadcrumbs from '../../../../../components/Breadcrumbs';
 
 interface Department {
   id: string;
@@ -108,6 +109,11 @@ export default function Page({ params }: { params: React.Usable<{ id: string }> 
 
   return (
     <div className="max-w-2xl mx-auto mt-10">
+      <Breadcrumbs items={[
+        { href: '/admin/dashboard', label: 'Dashboard' },
+        { href: '/admin/results/manage', label: 'Manage Results' },
+        { label: 'Edit Result' }
+      ]} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-monument-green mb-2">✏️ Edit Result</h1>
         <p className="text-gray-600">Modify the details of this competition result</p>

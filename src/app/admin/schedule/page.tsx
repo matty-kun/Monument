@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
 interface Department {
   id: string;
@@ -48,11 +49,39 @@ export default function SchedulePage() {
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [locationId, setLocationId] = useState("");
   const [time, setTime] = useState("");
+  // New state for robust time picker
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
+  const [ampm, setAmPm] = useState("AM");
+  // New state for robust date picker
+  const [year, setYear] = useState(() => new Date().getFullYear().toString());
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
   const [date, setDate] = useState("");
   const [status, setStatus] = useState<"upcoming" | "ongoing" | "finished">("upcoming");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
+
+  // Combine hour, minute, ampm into a 24-hour format time string
+  useEffect(() => {
+    if (hour && minute && ampm) {
+      let h24 = parseInt(hour, 10);
+      if (ampm === 'PM' && h24 < 12) {
+        h24 += 12;
+      } else if (ampm === 'AM' && h24 === 12) {
+        h24 = 0;
+      }
+      setTime(`${h24.toString().padStart(2, '0')}:${minute}`);
+    }
+  }, [hour, minute, ampm]);
+
+  // Combine year, month, day into a YYYY-MM-DD format date string
+  useEffect(() => {
+    if (year && month && day) {
+      setDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    }
+  }, [year, month, day]);
 
   useEffect(() => {
     fetchSchedules();
@@ -132,6 +161,12 @@ export default function SchedulePage() {
     setSelectedDepartments([]);
     setLocationId("");
     setTime("");
+    setHour("");
+    setMinute("");
+    setAmPm("AM");
+    setYear(new Date().getFullYear().toString());
+    setMonth("");
+    setDay("");
     setDate("");
     setStatus("upcoming");
     setEditingId(null);
@@ -184,8 +219,36 @@ export default function SchedulePage() {
     return Object.entries(groups).map(([category, events]) => ({ label: category, options: events }));
   }, [allEvents]);
 
+  const years = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return [currentYear, currentYear + 1].map(y => ({ id: y.toString(), name: y.toString() }));
+  }, []);
+
+  const months = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: (i + 1).toString(),
+      name: new Date(0, i).toLocaleString('default', { month: 'long' }),
+    }));
+  }, []);
+
+  const daysInMonth = useMemo(() => {
+    if (year && month) {
+      // The '0' for the day gets the last day of the previous month.
+      // So, for month '2' (February), it gets the last day of month '2', which is correct.
+      return new Date(parseInt(year), parseInt(month), 0).getDate();
+    }
+    return 31; // Default to 31 days
+  }, [year, month]);
+  
+  const statusOptions = useMemo(() => [
+    { id: 'upcoming', name: '🟡 Upcoming' },
+    { id: 'ongoing', name: '🟢 Ongoing' },
+    { id: 'finished', name: '🔴 Finished' },
+  ], []);
+
   return (
     <div className="max-w-4xl mx-auto mt-10">
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
       <h1 className="text-2xl font-bold mb-4">Manage Schedule</h1>
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
@@ -210,32 +273,64 @@ export default function SchedulePage() {
             onChange={setLocationId}
             placeholder="Select Location"
           />
-          <input
-            type="time"
-            placeholder="Time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
+          {/* Robust Time Picker */}
+          <div className="grid grid-cols-3 gap-2">
+            <select value={hour} onChange={e => setHour(e.target.value)} className="w-full border rounded px-3 py-2" required>
+              <option value="" disabled>Hour</option>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+            <select value={minute} onChange={e => setMinute(e.target.value)} className="w-full border rounded px-3 py-2" required>
+              <option value="" disabled>Min</option>
+              <option value="00">00</option>
+              <option value="05">05</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+              <option value="25">25</option>
+              <option value="30">30</option>
+              <option value="35">35</option>
+              <option value="40">40</option>
+              <option value="45">45</option>
+              <option value="50">50</option>
+              <option value="55">55</option>
+            </select>
+            <select value={ampm} onChange={e => setAmPm(e.target.value)} className="w-full border rounded px-3 py-2" required>
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+
+          {/* Robust Date Picker */}
+          <div className="grid grid-cols-3 gap-2">
+            <SingleSelectDropdown
+              options={years}
+              selectedValue={year}
+              onChange={setYear}
+              placeholder="Year"
+            />
+            <SingleSelectDropdown
+              options={months.map(m => ({ id: m.value, name: m.name }))}
+              selectedValue={month}
+              onChange={setMonth}
+              placeholder="Month"
+            />
+            <SingleSelectDropdown
+              options={Array.from({ length: daysInMonth }, (_, i) => ({ id: (i + 1).toString(), name: (i + 1).toString() }))}
+              selectedValue={day}
+              onChange={setDay}
+              placeholder="Day"
+              disabled={!year || !month}
+            />
+          </div>
+
+          <SingleSelectDropdown
+            options={statusOptions}
+            selectedValue={status}
+            onChange={(value) => setStatus(value as "upcoming" | "ongoing" | "finished")}
+            placeholder="Select Status"
           />
-          <input
-            type="date"
-            placeholder="Date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as "upcoming" | "ongoing" | "finished")}
-            className="w-full border rounded px-3 py-2"
-            required
-          >
-            <option value="upcoming">Upcoming</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="finished">Finished</option>
-          </select>
         </div>
         <button
           type="submit"
@@ -296,7 +391,17 @@ export default function SchedulePage() {
                 <td className="px-4 py-2">{schedule.locations?.name || 'N/A'}</td>
                 <td className="px-4 py-2">{schedule.time}</td>
                 <td className="px-4 py-2">{schedule.date}</td>
-                <td className="px-4 py-2">{schedule.status}</td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      schedule.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800' :
+                      schedule.status === 'ongoing' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}
+                  >
+                    {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
+                  </span>
+                </td>
                 <td className="px-4 py-2 text-center">
                   <div className="flex gap-2 justify-center">
                   <button
@@ -305,8 +410,23 @@ export default function SchedulePage() {
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
                       setLocationId(schedule.location_id);
-                      setTime(schedule.time);
-                      setDate(schedule.date);
+                      // Deconstruct time for the robust picker
+                      if (schedule.time) {
+                        const [h24, m] = schedule.time.split(':').map(Number);
+                        const newAmPm = h24 >= 12 ? 'PM' : 'AM';
+                        let h12 = h24 % 12;
+                        if (h12 === 0) h12 = 12; // 12 PM or 12 AM
+                        setHour(h12.toString());
+                        setMinute(m.toString().padStart(2, '0'));
+                        setAmPm(newAmPm);
+                      }
+                      // Deconstruct date for the robust picker
+                      if (schedule.date) {
+                        const [y, mo, d] = schedule.date.split('-').map(Number);
+                        setYear(y.toString());
+                        setMonth(mo.toString());
+                        setDay(d.toString());
+                      }
                       setStatus(schedule.status);
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"

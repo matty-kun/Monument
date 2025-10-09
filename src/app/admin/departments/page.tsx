@@ -6,18 +6,21 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
-type DepartmentInsert = { name: string; image_url?: string };
+type DepartmentInsert = { name: string; abbreviation: string; image_url?: string };
 
 interface Department {
   id: string;
   name: string;
+  abbreviation?: string | null;
   image_url?: string;
 }
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
+  const [abbreviation, setAbbreviation] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -30,7 +33,7 @@ export default function DepartmentsPage() {
   }, []);
 
   async function fetchDepartments() {
-    const { data, error } = await supabase.from("departments").select("*").order("name");
+    const { data, error } = await supabase.from("departments").select("id, name, abbreviation, image_url").order("name");
     if (!error && data) setDepartments(data);
   }
 
@@ -83,13 +86,13 @@ export default function DepartmentsPage() {
 
     try {
       if (editingId) {
-        const updateData: DepartmentInsert = { name };
+        const updateData: DepartmentInsert = { name, abbreviation };
         if (imageUrl) updateData.image_url = imageUrl;
         const { error } = await supabase.from("departments").update(updateData).eq("id", editingId);
         if (error) throw error;
         toast.success("Department updated successfully!");
       } else {
-        const insertData: DepartmentInsert = { name };
+        const insertData: DepartmentInsert = { name, abbreviation };
         if (imageUrl) insertData.image_url = imageUrl;
         const { error } = await supabase.from("departments").insert([insertData]);
         if (error) throw error;
@@ -108,6 +111,7 @@ export default function DepartmentsPage() {
 
   function resetForm() {
     setName("");
+    setAbbreviation("");
     setEditingId(null);
     setSelectedImage(null);
     setImagePreview(null);
@@ -147,6 +151,7 @@ export default function DepartmentsPage() {
   function handleEdit(dept: Department) {
     setEditingId(dept.id);
     setName(dept.name);
+    setAbbreviation(dept.abbreviation || "");
     setImagePreview(dept.image_url || null);
     setSelectedImage(null);
   }
@@ -155,23 +160,37 @@ export default function DepartmentsPage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10">
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Departments' }]} />
       <h1 className="text-2xl font-bold mb-4">🏫 Manage Departments</h1>
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Department Name
-          </label>
-          <input
-            type="text"
-            placeholder="Enter department name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department Name
+            </label>
+            <input
+              type="text"
+              placeholder="Enter department name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Abbreviation
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Ccs"
+              value={abbreviation}
+              onChange={(e) => setAbbreviation(e.target.value)}
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
         </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Department Image
@@ -221,6 +240,7 @@ export default function DepartmentsPage() {
             <tr>
               <th className="px-4 py-2 text-left">Image</th>
               <th className="px-4 py-2 text-left">Department</th>
+              <th className="px-4 py-2 text-left">Abbreviation</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -243,6 +263,7 @@ export default function DepartmentsPage() {
                   )}
                 </td>
                 <td className="px-4 py-2 font-medium">{dept.name}</td>
+                <td className="px-4 py-2 font-mono text-sm text-gray-600">{dept.abbreviation}</td>
                 <td className="px-4 py-2 text-center">
                   <div className="flex gap-2 justify-center">
                     <button
@@ -263,7 +284,7 @@ export default function DepartmentsPage() {
             ))}
             {departments.length === 0 && (
               <tr>
-                <td colSpan={3} className="text-center py-8 text-gray-500">
+                <td colSpan={4} className="text-center py-8 text-gray-500">
                   <div className="flex flex-col items-center">
                     <span className="text-4xl mb-2">🏫</span>
                     <span>No departments yet. Add your first department!</span>

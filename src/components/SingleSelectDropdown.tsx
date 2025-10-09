@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 
 interface Option {
@@ -10,30 +10,24 @@ interface Option {
   image_url?: string;
 }
 
-interface OptionGroup {
+interface GroupedOption {
   label: string;
   options: Option[];
 }
 
-type DropdownOption = Option | OptionGroup;
-
-interface SingleSelectDropdownProps {
-  options: DropdownOption[];
+export interface SingleSelectDropdownProps {
+  options: (Option | GroupedOption)[];
   selectedValue: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export default function SingleSelectDropdown({
-  options,
-  selectedValue,
-  onChange,
-  placeholder = 'Select an option',
-}: SingleSelectDropdownProps) {
+function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 'Select an option', disabled = false }: SingleSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : [opt]);
+  const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : opt);
   const selectedOption = allOptions.find(opt => opt.id === selectedValue);
 
   useEffect(() => {
@@ -42,9 +36,9 @@ export default function SingleSelectDropdown({
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
 
@@ -57,8 +51,9 @@ export default function SingleSelectDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2 min-h-[42px]"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2 min-h-[42px] ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+        disabled={disabled}
       >
         {selectedOption ? (
           <div className="flex items-center gap-2">
@@ -66,24 +61,24 @@ export default function SingleSelectDropdown({
               <span className="text-xl w-6 h-6 flex items-center justify-center">{selectedOption.icon}</span>
             ) : selectedOption.image_url ? (
               <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
-            ) : (
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{selectedOption.name.substring(0, 2)}</div>
-            )}
+            ) : null}
             <span className="ml-1">{selectedOption.name}</span>
           </div>
-        ) : (
-          placeholder
-        )}
+        ) : <span className="text-gray-500">{placeholder}</span>}
       </button>
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {options.map((option, index) => {
+          {options.map((option) => {
             if ('label' in option) {
               return (
                 <div key={option.label}>
                   <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-50">{option.label}</div>
                   {option.options.map(subOption => (
-                    <div key={subOption.id} onClick={() => handleSelect(subOption.id)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer pl-6">
+                    <div
+                      key={subOption.id}
+                      onClick={() => handleSelect(subOption.id)}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer pl-6"
+                    >
                       {subOption.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{subOption.icon}</span> : <div className="w-6 h-6" />}
                       <span className="ml-1">{subOption.name}</span>
                     </div>
@@ -92,14 +87,12 @@ export default function SingleSelectDropdown({
               );
             }
             return (
-              <div key={option.id} onClick={() => handleSelect(option.id)} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                {option.icon ? (
-                  <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span>
-                ) : option.image_url ? (
-                  <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
-                ) : (
-                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500">{option.name.substring(0, 2)}</div>
-                )}
+              <div
+                key={option.id}
+                onClick={() => handleSelect(option.id)}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                {option.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span> : option.image_url ? <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" /> : null}
                 <span className="ml-1">{option.name}</span>
               </div>
             );
@@ -109,3 +102,5 @@ export default function SingleSelectDropdown({
     </div>
   );
 }
+
+export default SingleSelectDropdown;
