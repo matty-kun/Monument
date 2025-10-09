@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
 interface Category {
   id: string;
@@ -100,6 +101,7 @@ export default function CategoriesPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <Toaster position="top-center" />
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Categories' }]} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-monument-green mb-2">🏷️ Manage Categories</h1>
         <p className="text-gray-600">Add, edit, or delete event categories.</p>

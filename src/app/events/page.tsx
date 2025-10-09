@@ -1,21 +1,28 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Image from "next/image";
 
+interface Result {
+  id: string;
+  department_id: string;
+  medal_type: "gold" | "silver" | "bronze";
+  events: { name: string; category: string | null } | null;
+  departments: { name:string; abbreviation: string | null; image_url: string | null } | null;
+}
 interface EventResult {
-  event_id: string;
   event_name: string;
   category: string | null;
   department_id: string;
+  department_abbreviation: string;
   department_name: string;
+  department_image_url?: string;
   medal_type: "gold" | "silver" | "bronze";
-  points: number;
 }
 
 export default function EventsPage() {
-  const [results, setResults] = useState<EventResult[]>([]);
+  const [results, setResults] = useState<Result[]>([]);
   const [filteredResults, setFilteredResults] = useState<EventResult[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [allDepartments, setAllDepartments] = useState<string[]>([]);
@@ -44,16 +51,32 @@ export default function EventsPage() {
   }, []);
 
   async function fetchResults() {
-    const { data, error } = await supabase.rpc("get_event_results");
+    const { data, error } = await supabase
+      .from("results")
+      .select(`
+        id,
+        department_id,
+        medal_type,
+        events ( name, category ),
+        departments ( name, abbreviation, image_url )
+      `);
+
     if (error) {
       console.error("Error fetching event results:", error);
     } else {
-      console.log("Event results data:", data);
-      setResults(data);
-      setFilteredResults(data);
+      const resultsData = data as any as Result[];
+      setResults(resultsData);
+
+      const flattenedResults = resultsData.map(r => ({
+        event_name: r.events?.name || 'Unknown Event',
+        category: r.events?.category || null,
+        department_name: r.departments?.name || 'Unknown Dept',
+        medal_type: r.medal_type,
+      }));
       
-      const categories = [...new Set(data.map((result: EventResult) => result.category).filter(Boolean))] as string[];
-      const departments = [...new Set(data.map((result: EventResult) => result.department_name))] as string[];
+      // Extract unique categories and departments for filters
+      const categories = [...new Set(flattenedResults.map((result) => result.category).filter(Boolean) as string[])];
+      const departments = [...new Set(flattenedResults.map((result) => result.department_name))];
       setAllCategories(categories);
       setAllDepartments(departments);
     }
@@ -77,17 +100,26 @@ export default function EventsPage() {
     }
   }
 
+  // Filter results based on selected filters
   useEffect(() => {
-    let filtered = [...results];
+    const flattenedResults = results.map(r => ({
+      event_name: r.events?.name || 'Unknown Event',
+      category: r.events?.category || null,
+      department_id: r.department_id,
+      department_name: r.departments?.name || 'Unknown Dept',
+      department_abbreviation: r.departments?.abbreviation || '',
+      department_image_url: r.departments?.image_url || undefined,
+      medal_type: r.medal_type,
+    }));
+
+    let filtered = [...flattenedResults];
 
     if (categoryFilter !== "all") {
       filtered = filtered.filter(result => result.category === categoryFilter);
     }
-
     if (medalFilter !== "all") {
       filtered = filtered.filter(result => result.medal_type === medalFilter);
     }
-
     if (departmentFilter !== "all") {
       filtered = filtered.filter(result => result.department_name === departmentFilter);
     }
@@ -102,13 +134,15 @@ export default function EventsPage() {
   };
 
   const grouped = filteredResults.reduce((acc, row) => {
-    if (!acc[row.event_id]) acc[row.event_id] = { event_name: row.event_name, winners: {} };
-    acc[row.event_id].winners[row.medal_type] = {
+    if (!acc[row.event_name]) acc[row.event_name] = { event_name: row.event_name, winners: {} };
+    acc[row.event_name].winners[row.medal_type] = {
       department_name: row.department_name,
-      department_id: row.department_id
+      department_id: row.department_id,
+      department_abbreviation: row.department_abbreviation || '',
+      image_url: row.department_image_url,
     };
     return acc;
-  }, {} as Record<string, { event_name: string; winners: Record<string, { department_name: string; department_id: string }> }>);
+  }, {} as Record<string, { event_name: string; winners: Record<string, { department_name: string; department_id: string; department_abbreviation: string; image_url?: string }> }>);
 
   return (
     <div>
@@ -224,7 +258,7 @@ export default function EventsPage() {
                       <div className="flex items-center justify-center gap-2" title={winners.gold.department_name}>
                         {departmentData[winners.gold.department_id]?.image_url ? (
                           <Image
-                            src={departmentData[winners.gold.department_id].image_url!}
+                            src={departmentData[winners.gold.department_id]?.image_url as string}
                             alt={winners.gold.department_name}
                             width={32}
                             height={32}
@@ -248,7 +282,7 @@ export default function EventsPage() {
                       <div className="flex items-center justify-center gap-2" title={winners.silver.department_name}>
                         {departmentData[winners.silver.department_id]?.image_url ? (
                           <Image
-                            src={departmentData[winners.silver.department_id].image_url!}
+                            src={departmentData[winners.silver.department_id]?.image_url as string}
                             alt={winners.silver.department_name}
                             width={32}
                             height={32}
@@ -272,7 +306,7 @@ export default function EventsPage() {
                       <div className="flex items-center justify-center gap-2" title={winners.bronze.department_name}>
                         {departmentData[winners.bronze.department_id]?.image_url ? (
                           <Image
-                            src={departmentData[winners.bronze.department_id].image_url!}
+                            src={departmentData[winners.bronze.department_id]?.image_url as string}
                             alt={winners.bronze.department_name}
                             width={32}
                             height={32}

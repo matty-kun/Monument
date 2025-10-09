@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import Link from "next/link";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
+import Breadcrumbs from "../../../components/Breadcrumbs";
 // ...existing code...
 
 interface Department {
@@ -88,6 +89,7 @@ export default function AddResultPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold text-monument-green mb-2">➕ Add Result</h1>

@@ -8,24 +8,13 @@ import { calculateTotalPoints } from "@/utils/scoring";
 interface Tally {
   department_id: string;
   department_name: string;
+  department_abbreviation: string;
   image_url?: string;
   gold: number;
   silver: number;
   bronze: number;
   total_points: number;
 }
-
-const departmentAbbreviations: { [key: string]: string } = {
-  "College of Information Technology and Engineering": "CITE",
-  "College of Education": "CED",
-  "College of Business and Accountancy": "CBA",
-  "College of Nursing": "CN",
-  "College of Arts and Sciences": "CAS",
-  "College of Criminology": "CCJE",
-};
-
-const getAbbreviation = (name: string) => departmentAbbreviations[name] || name.substring(0, 3).toUpperCase();
-
 export default function MedalTallyPage() {
   const [tally, setTally] = useState<Tally[]>([]);
   const [filteredTally, setFilteredTally] = useState<Tally[]>([]);
@@ -57,7 +46,7 @@ export default function MedalTallyPage() {
   async function fetchTally() {
     const { data: departmentsData, error: departmentsError } = await supabase
       .from("departments")
-      .select("id, name, image_url");
+      .select("id, name, image_url, abbreviation");
 
     if (departmentsError) {
       console.error("Error fetching departments:", departmentsError);
@@ -78,6 +67,7 @@ export default function MedalTallyPage() {
       departmentMap.set(dept.id, {
         department_id: dept.id,
         department_name: dept.name,
+        department_abbreviation: dept.abbreviation || dept.name.substring(0, 3).toUpperCase(),
         image_url: dept.image_url || undefined,
         gold: 0,
         silver: 0,
@@ -291,31 +281,27 @@ export default function MedalTallyPage() {
                 <tr key={row.department_id} className="table-row animate-fadeIn">
                   <td className="table-cell font-bold">{idx + 1}</td>
                   <td className="table-cell">
-                    <div className="flex items-center justify-start gap-4" title={row.department_name}>
+                    <div className="flex items-center gap-3" title={row.department_name}>
                       {row.image_url ? (
                         <Image
                           src={row.image_url}
                           alt={row.department_name}
-                          width={48}
-                          height={48}
-                          className="w-12 h-12 object-cover rounded-full shadow-md flex-shrink-0"
+                          width={40}
+                          height={40}
+                          className="w-10 h-10 object-cover rounded-full shadow-sm"
                         />
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
-                          <span className="text-lg font-bold text-gray-600">
-                            {getAbbreviation(row.department_name)}
-                          </span>
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shadow-sm text-sm font-bold text-gray-600">
+                          {row.department_abbreviation}
                         </div>
                       )}
-                      <span className="font-semibold text-gray-800 hidden md:inline">
-                        {getAbbreviation(row.department_name)}
-                      </span>
+                      <span className="font-semibold text-gray-800">{row.department_abbreviation}</span>
                     </div>
                   </td>
                   <td className="table-cell text-center text-yellow-500 font-bold">{row.gold}</td>
                   <td className="table-cell text-center text-gray-400">{row.silver}</td>
                   <td className="table-cell text-center text-orange-400">{row.bronze}</td>
-                  <td className="table-cell text-center font-extrabold">{row.total_points}</td>
+                  <td className="table-cell text-center font-extrabold">{row.total_points.toFixed(2)}</td>
                 </tr>
               ))}
               {filteredTally.length === 0 && (

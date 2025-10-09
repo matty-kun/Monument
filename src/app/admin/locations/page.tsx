@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
 interface Location {
   id: string;
@@ -55,7 +56,11 @@ export default function LocationsPage() {
         .eq("id", editingLocation.id);
 
       if (error) {
-        toast.error(`Error updating location: ${error.message}`);
+        if (error.code === '23505') { // Handle unique constraint violation
+          toast.error("A location with this name already exists.");
+        } else {
+          toast.error(`Error updating location: ${error.message}`);
+        }
       } else {
         toast.success("Location updated successfully!");
         setEditingLocation(null);
@@ -68,7 +73,11 @@ export default function LocationsPage() {
         .insert([{ name: nameToSubmit.trim() }]);
 
       if (error) {
-        toast.error(`Error adding location: ${error.message}`);
+        if (error.code === '23505') { // Handle unique constraint violation
+          toast.error("A location with this name already exists.");
+        } else {
+          toast.error(`Error adding location: ${error.message}`);
+        }
       } else {
         toast.success("Location added successfully!");
         setNewLocationName("");
@@ -88,7 +97,7 @@ export default function LocationsPage() {
     const { error } = await supabase.from("locations").delete().eq("id", locationToDeleteId);
 
     if (error) {
-      toast.error("Error deleting location. It might be in use by some schedules.");
+      toast.error("Error deleting location. It might be in use in a schedule.");
     } else {
       toast.success("Location deleted successfully!");
       fetchLocations();
@@ -100,6 +109,7 @@ export default function LocationsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <Toaster position="top-center" />
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Locations' }]} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-monument-green mb-2">📍 Manage Locations</h1>
         <p className="text-gray-600">Add, edit, or delete event locations.</p>
@@ -114,7 +124,7 @@ export default function LocationsPage() {
             <input
               id="location-name"
               type="text"
-              placeholder="e.g., Auditorium, College Gym, Primera"
+              placeholder="e.g., University Gym"
               className="input"
               value={editingLocation ? editingLocation.name : newLocationName}
               onChange={(e) =>
@@ -165,6 +175,13 @@ export default function LocationsPage() {
                   </td>
                 </tr>
               ))}
+              {locations.length === 0 && (
+                <tr>
+                  <td colSpan={2} className="text-center py-8 text-gray-500">
+                    No locations found. Add one using the form above.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

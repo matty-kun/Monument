@@ -6,6 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
 interface Category {
   id: string;
@@ -109,6 +110,7 @@ export default function EventsPage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10">
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Events' }]} />
       <h1 className="text-2xl font-bold mb-4">🗓️ Manage Events</h1>
       <form
         onSubmit={handleAddOrUpdate}
