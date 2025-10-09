@@ -63,7 +63,7 @@ export default function EventsPage() {
     if (error) {
       console.error("Error fetching event results:", error);
     } else {
-      const resultsData = data as any as Result[];
+      const resultsData = data as unknown as Result[];
       setResults(resultsData);
 
       const flattenedResults = resultsData.map((r) => ({

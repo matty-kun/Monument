@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import Logo from "../assets/monument-logo.png";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Navbar() {
+  const supabase = createClient();
   const [role, setRole] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -26,10 +26,11 @@ export default function Navbar() {
       <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
         <div className="flex items-center">
           <Link href="/" className="flex items-center text-2xl font-bold text-monument-green hover:text-green-700 transition-colors no-underline">
-            <Image 
-              src={Logo} 
-              alt="Monument Logo" 
-              width={50} 
+            <Image
+              src="/monument-logo.png"
+              alt="Monument Logo"
+              width={50}
+              height={50}
               className="mr-2"
               priority
             />

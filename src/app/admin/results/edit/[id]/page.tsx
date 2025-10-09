@@ -3,7 +3,7 @@
 import React from 'react';
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
 import SingleSelectDropdown from '../../../../../components/SingleSelectDropdown';
@@ -23,8 +23,9 @@ interface Event {
 
 
 
-export default function Page({ params }: { params: React.Usable<{ id: string }> }) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const supabase = createClient();
   const { id } = React.use(params);
 
   const [departments, setDepartments] = useState<Department[]>([]);
