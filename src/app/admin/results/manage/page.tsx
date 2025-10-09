@@ -51,7 +51,7 @@ export default function ManageResultsPage() {
       // Supabase returns joined tables as single objects if the relationship is one-to-one.
       // We cast to `any` first then to `Result[]` to satisfy TypeScript.
       // This is safe because we know the shape of the data from the query.
-      setResults(data as any as Result[]);
+      setResults(data as unknown as Result[]);
     }
     setLoading(false);
   }

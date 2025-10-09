@@ -1,14 +1,14 @@
 'use client';
-import monumentLogo from '@/assets/monument-logo.png';
 
 import { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
     <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 p-4 overflow-hidden">
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
-          src={monumentLogo}
+          src="/monument-logo.png"
           alt="Monument Logo"
           width={300}
           height={300}
