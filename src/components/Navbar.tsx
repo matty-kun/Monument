@@ -2,24 +2,54 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const supabase = createClient();
   const [role, setRole] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     getRole();
   }, []);
 
   async function getRole() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user && user.user_metadata && user.user_metadata.role) {
-      setRole(user.user_metadata.role);
-    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user?.id)
+      .single();
+
+    if (!error && profile) setRole(profile.role);
   }
+
+  const navLinks = useMemo(() => [
+    { href: "/", label: "🏆 Podium" },
+    { href: "/medals", label: "🏅 Medals" },
+    { href: "/events", label: "🏟️ Events" },
+    { href: "/schedule", label: "🗓️ Schedule" },
+  ], []);
+
+  const getLinkClass = (href: string, isMobile: boolean = false) => {
+    const isActive = pathname === href;
+    const baseClasses = isMobile 
+      ? "block px-3 py-2 rounded-md text-base font-medium" 
+      : "px-4 py-2 rounded-lg text-sm font-medium transition-all";
+
+    if (isActive) {
+      return `${baseClasses} bg-monument-green/10 text-monument-green`;
+    }
+    return `${baseClasses} text-gray-700 hover:bg-gray-100 hover:text-monument-green`;
+  };
+
+  const closeMenu = () => setIsMenuOpen(false);
+
 
   return (
     <nav className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-50">
@@ -41,21 +71,13 @@ export default function Navbar() {
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-1">
-          <Link href="/" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-            🏆 Podium
-          </Link>
-          <Link href="/medals" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-            🏅 Medals
-          </Link>
-          <Link href="/events" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-            🏟️ Events
-          </Link>
-          <Link href="/schedule" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-monument-green transition-all">
-            🗓️ Schedule
-          </Link>
-          {/* This is a temporary link for categories, you might want to move it to a dropdown in the dashboard */}
+          {navLinks.map(({ href, label }) => (
+            <Link key={href} href={href} className={getLinkClass(href)}>
+              {label}
+            </Link>
+          ))}
           {role === "admin" && (
-            <Link href="/admin/dashboard" className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm">
+            <Link href="/admin/dashboard" className={`ml-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-monument-green hover:bg-green-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-green-500' : ''}`}>
               📊 Dashboard
             </Link>
           )}
@@ -71,17 +93,13 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏆 Podium</Link>
-            <Link href="/medals" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏅 Medals</Link>
-            <Link href="/events" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🏟️ Events</Link>
-            <Link href="/schedule" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">🗓️ Schedule</Link>
-            {role === "admin" && (
-              <Link href="/admin/categories" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-monument-green hover:bg-gray-50">
-                🏷️ Categories
+            {navLinks.map(({ href, label }) => (
+              <Link key={href} href={href} className={getLinkClass(href, true)} onClick={closeMenu}>
+                {label}
               </Link>
-            )}
+            ))}
             {role === "admin" && (
-              <Link href="/admin/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700">📊 Dashboard</Link>
+              <Link href="/admin/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium text-white bg-monument-green hover:bg-green-700 ${pathname.startsWith('/admin') ? 'ring-2 ring-white' : ''}`} onClick={closeMenu}>📊 Dashboard</Link>
             )}
           </div>
         </div>

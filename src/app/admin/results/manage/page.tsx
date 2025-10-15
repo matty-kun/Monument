@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../../components/ConfirmModal';
@@ -24,6 +24,7 @@ export default function ManageResultsPage() {
   const [message, setMessage] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [resultToDeleteId, setResultToDeleteId] = useState<string | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchResults();
