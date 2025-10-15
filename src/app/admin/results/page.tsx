@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/utils//supabase/client";
 import Link from "next/link";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import toast, { Toaster } from 'react-hot-toast';
 
 interface Department {
   id: string;
@@ -30,16 +29,16 @@ export default function AddResultPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
-
-  async function fetchDropdownData() {
+  const fetchDropdownData = useCallback(async () => {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
     const { data: eventData } = await supabase.from("events").select("id, name, icon, category").order("category,name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, [fetchDropdownData]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -18,7 +18,7 @@ interface Event {
   icon?: string;
 }
 
-const Page = ({ params }: { params: { id: string } }) => {
+export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -202,5 +202,3 @@ const Page = ({ params }: { params: { id: string } }) => {
     </div>
   );
 }
-
-export default Page;

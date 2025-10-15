@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import toast, { Toaster } from 'react-hot-toast';
@@ -26,11 +26,7 @@ export default function ManageResultsPage() {
   const [resultToDeleteId, setResultToDeleteId] = useState<string | null>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchResults();
-  }, []);
-
-  async function fetchResults() {
+  const fetchResults = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("results")
@@ -55,7 +51,11 @@ export default function ManageResultsPage() {
       setResults(data as unknown as Result[]);
     }
     setLoading(false);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
 
   async function handleDelete(id: string) {
     setResultToDeleteId(id);
