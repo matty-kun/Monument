@@ -4,7 +4,7 @@ import React, { Fragment } from "react";
 import type { NextPage } from "next";
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { supabase } from '../../lib/supabaseClient';
+import { createClient } from '@/utils/supabase/client';
 
 interface Department {
   id: string;
@@ -41,6 +41,7 @@ const SchedulePage: NextPage = () => {
   const [timeFromFilter, setTimeFromFilter] = useState<string>("");
   const [timeToFilter, setTimeToFilter] = useState<string>("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchEvents();
@@ -48,6 +49,7 @@ const SchedulePage: NextPage = () => {
 
   async function fetchEvents() {
     // Fetch schedules and the related event name in a single query
+    
     const { data: schedulesData, error: schedulesError } = await supabase
       .from("schedules")
       .select(`

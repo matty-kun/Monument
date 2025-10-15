@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
@@ -31,6 +31,8 @@ export default function DepartmentsPage() {
   useEffect(() => {
     fetchDepartments();
   }, []);
+
+  const supabase = createClient();
 
   async function fetchDepartments() {
     const { data, error } = await supabase.from("departments").select("id, name, abbreviation, image_url").order("name");

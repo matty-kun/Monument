@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
 import Image from "next/image";
@@ -19,6 +19,7 @@ interface LeaderboardRow {
 
 export default function ScoreboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const supabase = createClient(); // Add this line
 
   useEffect(() => {
     fetchLeaderboard();

@@ -43,6 +43,7 @@ export default function AdminLoginPage() {
         setLoading(false);
       } else if (profiles.role === 'admin') {
         router.push('/admin/dashboard');
+        router.refresh();
       } else if (profiles) {
         setErrorMsg('You are not authorized to access this page.');
         setLoading(false);

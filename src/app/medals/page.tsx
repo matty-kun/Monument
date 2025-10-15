@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
 
@@ -27,6 +27,7 @@ export default function MedalTallyPage() {
   const [pointsMaxFilter, setPointsMaxFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("points");
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
     fetchTally();

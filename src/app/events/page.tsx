@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 
 interface Result {
@@ -33,6 +33,8 @@ export default function EventsPage() {
   const [medalFilter, setMedalFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+
+  const supabase = createClient();
 
   useEffect(() => {
     fetchResults();

@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -23,10 +22,9 @@ interface Event {
 
 
 
-export default function Page({ params }: { params: Promise<{ id: string }> }) {
+export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const supabase = createClient();
-  const { id } = React.use(params);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
@@ -35,6 +33,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [medalType, setMedalType] = useState("gold");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const { id } = params;
 
   useEffect(() => {
     fetchDropdownData();

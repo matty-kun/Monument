@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 // ✅ Accept `email` as a prop
@@ -11,6 +11,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ email }: AdminDashboardProps) {
   const router = useRouter();
+  const supabase = createClient();
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut();

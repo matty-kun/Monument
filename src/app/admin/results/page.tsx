@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils//supabase/client";
 import Link from "next/link";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-// ...existing code...
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Department {
   id: string;
@@ -20,13 +20,15 @@ interface Event {
 }
 
 export default function AddResultPage() {
-  // ...existing code...
+  
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventId, setEventId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [medalType, setMedalType] = useState("gold");
   const [message, setMessage] = useState("");
+
+  const supabase = createClient();
 
   useEffect(() => {
     fetchDropdownData();

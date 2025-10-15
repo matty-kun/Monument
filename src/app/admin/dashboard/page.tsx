@@ -1,29 +1,14 @@
 'use client';
 
 import Link from "next/link";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // If no user is found, redirect to the login page.
-        router.replace('/login');
-      } else {
-        // If a user is found, stop loading and render the page.
-        setIsLoading(false);
-      }
-    };
-
-    checkUser();
-  }, [router]);
+  const supabase = createClient();
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut();
@@ -32,11 +17,6 @@ export default function AdminDashboardPage() {
     } else {
       console.error('Logout failed:', error);
     }
-  }
-
-  // While checking for the user, show a loading screen to prevent flicker
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner component
   }
 
   return (

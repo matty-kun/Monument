@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
@@ -12,6 +12,7 @@ interface Location {
 }
 
 export default function LocationsPage() {
+  const supabase = createClient();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [newLocationName, setNewLocationName] = useState("");

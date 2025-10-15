@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
@@ -34,6 +34,8 @@ export default function EventsPage() {
     fetchEvents();
     fetchCategories();
   }, []);
+
+  const supabase = createClient();
 
   async function fetchEvents() {
   const { data, error } = await supabase.from("events").select("*").order("name"); // data: Event[] | null

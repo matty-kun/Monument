@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Fragment } from "react";
 import Image from "next/image";
-import { supabase } from "../../../lib/supabaseClient";
+import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
@@ -62,6 +62,7 @@ export default function SchedulePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
+  const supabase = createClient();
 
   // Combine hour, minute, ampm into a 24-hour format time string
   useEffect(() => {
