@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname } from "next/navigation";
 
@@ -13,21 +13,22 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    getRole();
-  }, []);
+    const fetchRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        if (!error && profile) setRole(profile.role);
+      }
+    };
+    fetchRole();
+  }, [supabase]);
 
-  async function getRole() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user?.id)
-      .single();
-
-    if (!error && profile) setRole(profile.role);
-  }
 
   const navLinks = useMemo(() => [
     { href: "/", label: "🏆 Podium" },

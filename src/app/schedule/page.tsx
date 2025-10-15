@@ -1,7 +1,7 @@
 "use client";
 
-import React, { Fragment } from "react";
-import type { NextPage } from "next";
+import React, { Fragment, useCallback } from "react";
+import type { NextPage } from 'next';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/client';
@@ -43,13 +43,8 @@ const SchedulePage: NextPage = () => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     // Fetch schedules and the related event name in a single query
-    
     const { data: schedulesData, error: schedulesError } = await supabase
       .from("schedules")
       .select(`
@@ -99,14 +94,14 @@ const SchedulePage: NextPage = () => {
       setFilteredSchedules(enrichedSchedules as unknown as Schedule[]);
       setAllDepartments(departmentsData);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   // Fetch filter options
-  useEffect(() => {
-    fetchFilterOptions();
-  }, []);
-
-  async function fetchFilterOptions() {
+  const fetchFilterOptions = useCallback(async () => {
     // Fetch all events
     const { data: eventsData } = await supabase
       .from("events")
@@ -121,7 +116,11 @@ const SchedulePage: NextPage = () => {
 
     if (eventsData) setAllEvents(eventsData);
     if (locationsData) setAllLocations(locationsData);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
 
   // Filter schedules based on selected filters
   useEffect(() => {
