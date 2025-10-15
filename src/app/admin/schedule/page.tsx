@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment, useCallback } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
@@ -84,14 +84,7 @@ export default function SchedulePage() {
     }
   }, [year, month, day]);
 
-  useEffect(() => {
-    fetchSchedules();
-    fetchAllDepartments();
-    fetchAllEvents();
-    fetchAllLocations();
-  }, []);
-
-  async function fetchSchedules() {
+  const fetchSchedules = useCallback(async () => {
     const { data, error } = await supabase
       .from("schedules")
       .select(`
@@ -105,34 +98,41 @@ export default function SchedulePage() {
     } else if (data) {
       setSchedules(data);
     }
-  }
+  }, [supabase]);
 
-  async function fetchAllDepartments() {
+  const fetchAllDepartments = useCallback(async () => {
     const { data, error } = await supabase.from("departments").select("id, name, image_url").order("name");
     if (error) {
       toast.error("Could not fetch departments.");
     } else if (data) {
       setAllDepartments(data);
     }
-  }
+  }, [supabase]);
 
-  async function fetchAllEvents() {
+  const fetchAllEvents = useCallback(async () => {
     const { data, error } = await supabase.from("events").select("id, name, icon, category").order("category,name");
     if (error) {
       toast.error("Could not fetch events.");
     } else if (data) {
       setAllEvents(data);
     }
-  }
+  }, [supabase]);
 
-  async function fetchAllLocations() {
+  const fetchAllLocations = useCallback(async () => {
     const { data, error } = await supabase.from("locations").select("id, name").order("name");
     if (error) {
       toast.error("Could not fetch locations.");
     } else if (data) {
       setAllLocations(data);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSchedules();
+    fetchAllDepartments();
+    fetchAllEvents();
+    fetchAllLocations();
+  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllLocations]);
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -203,10 +203,6 @@ export default function SchedulePage() {
   const departmentMap = useMemo(() => {
     return new Map(allDepartments.map(dept => [dept.name, dept]));
   }, [allDepartments]);
-
-  const eventMap = useMemo(() => {
-    return new Map(allEvents.map(event => [event.id, event]));
-  }, [allEvents]);
 
   const groupedEvents = useMemo(() => {
     if (!allEvents.length) return [];

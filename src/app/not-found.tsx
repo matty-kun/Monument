@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image'; // Added import
 
 export default function NotFound() {
   return (

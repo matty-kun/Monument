@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
@@ -29,22 +29,7 @@ export default function MedalTallyPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchTally();
-
-    const channel = supabase
-      .channel("medals-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
-        fetchTally();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchTally() {
+  const fetchTally = useCallback(async () => {
     const { data: departmentsData, error: departmentsError } = await supabase
       .from("departments")
       .select("id, name, image_url, abbreviation");
@@ -98,7 +83,22 @@ export default function MedalTallyPage() {
     
     // Set departments for filter
     setAllDepartments(departmentsData.map(dept => ({ id: dept.id, name: dept.name })));
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchTally();
+
+    const channel = supabase
+      .channel("medals-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
+        fetchTally();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTally, supabase]);
 
   // Filter and sort logic
   useEffect(() => {

@@ -1,7 +1,6 @@
 "use client";
 
-
-import { useState, useEffect, FC } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
@@ -19,14 +18,7 @@ interface Event {
   icon?: string;
 }
 
-
-
-
-interface PageProps {
-  params: { id: string };
-}
-
-const Page: FC<PageProps> = ({ params }) => {
+const Page = ({ params }: { params: { id: string } }) => {
   const router = useRouter();
   const supabase = createClient();
 
@@ -39,20 +31,14 @@ const Page: FC<PageProps> = ({ params }) => {
   const [loading, setLoading] = useState(true);
   const { id } = params;
 
-  useEffect(() => {
-    fetchDropdownData();
-    fetchResult();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  async function fetchDropdownData() {
+  const fetchDropdownData = useCallback(async () => {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
     const { data: eventData } = await supabase.from("events").select("id, name, icon").order("name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
-  }
+  }, [supabase]);
 
-  async function fetchResult() {
+  const fetchResult = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("results")
@@ -73,7 +59,12 @@ const Page: FC<PageProps> = ({ params }) => {
       setMedalType(data.medal_type);
     }
     setLoading(false);
-  }
+  }, [supabase, id]);
+
+  useEffect(() => {
+    fetchDropdownData();
+    fetchResult();
+  }, [id, fetchDropdownData, fetchResult]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
