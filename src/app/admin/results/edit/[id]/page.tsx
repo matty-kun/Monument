@@ -22,11 +22,7 @@ interface Event {
 
 
 
-interface PageProps {
-  params: { id: string };
-}
-
-export default function Page({ params }: PageProps) {
+export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const supabase = createClient();
 

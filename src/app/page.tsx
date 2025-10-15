@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
@@ -21,24 +21,7 @@ export default function ScoreboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const supabase = createClient(); // Add this line
 
-  useEffect(() => {
-    fetchLeaderboard();
-
-    const channel = supabase
-      .channel("results-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "results" },
-        () => fetchLeaderboard()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchLeaderboard() {
+  const fetchLeaderboard = useCallback(async () => {
     const { data, error } = await supabase.rpc("get_leaderboard");
     if (!error && data) {
       // Calculate total_points using the scoring logic
@@ -48,7 +31,24 @@ export default function ScoreboardPage() {
       }));
       setLeaderboard(calculated);
     }
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    const channel = supabase
+      .channel("results-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "results" },
+        fetchLeaderboard
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLeaderboard, supabase]);
 
   return (
     <div className="bg-gray-50 text-black">
