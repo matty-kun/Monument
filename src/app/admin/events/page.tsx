@@ -30,15 +30,15 @@ export default function EventsPage() {
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+  const supabase = createClient(); // Moved before useEffect
+
   useEffect(() => {
     fetchEvents();
     fetchCategories();
   }, []);
 
-  const supabase = createClient();
-
   async function fetchEvents() {
-  const { data, error } = await supabase.from("events").select("*").order("name"); // data: Event[] | null
+    const { data, error } = await supabase.from("events").select("*").order("name");
     if (!error && data) setEvents(data);
   }
 
@@ -56,7 +56,7 @@ export default function EventsPage() {
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     try {
       if (editingId) {
         const { error } = await supabase.from("events").update({ name, category, icon }).eq("id", editingId);
@@ -70,8 +70,7 @@ export default function EventsPage() {
     } catch (error: unknown) {
       const err = error as Error;
       toast.error(`Error saving event: ${err.message}`);
-    }
-    finally {
+    } finally {
       resetForm();
       fetchEvents();
     }
@@ -169,53 +168,56 @@ export default function EventsPage() {
       </form>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-green-600 text-white">
-            <tr>
-              <th className="px-4 py-2 text-left">Icon</th>
-              <th className="px-4 py-2 text-left">Event</th>
-              <th className="px-4 py-2 text-left">Category</th>
-              <th className="px-4 py-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((event) => (
-              <tr key={event.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2 text-2xl">{event.icon}</td>
-                <td className="px-4 py-2 font-medium">{event.name}</td>
-                <td className="px-4 py-2">{event.category || "—"}</td>
-                <td className="px-4 py-2">
-                  <div className="flex gap-2 justify-center">
-                    <button
-                      onClick={() => handleEdit(event)}
-                      className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
-                    >
-                      ✏️ Edit
-                    </button>
-                  <button
-                    onClick={() => handleDelete(event.id)}
-                    className="btn-danger py-1 px-3 text-sm rounded"
-                  >
-                    🗑️ Delete
-                  </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {events.length === 0 && (
+        <div className="table-container">
+          <table className="min-w-full">
+            <thead className="table-header">
               <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-500">
-                  <div className="flex flex-col items-center">
-                    <span className="text-4xl mb-2">🗓️</span>
-                    <span>No events yet. Add your first event!</span>
-                  </div>
-                </td>
+                <th className="table-cell text-left">Icon</th>
+                <th className="table-cell text-left">Event</th>
+                <th className="table-cell text-left">Category</th>
+                <th className="table-cell text-center">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {events.map((event) => (
+                <tr key={event.id} className="table-row">
+                  <td className="table-cell text-2xl">{event.icon}</td>
+                  <td className="table-cell font-medium">{event.name}</td>
+                  <td className="table-cell">{event.category || "—"}</td>
+                  <td className="table-cell">
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => handleEdit(event)}
+                        className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(event.id)}
+                        className="btn-danger py-1 px-3 text-sm rounded"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {events.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center py-8 text-gray-500">
+                    <div className="flex flex-col items-center">
+                      <span className="text-4xl mb-2">🗓️</span>
+                      <span>No events yet. Add your first event!</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    <ConfirmModal
+      
+      <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmDelete}

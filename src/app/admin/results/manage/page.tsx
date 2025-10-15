@@ -112,17 +112,17 @@ export default function ManageResultsPage() {
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-green-600 text-white">
+          <table className="min-w-full">
+            <thead className="table-header">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Event</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Department</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Medal</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Points</th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Actions</th>
+                <th className="table-cell text-left">Event</th>
+                <th className="table-cell text-left">Department</th>
+                <th className="table-cell text-left">Medal</th>
+                <th className="table-cell text-left">Points</th>
+                <th className="table-cell text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {results.map((result) => (
                 <tr key={result.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{result.events?.name || 'N/A'}</td>

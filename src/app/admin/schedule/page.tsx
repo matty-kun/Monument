@@ -341,27 +341,28 @@ export default function SchedulePage() {
         </button>
       </form>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-green-600 text-white">
+      <div className="table-container">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="table-header">
             <tr>
-              <th className="px-4 py-2 text-left">Event</th>
-              <th className="px-4 py-2 text-left">Departments</th>
-              <th className="px-4 py-2 text-left">Location</th>
-              <th className="px-4 py-2 text-left">Time</th>
-              <th className="px-4 py-2 text-left">Date</th>
-              <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2">Actions</th>
+                <th className="table-cell text-left">Event</th>
+                <th className="table-cell text-left">Departments</th>
+                <th className="table-cell text-left">Location</th>
+                <th className="table-cell text-left">Time</th>
+                <th className="table-cell text-left">Date</th>
+                <th className="table-cell text-left">Status</th>
+                <th className="table-cell text-center">Actions</th>
             </tr>
-          </thead>
-          <tbody>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
             {schedules.map((schedule) => (
-              <tr key={schedule.id} className="border-b">
-                <td className="px-4 py-2 flex items-center gap-2">
+                <tr key={schedule.id} className="table-row">
+                  <td className="table-cell flex items-center gap-2">
                   <span className="text-xl">{schedule.events?.icon}</span>
                   <span>{schedule.events?.name}</span>
                 </td>
-                <td className="px-4 py-2">
+                  <td className="table-cell">
                   <div className="flex flex-wrap items-center gap-2">
                     {schedule.departments.map((deptName, index) => {
                       const dept = departmentMap.get(deptName);
@@ -389,10 +390,10 @@ export default function SchedulePage() {
                     })}
                   </div>
                 </td>
-                <td className="px-4 py-2">{schedule.locations?.name || 'N/A'}</td>
-                <td className="px-4 py-2">{schedule.time}</td>
-                <td className="px-4 py-2">{schedule.date}</td>
-                <td className="px-4 py-2">
+                  <td className="table-cell">{schedule.locations?.name || 'N/A'}</td>
+                  <td className="table-cell">{schedule.time}</td>
+                  <td className="table-cell">{schedule.date}</td>
+                  <td className="table-cell">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       schedule.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800' :
@@ -403,7 +404,7 @@ export default function SchedulePage() {
                     {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-center">
+                  <td className="table-cell text-center">
                   <div className="flex gap-2 justify-center">
                   <button
                     onClick={() => {
@@ -446,13 +447,14 @@ export default function SchedulePage() {
             ))}
             {schedules.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-4 text-gray-500">
+                  <td colSpan={7} className="table-cell text-center py-4 text-gray-500">
                   No schedules yet.
                 </td>
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     <ConfirmModal
         isOpen={showConfirmModal}

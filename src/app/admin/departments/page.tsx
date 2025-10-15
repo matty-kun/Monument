@@ -237,19 +237,20 @@ export default function DepartmentsPage() {
       </form>
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-green-600 text-white">
-            <tr>
-              <th className="px-4 py-2 text-left">Image</th>
-              <th className="px-4 py-2 text-left">Department</th>
-              <th className="px-4 py-2 text-left">Abbreviation</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {departments.map((dept) => (
-              <tr key={dept.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">
+        <div className="table-container">
+          <table className="min-w-full">
+            <thead className="table-header">
+              <tr>
+                <th className="table-cell text-left">Image</th>
+                <th className="table-cell text-left">Department</th>
+                <th className="table-cell text-left">Abbreviation</th>
+                <th className="table-cell text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {departments.map((dept) => (
+                <tr key={dept.id} className="table-row">
+                  <td className="table-cell">
                   {dept.image_url ? (
                     <Image 
                       src={dept.image_url} 
@@ -264,9 +265,9 @@ export default function DepartmentsPage() {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-2 font-medium">{dept.name}</td>
-                <td className="px-4 py-2 font-mono text-sm text-gray-600">{dept.abbreviation}</td>
-                <td className="px-4 py-2 text-center">
+                <td className="table-cell font-medium">{dept.name}</td>
+                <td className="table-cell font-mono text-sm text-gray-600">{dept.abbreviation}</td>
+                <td className="table-cell text-center">
                   <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => handleEdit(dept)}
@@ -286,7 +287,7 @@ export default function DepartmentsPage() {
             ))}
             {departments.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-500">
+                <td colSpan={4} className="table-cell text-center py-8 text-gray-500">
                   <div className="flex flex-col items-center">
                     <span className="text-4xl mb-2">🏫</span>
                     <span>No departments yet. Add your first department!</span>
@@ -295,7 +296,8 @@ export default function DepartmentsPage() {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     <ConfirmModal
         isOpen={showConfirmModal}
