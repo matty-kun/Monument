@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 
@@ -36,22 +36,7 @@ export default function EventsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchResults();
-
-    const channel = supabase
-      .channel("events-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
-        fetchResults();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchResults() {
+  const fetchResults = useCallback(async () => {
     const { data, error } = await supabase
       .from("results")
       .select(`
@@ -89,7 +74,22 @@ export default function EventsPage() {
       setAllCategories(categories);
       setAllDepartments(departments);
     }
-  }
+  }, [supabase, setResults, setAllCategories, setAllDepartments]);
+
+  useEffect(() => {
+    fetchResults();
+
+    const channel = supabase
+      .channel("events-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
+        fetchResults();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchResults, supabase]);
 
   // Filter results based on selected filters
   useEffect(() => {

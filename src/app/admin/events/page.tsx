@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
@@ -32,23 +32,23 @@ export default function EventsPage() {
 
   const supabase = createClient(); // Moved before useEffect
 
-  useEffect(() => {
-    fetchEvents();
-    fetchCategories();
-  }, []);
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     const { data, error } = await supabase.from("events").select("*").order("name");
     if (!error && data) setEvents(data);
-  }
+  }, [supabase]);
 
-  async function fetchCategories() {
+  const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from("categories")
       .select("id, name")
       .order("name");
     if (!error && data) setCategories(data);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchEvents();
+    fetchCategories();
+  }, [fetchEvents, fetchCategories]);
 
   function onEmojiClick(emojiData: EmojiClickData) {
     setIcon(emojiData.emoji);

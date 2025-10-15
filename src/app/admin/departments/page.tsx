@@ -2,7 +2,7 @@
 import Image from 'next/image';
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
@@ -28,16 +28,16 @@ export default function DepartmentsPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
   const supabase = createClient();
 
-  async function fetchDepartments() {
+  const fetchDepartments = useCallback(async () => {
     const { data, error } = await supabase.from("departments").select("id, name, abbreviation, image_url").order("name");
     if (!error && data) setDepartments(data);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, [fetchDepartments]);
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

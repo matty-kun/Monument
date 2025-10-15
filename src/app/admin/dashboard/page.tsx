@@ -4,7 +4,6 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { useState } from "react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
@@ -20,11 +20,7 @@ export default function CategoriesPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [categoryToDeleteId, setCategoryToDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("categories")
@@ -38,7 +34,11 @@ export default function CategoriesPage() {
       setCategories(data);
     }
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
