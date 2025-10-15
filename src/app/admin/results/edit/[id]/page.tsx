@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FC } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
@@ -22,7 +22,11 @@ interface Event {
 
 
 
-export default function Page({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: { id: string };
+}
+
+const Page: FC<PageProps> = ({ params }) => {
   const router = useRouter();
   const supabase = createClient();
 
@@ -207,3 +211,5 @@ export default function Page({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+export default Page;
