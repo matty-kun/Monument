@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
@@ -20,11 +20,7 @@ export default function LocationsPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [locationToDeleteId, setLocationToDeleteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  const fetchLocations = async () => {
+  const fetchLocations = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("locations")
@@ -38,7 +34,11 @@ export default function LocationsPage() {
       setLocations(data);
     }
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault();

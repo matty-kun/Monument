@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
@@ -18,7 +18,7 @@ interface Event {
   icon?: string;
 }
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -29,7 +29,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const [medalType, setMedalType] = useState("gold");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const { id } = params;
+  const { id } = use(params);
 
   const fetchDropdownData = useCallback(async () => {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
@@ -198,7 +198,7 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
         )}
       </div>
-    <Toaster />
+      <Toaster />
     </div>
   );
 }
