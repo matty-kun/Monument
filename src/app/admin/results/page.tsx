@@ -89,26 +89,26 @@ export default function AddResultPage() {
   
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-monument-green mb-2">➕ Add Result</h1>
-          <p className="text-gray-600">Record competition results and award medals to departments</p>
+          <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">➕ Add Result</h1>
+          <p className="text-gray-600 dark:text-gray-400">Record competition results and award medals to departments</p>
         </div>
-        <Link href="/admin/results/manage" className="btn btn-secondary">
+        <Link href="/admin/results/manage" className="btn btn-secondary dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200">
           Manage Results
         </Link>
       </div>
       
-      <div className="card">
-        <div className="card-header">
-          <h2 className="text-xl font-semibold text-gray-800">Competition Result Form</h2>
+      <div className="card dark:bg-gray-800 dark:border-gray-700">
+        <div className="card-header dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Competition Result Form</h2>
         </div>
         
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Event</label>
           <SingleSelectDropdown
             options={groupedEvents}
             selectedValue={eventId}
@@ -118,7 +118,7 @@ export default function AddResultPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
           <SingleSelectDropdown
             options={departments}
             selectedValue={departmentId}
@@ -128,7 +128,7 @@ export default function AddResultPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Medal Type</label>
+          <label className="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">Medal Type</label>
           <div className="grid grid-cols-3 gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -136,7 +136,7 @@ export default function AddResultPage() {
               value="gold"
               checked={medalType === "gold"}
               onChange={(e) => setMedalType(e.target.value)}
-              className="text-monument-green focus:ring-monument-green"
+              className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
             />
             <span className="badge badge-gold">🥇 Gold (1 pt)</span>
           </label>
@@ -146,7 +146,7 @@ export default function AddResultPage() {
               value="silver"
               checked={medalType === "silver"}
               onChange={(e) => setMedalType(e.target.value)}
-              className="text-monument-green focus:ring-monument-green"
+              className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
             />
             <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
           </label>
@@ -156,7 +156,7 @@ export default function AddResultPage() {
               value="bronze"
               checked={medalType === "bronze"}
               onChange={(e) => setMedalType(e.target.value)}
-              className="text-monument-green focus:ring-monument-green"
+              className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
             />
             <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
           </label>
@@ -165,15 +165,16 @@ export default function AddResultPage() {
 
         <button
           type="submit"
-          className="btn btn-primary w-full text-lg py-3"
+          className="btn btn-primary w-full text-lg py-3 dark:bg-green-600 dark:hover:bg-green-700"
         >
           🏆 Submit Result
         </button>
       </form>
 
       {message && (
-        <div className={`mt-6 p-4 rounded-lg text-center ${
-          message.includes('✅') ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        <div className={`mt-6 p-4 rounded-lg text-center ${message.includes('✅')
+            ? 'bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-700 dark:text-green-300'
+            : 'bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300'
         }`}>
           <p className="font-medium">{message}</p>
         </div>

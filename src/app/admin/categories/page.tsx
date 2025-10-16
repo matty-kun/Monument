@@ -100,25 +100,25 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto dark:text-gray-200">
       <Toaster position="top-center" />
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Categories' }]} />
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2">🏷️ Manage Categories</h1>
-        <p className="text-gray-600">Add, edit, or delete event categories.</p>
+        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🏷️ Manage Categories</h1>
+        <p className="text-gray-600 dark:text-gray-400">Add, edit, or delete event categories.</p>
       </div>
 
-      <div className="card mb-8">
+      <div className="card mb-8 dark:bg-gray-800">
         <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-grow w-full">
-            <label htmlFor="category-name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="category-name" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               {editingCategory ? "Edit Category Name" : "New Category Name"}
             </label>
             <input
               id="category-name"
               type="text"
               placeholder="e.g., Sports, Socio-Cultural"
-              className="input"
+              className="input dark:bg-gray-700 dark:border-gray-600"
               value={editingCategory ? editingCategory.name : newCategoryName}
               onChange={(e) =>
                 editingCategory
@@ -144,18 +144,18 @@ export default function CategoriesPage() {
       {loading ? (
         <div className="text-center p-10"><div className="spinner mx-auto"></div></div>
       ) : (
-        <div className="table-container">
+        <div className="table-container bg-white shadow rounded-lg overflow-hidden dark:bg-gray-800">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="table-header">
+            <thead className="table-header bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider">Category Name</th>
-                <th className="table-cell text-center text-xs font-medium uppercase tracking-wider">Actions</th>
+                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider dark:text-gray-300">Category Name</th>
+                <th className="table-cell text-center text-xs font-medium uppercase tracking-wider dark:text-gray-300">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
               {categories.map((category) => (
-                <tr key={category.id} className="table-row">
-                  <td className="table-cell font-medium text-gray-900">{category.name}</td>                  
+                <tr key={category.id} className="table-row dark:hover:bg-gray-700/50">
+                  <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{category.name}</td>                  
                   <td className="table-cell text-center text-sm font-medium">
                     <div className="flex gap-2 justify-center">
                       <button onClick={() => setEditingCategory(category)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">

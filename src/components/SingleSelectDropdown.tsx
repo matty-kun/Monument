@@ -52,7 +52,7 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full border rounded px-3 py-2 text-left bg-white flex items-center gap-2 min-h-[42px] ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
         disabled={disabled}
       >
         {selectedOption ? (
@@ -60,27 +60,28 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
             {selectedOption.icon ? (
               <span className="text-xl w-6 h-6 flex items-center justify-center">{selectedOption.icon}</span>
             ) : selectedOption.image_url ? (
-              <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" />
+              <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" priority />
             ) : null}
-            <span className="ml-1">{selectedOption.name}</span>
+            <span className="ml-1 text-gray-900 dark:text-gray-200">{selectedOption.name}</span>
           </div>
-        ) : <span className="text-gray-500">{placeholder}</span>}
+        ) : <span className="text-gray-500 dark:text-gray-400">{placeholder}</span>}
+        <span className="text-gray-400">▼</span>
       </button>
       {isOpen && !disabled && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {options.map((option) => {
             if ('label' in option) {
               return (
                 <div key={option.label}>
-                  <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-50">{option.label}</div>
+                  <div className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-800">{option.label}</div>
                   {option.options.map(subOption => (
                     <div
                       key={subOption.id}
                       onClick={() => handleSelect(subOption.id)}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer pl-6"
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer pl-6"
                     >
-                      {subOption.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{subOption.icon}</span> : <div className="w-6 h-6" />}
-                      <span className="ml-1">{subOption.name}</span>
+                      {subOption.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center ">{subOption.icon}</span> : <div className="w-6 h-6" />}
+                      <span className="ml-1 text-gray-900 dark:text-gray-200">{subOption.name}</span>
                     </div>
                   ))}
                 </div>
@@ -90,10 +91,10 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
               <div
                 key={option.id}
                 onClick={() => handleSelect(option.id)}
-                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
               >
-                {option.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span> : option.image_url ? <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" /> : null}
-                <span className="ml-1">{option.name}</span>
+                {option.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span> : option.image_url ? <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" priority /> : null}
+                <span className="ml-1 text-gray-900 dark:text-gray-200">{option.name}</span>
               </div>
             );
           })}

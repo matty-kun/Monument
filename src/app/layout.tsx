@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
   title: "Monument",
@@ -16,13 +17,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="flex flex-col min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-          {children}
-        </main>
-        <Footer />
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+        <ThemeProvider>
+          <Navbar />
+          <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+            {children}
+          </main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

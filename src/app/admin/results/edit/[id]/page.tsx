@@ -96,32 +96,32 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto mt-10 text-center">
-        <p>Loading result...</p>
+      <div className="max-w-2xl mx-auto mt-10 text-center dark:text-gray-300">
+        <p>Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10">
+    <div className="max-w-2xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[
         { href: '/admin/dashboard', label: 'Dashboard' },
         { href: '/admin/results/manage', label: 'Manage Results' },
         { label: 'Edit Result' }
       ]} />
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2">✏️ Edit Result</h1>
-        <p className="text-gray-600">Modify the details of this competition result</p>
+        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">✏️ Edit Result</h1>
+        <p className="text-gray-600 dark:text-gray-400">Modify the details of this competition result</p>
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <h2 className="text-xl font-semibold text-gray-800">Edit Result Form</h2>
+      <div className="card dark:bg-gray-800 dark:border-gray-700">
+        <div className="card-header dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Edit Result Form</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Event</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Event</label>
             <SingleSelectDropdown
               options={events.map(e => ({ id: e.id, name: e.name, icon: e.icon }))}
               selectedValue={eventId}
@@ -131,7 +131,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Department</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
             <SingleSelectDropdown
               options={departments}
               selectedValue={departmentId}
@@ -141,7 +141,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Medal Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">Medal Type</label>
             <div className="grid grid-cols-3 gap-4">
               <label className="flex items-center gap-2">
                 <input
@@ -151,7 +151,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   onChange={(e) => {
                     setMedalType(e.target.value);
                   }}
-                  className="text-monument-green focus:ring-monument-green"
+                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
                 />
                 <span className="badge badge-gold">🥇 Gold (1 pt)</span>
               </label>
@@ -163,7 +163,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   onChange={(e) => {
                     setMedalType(e.target.value);
                   }}
-                  className="text-monument-green focus:ring-monument-green"
+                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
                 />
                 <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
               </label>
@@ -175,7 +175,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   onChange={(e) => {
                     setMedalType(e.target.value);
                   }}
-                  className="text-monument-green focus:ring-monument-green"
+                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
                 />
                 <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
               </label>
@@ -184,15 +184,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
           <button
             type="submit"
-            className="btn btn-primary w-full text-lg py-3"
+            className="btn btn-primary w-full text-lg py-3 dark:bg-green-600 dark:hover:bg-green-700"
           >
             💾 Update Result
           </button>
         </form>
 
         {message && (
-          <div className={`mt-6 p-4 rounded-lg text-center ${
-            message.includes('✅') ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+          <div className={`mt-6 p-4 rounded-lg text-center ${message.includes('✅')
+              ? 'bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/50 dark:border-green-700 dark:text-green-300'
+              : 'bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/50 dark:border-red-700 dark:text-red-300'
           }`}>
             <p className="font-medium">{message}</p>
           </div>

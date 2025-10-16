@@ -244,11 +244,11 @@ export default function SchedulePage() {
   ], []);
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
-      <h1 className="text-2xl font-bold mb-4">Manage Schedule</h1>
+      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🗓️ Manage Schedule</h1>
 
-      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
+      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <SingleSelectDropdown
             options={groupedEvents}
@@ -272,13 +272,13 @@ export default function SchedulePage() {
           />
           {/* Robust Time Picker */}
           <div className="grid grid-cols-3 gap-2">
-            <select value={hour} onChange={e => setHour(e.target.value)} className="w-full border rounded px-3 py-2" required>
+            <select value={hour} onChange={e => setHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
               <option value="" disabled>Hour</option>
               {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
                 <option key={h} value={h}>{h}</option>
               ))}
             </select>
-            <select value={minute} onChange={e => setMinute(e.target.value)} className="w-full border rounded px-3 py-2" required>
+            <select value={minute} onChange={e => setMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
               <option value="" disabled>Min</option>
               <option value="00">00</option>
               <option value="05">05</option>
@@ -293,7 +293,7 @@ export default function SchedulePage() {
               <option value="50">50</option>
               <option value="55">55</option>
             </select>
-            <select value={ampm} onChange={e => setAmPm(e.target.value)} className="w-full border rounded px-3 py-2" required>
+            <select value={ampm} onChange={e => setAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
               <option value="AM">AM</option>
               <option value="PM">PM</option>
             </select>
@@ -339,22 +339,22 @@ export default function SchedulePage() {
 
       <div className="table-container">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="table-header">
+          <table className="min-w-full bg-white dark:bg-gray-800">
+            <thead className="table-header bg-gray-50 dark:bg-gray-700">
             <tr>
-                <th className="table-cell text-left">Event</th>
-                <th className="table-cell text-left">Departments</th>
-                <th className="table-cell text-left">Location</th>
-                <th className="table-cell text-left">Time</th>
-                <th className="table-cell text-left">Date</th>
-                <th className="table-cell text-left">Status</th>
-                <th className="table-cell text-center">Actions</th>
+                <th className="table-cell text-left dark:text-gray-300">Event</th>
+                <th className="table-cell text-left dark:text-gray-300">Departments</th>
+                <th className="table-cell text-left dark:text-gray-300">Location</th>
+                <th className="table-cell text-left dark:text-gray-300">Time</th>
+                <th className="table-cell text-left dark:text-gray-300">Date</th>
+                <th className="table-cell text-left dark:text-gray-300">Status</th>
+                <th className="table-cell text-center dark:text-gray-300">Actions</th>
             </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
             {schedules.map((schedule) => (
-                <tr key={schedule.id} className="table-row">
-                  <td className="table-cell flex items-center gap-2">
+                <tr key={schedule.id} className="table-row dark:hover:bg-gray-700/50">
+                  <td className="table-cell flex items-center gap-2 dark:text-gray-100">
                   <span className="text-xl">{schedule.events?.icon}</span>
                   <span>{schedule.events?.name}</span>
                 </td>
@@ -375,12 +375,12 @@ export default function SchedulePage() {
                                 className="w-8 h-8 object-cover rounded-full"
                               />
                             ) : (
-                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500" title={dept.name}>
+                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-300" title={dept.name}>
                                 {dept.name.substring(0, 2)}
                               </div>
                             )}
                           </div>
-                          {index < schedule.departments.length - 1 && <span className="font-bold text-gray-400">vs</span>}
+                          {index < schedule.departments.length - 1 && <span className="font-bold text-gray-400 dark:text-gray-500">vs</span>}
                         </Fragment>
                       );
                     })}
@@ -392,9 +392,9 @@ export default function SchedulePage() {
                   <td className="table-cell">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      schedule.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800' :
-                      schedule.status === 'ongoing' ? 'bg-green-100 text-green-800' :
-                      'bg-red-100 text-red-800'
+                      schedule.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                      schedule.status === 'ongoing' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                      'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                     }`}
                   >
                     {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}

@@ -161,14 +161,14 @@ export default function DepartmentsPage() {
   
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Departments' }]} />
-      <h1 className="text-2xl font-bold mb-4">🏫 Manage Departments</h1>
+      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🏫 Manage Departments</h1>
 
-      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow">
+      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               Department Name
             </label>
             <input
@@ -176,12 +176,12 @@ export default function DepartmentsPage() {
               placeholder="Enter department name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               Abbreviation
             </label>
             <input
@@ -189,19 +189,19 @@ export default function DepartmentsPage() {
               placeholder="e.g. Ccs"
               value={abbreviation}
               onChange={(e) => setAbbreviation(e.target.value)}
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
             Department Image
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageSelect}
-            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
           />
           {imagePreview && (
             <div className="mt-2">
@@ -220,7 +220,7 @@ export default function DepartmentsPage() {
           <button
             type="submit"
             disabled={uploading}
-            className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? "Saving..." : editingId ? "Update Department" : "Add Department"}
           </button>
@@ -228,7 +228,7 @@ export default function DepartmentsPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              className="btn btn-secondary"
             >
               Cancel
             </button>
@@ -236,20 +236,20 @@ export default function DepartmentsPage() {
         </div>
       </form>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow rounded-lg overflow-hidden dark:bg-gray-800">
         <div className="table-container">
           <table className="min-w-full">
-            <thead className="table-header">
+            <thead className="table-header bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="table-cell text-left">Image</th>
-                <th className="table-cell text-left">Department</th>
-                <th className="table-cell text-left">Abbreviation</th>
-                <th className="table-cell text-center">Actions</th>
+                <th className="table-cell text-left dark:text-gray-300">Image</th>
+                <th className="table-cell text-left dark:text-gray-300">Department</th>
+                <th className="table-cell text-left dark:text-gray-300">Abbreviation</th>
+                <th className="table-cell text-center dark:text-gray-300">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
               {departments.map((dept) => (
-                <tr key={dept.id} className="table-row">
+                <tr key={dept.id} className="table-row dark:hover:bg-gray-700/50">
                   <td className="table-cell">
                   {dept.image_url ? (
                     <Image 
@@ -257,16 +257,16 @@ export default function DepartmentsPage() {
                       alt={dept.name}
                       width={48}
                       height={48}
-                      className="object-cover rounded border"
+                      className="object-cover rounded border dark:border-gray-600"
                     />
                   ) : (
-                    <div className="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded border flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
                       <span className="text-gray-400 text-xs">No img</span>
                     </div>
                   )}
                 </td>
-                <td className="table-cell font-medium">{dept.name}</td>
-                <td className="table-cell font-mono text-sm text-gray-600">{dept.abbreviation}</td>
+                <td className="table-cell font-medium dark:text-gray-100">{dept.name}</td>
+                <td className="table-cell font-mono text-sm text-gray-600 dark:text-gray-400">{dept.abbreviation}</td>
                 <td className="table-cell text-center">
                   <div className="flex gap-2 justify-center">
                     <button
@@ -287,7 +287,7 @@ export default function DepartmentsPage() {
             ))}
             {departments.length === 0 && (
               <tr>
-                <td colSpan={4} className="table-cell text-center py-8 text-gray-500">
+                <td colSpan={4} className="table-cell text-center py-8 text-gray-500 dark:text-gray-400">
                   <div className="flex flex-col items-center">
                     <span className="text-4xl mb-2">🏫</span>
                     <span>No departments yet. Add your first department!</span>

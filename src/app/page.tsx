@@ -51,7 +51,7 @@ export default function ScoreboardPage() {
   }, [fetchLeaderboard, supabase]);
 
   return (
-    <div className="bg-gray-50 text-black">
+    <div className="bg-gray-50 dark:bg-gray-900 text-black dark:text-gray-200">
       {/* Minimalist Podium - Full screen height */}
       <div className="min-h-screen flex flex-col justify-center items-center py-8 px-4 md:px-6">
         <div className="w-full flex justify-center">
@@ -60,19 +60,19 @@ export default function ScoreboardPage() {
       </div>
 
       {/* Minimalist Full Leaderboard */}
-      <div className="w-full max-w-4xl mx-auto mt-10 bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="w-full max-w-4xl mx-auto mt-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
 
         <div className="overflow-x-auto">
           <table className="w-full table-auto">
-            <thead className="bg-white py-2">
+            <thead className="bg-white dark:bg-gray-800 py-2">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Medals</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Points</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rank</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medals</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Points</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               <AnimatePresence>
                 {leaderboard.slice(3).map((dept, index) => (
                   <motion.tr
@@ -82,10 +82,10 @@ export default function ScoreboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.3 }}
-                    className="hover:bg-gray-50"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-lg font-bold text-gray-700">#{index + 4}</span>
+                      <span className="text-lg font-bold text-gray-700 dark:text-gray-300">#{index + 4}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-4">
@@ -99,13 +99,13 @@ export default function ScoreboardPage() {
                               className="w-12 h-12 object-cover rounded-full shadow-md"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shadow-md">
+                            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
                               <span className="text-2xl text-gray-400">🏫</span>
                             </div>
                           )}
                         </div>
                         <div>
-                          <span className="text-base font-semibold text-gray-900">{dept.name}</span>
+                          <span className="text-base font-semibold text-gray-900 dark:text-gray-100">{dept.name}</span>
                         </div>
                       </div>
                     </td>
@@ -117,7 +117,7 @@ export default function ScoreboardPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right">
-                      <span className="text-xl font-bold text-indigo-600">
+                      <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
                         {dept.total_points}
                       </span>
                     </td>

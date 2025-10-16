@@ -108,25 +108,25 @@ export default function LocationsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto dark:text-gray-200">
       <Toaster position="top-center" />
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Locations' }]} />
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2">📍 Manage Locations</h1>
-        <p className="text-gray-600">Add, edit, or delete event locations.</p>
+        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">📍 Manage Locations</h1>
+        <p className="text-gray-600 dark:text-gray-400">Add, edit, or delete event locations.</p>
       </div>
 
-      <div className="card mb-8">
+      <div className="card mb-8 dark:bg-gray-800">
         <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-grow w-full">
-            <label htmlFor="location-name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="location-name" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
               {editingLocation ? "Edit Location Name" : "New Location Name"}
             </label>
             <input
               id="location-name"
               type="text"
               placeholder="e.g., University Gym"
-              className="input"
+              className="input dark:bg-gray-700 dark:border-gray-600"
               value={editingLocation ? editingLocation.name : newLocationName}
               onChange={(e) =>
                 editingLocation
@@ -152,18 +152,18 @@ export default function LocationsPage() {
       {loading ? (
         <div className="text-center p-10"><div className="spinner mx-auto"></div></div>
       ) : (
-        <div className="table-container">
+        <div className="table-container bg-white shadow rounded-lg overflow-hidden dark:bg-gray-800">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="table-header">
+            <thead className="table-header bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider">Location Name</th>
-                <th className="table-cell text-center text-xs font-medium uppercase tracking-wider">Actions</th>
+                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider dark:text-gray-300">Location Name</th>
+                <th className="table-cell text-center text-xs font-medium uppercase tracking-wider dark:text-gray-300">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
               {locations.map((location) => (
-                <tr key={location.id} className="table-row">
-                  <td className="table-cell font-medium text-gray-900">{location.name}</td>                  
+                <tr key={location.id} className="table-row dark:hover:bg-gray-700/50">
+                  <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{location.name}</td>                  
                   <td className="table-cell text-center text-sm font-medium">
                     <div className="flex gap-2 justify-center">
                       <button onClick={() => setEditingLocation(location)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">
@@ -178,7 +178,7 @@ export default function LocationsPage() {
               ))}
               {locations.length === 0 && (
                 <tr>
-                  <td colSpan={2} className="text-center py-8 text-gray-500">
+                  <td colSpan={2} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No locations found. Add one using the form above.
                   </td>
                 </tr>

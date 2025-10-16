@@ -5,20 +5,20 @@ import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
 
-interface Tally {
-  department_id: string;
-  department_name: string;
-  department_abbreviation: string;
+interface LeaderboardRow {
+  id: string;
+  name: string;
   image_url?: string;
-  gold: number;
-  silver: number;
-  bronze: number;
   total_points: number;
+  golds: number;
+  silvers: number;
+  bronzes: number;
 }
-export default function MedalTallyPage() {
-  const [tally, setTally] = useState<Tally[]>([]);
-  const [filteredTally, setFilteredTally] = useState<Tally[]>([]);
-  const [allDepartments, setAllDepartments] = useState<{id: string, name: string}[]>([]);
+
+export default function MedalsPage() {
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [filteredLeaderboard, setFilteredLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [allDepartments, setAllDepartments] = useState<string[]>([]);
   
   // Filter states
   const [medalFilter, setMedalFilter] = useState<string>("all");
@@ -29,120 +29,64 @@ export default function MedalTallyPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(true);
   const supabase = createClient();
 
-  const fetchTally = useCallback(async () => {
-    const { data: departmentsData, error: departmentsError } = await supabase
-      .from("departments")
-      .select("id, name, image_url, abbreviation");
-
-    if (departmentsError) {
-      console.error("Error fetching departments:", departmentsError);
-      return;
+  const fetchLeaderboard = useCallback(async () => {
+    const { data, error } = await supabase.rpc("get_leaderboard");
+    if (!error && data) {
+      const calculated = (data as any[]).map((row: LeaderboardRow) => ({
+        ...row,
+        total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
+      }));
+      setLeaderboard(calculated);
+      setAllDepartments([...new Set(calculated.map((dept: LeaderboardRow) => dept.name))]);
     }
-
-    const { data: resultsData, error: resultsError } = await supabase
-      .from("results")
-      .select("department_id, medal_type");
-
-    if (resultsError) {
-      console.error("Error fetching results:", resultsError);
-      return;
-    }
-
-    const departmentMap = new Map<string, Tally>();
-    departmentsData.forEach(dept => {
-      departmentMap.set(dept.id, {
-        department_id: dept.id,
-        department_name: dept.name,
-        department_abbreviation: dept.abbreviation || dept.name.substring(0, 3).toUpperCase(),
-        image_url: dept.image_url || undefined,
-        gold: 0,
-        silver: 0,
-        bronze: 0,
-        total_points: 0,
-      });
-    });
-
-    resultsData.forEach(result => {
-      const dept = departmentMap.get(result.department_id);
-      if (dept) {
-        if (result.medal_type === "gold") dept.gold++;
-        else if (result.medal_type === "silver") dept.silver++;
-        else if (result.medal_type === "bronze") dept.bronze++;
-      }
-    });
-
-    const calculatedTally: Tally[] = Array.from(departmentMap.values()).map(dept => ({
-      ...dept,
-      total_points: calculateTotalPoints(dept.gold, dept.silver, dept.bronze),
-    }));
-
-    calculatedTally.sort((a, b) => b.total_points - a.total_points);
-
-    setTally(calculatedTally);
-    setFilteredTally(calculatedTally);
-    
-    // Set departments for filter
-    setAllDepartments(departmentsData.map(dept => ({ id: dept.id, name: dept.name })));
   }, [supabase]);
 
   useEffect(() => {
-    fetchTally();
-
+    fetchLeaderboard();
     const channel = supabase
-      .channel("medals-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, () => {
-        fetchTally();
-      })
+      .channel("results-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "results" }, fetchLeaderboard)
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchTally, supabase]);
+  }, [fetchLeaderboard, supabase]);
 
   // Filter and sort logic
   useEffect(() => {
-    let filtered = [...tally];
+    let filtered = [...leaderboard];
 
     // Filter by department
     if (departmentFilter !== "all") {
-      filtered = filtered.filter(item => item.department_id === departmentFilter);
+      filtered = filtered.filter((dept) => dept.name === departmentFilter);
     }
 
     // Filter by medal type
     if (medalFilter !== "all") {
-      if (medalFilter === "gold") {
-        filtered = filtered.filter(item => item.gold > 0);
-      } else if (medalFilter === "silver") {
-        filtered = filtered.filter(item => item.silver > 0);
-      } else if (medalFilter === "bronze") {
-        filtered = filtered.filter(item => item.bronze > 0);
-      }
+      const medalKey = `${medalFilter}s` as "golds" | "silvers" | "bronzes";
+      filtered = filtered.filter((dept) => dept[medalKey] > 0);
     }
 
     // Filter by points range
     if (pointsMinFilter) {
-      filtered = filtered.filter(item => item.total_points >= parseInt(pointsMinFilter));
+      filtered = filtered.filter((dept) => dept.total_points >= parseFloat(pointsMinFilter));
     }
     if (pointsMaxFilter) {
-      filtered = filtered.filter(item => item.total_points <= parseInt(pointsMaxFilter));
+      filtered = filtered.filter((dept) => dept.total_points <= parseFloat(pointsMaxFilter));
     }
 
     // Sort
-    if (sortBy === "points") {
-      filtered.sort((a, b) => b.total_points - a.total_points);
-    } else if (sortBy === "gold") {
-      filtered.sort((a, b) => b.gold - a.gold);
-    } else if (sortBy === "silver") {
-      filtered.sort((a, b) => b.silver - a.silver);
-    } else if (sortBy === "bronze") {
-      filtered.sort((a, b) => b.bronze - a.bronze);
-    } else if (sortBy === "name") {
-      filtered.sort((a, b) => a.department_name.localeCompare(b.department_name));
-    }
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "points") return b.total_points - a.total_points;
+      if (sortBy === "gold") return b.golds - a.golds;
+      if (sortBy === "silver") return b.silvers - a.silvers;
+      if (sortBy === "bronze") return b.bronzes - a.bronzes;
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      return 0;
+    });
 
-    setFilteredTally(filtered);
-  }, [tally, medalFilter, departmentFilter, pointsMinFilter, pointsMaxFilter, sortBy]);
+    setFilteredLeaderboard(sorted);
+  }, [leaderboard, medalFilter, departmentFilter, pointsMinFilter, pointsMaxFilter, sortBy]);
 
   const clearFilters = () => {
     setMedalFilter("all");
@@ -153,34 +97,34 @@ export default function MedalTallyPage() {
   };
 
   return (
-    <div>
+    <div className="dark:text-gray-200">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2">🏆 Medal Tally</h1>
-        <p className="text-gray-600">Overall department rankings and medal counts</p>
+        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🏆 Medal Tally</h1>
+        <p className="text-gray-600 dark:text-gray-400">Overall department rankings and medal counts</p>
       </div>
 
       {/* Filters Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-gray-100">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 dark:bg-gray-800 dark:border-gray-700">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 text-sm">🔍</span>
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/50">
+                <span className="text-blue-600 text-sm dark:text-blue-300">🔍</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">Filters</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Filters</h3>
             </div>
             <button
               onClick={clearFilters}
-              className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors duration-200"
+              className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors duration-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
             >
               Clear All
             </button>
           </div>
           <button 
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-200"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
           >
-            <span className="text-xs">
+            <span className="text-xs dark:text-gray-400">
               {isFiltersOpen ? '▼' : '▶'}
             </span>
             {isFiltersOpen ? 'Hide Filters' : 'Show Filters'}
@@ -188,84 +132,84 @@ export default function MedalTallyPage() {
         </div>
         
         {isFiltersOpen && (
-          <div className="p-4 animate-fadeIn">
+          <div className="p-4 animate-fadeIn dark:bg-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Medal Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Medal Type</label>
-            <select
-              value={medalFilter}
-              onChange={(e) => setMedalFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="all">All Medals</option>
-              <option value="gold">🥇 Gold Only</option>
-              <option value="silver">🥈 Silver Only</option>
-              <option value="bronze">🥉 Bronze Only</option>
-            </select>
-          </div>
+              {/* Medal Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Medal Type</label>
+                <select
+                  value={medalFilter}
+                  onChange={(e) => setMedalFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                >
+                  <option value="all">All Medals</option>
+                  <option value="gold">🥇 Gold Only</option>
+                  <option value="silver">🥈 Silver Only</option>
+                  <option value="bronze">🥉 Bronze Only</option>
+                </select>
+              </div>
 
-          {/* Department Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="all">All Departments</option>
-              {allDepartments.map(dept => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              {/* Department Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                >
+                  <option value="all">All Departments</option>
+                  {allDepartments.map(dept => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Sort By Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="points">Total Points</option>
-              <option value="gold">Gold Medals</option>
-              <option value="silver">Silver Medals</option>
-              <option value="bronze">Bronze Medals</option>
-              <option value="name">Department Name</option>
-            </select>
-          </div>
+              {/* Sort By Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                >
+                  <option value="points">Total Points</option>
+                  <option value="gold">Gold Medals</option>
+                  <option value="silver">Silver Medals</option>
+                  <option value="bronze">Bronze Medals</option>
+                  <option value="name">Department Name</option>
+                </select>
+              </div>
 
-          {/* Points Range Filters */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Points</label>
-            <input
-              type="number"
-              placeholder="0"
-              value={pointsMinFilter}
-              onChange={(e) => setPointsMinFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              min="0"
-            />
-          </div>
+              {/* Points Range Filters */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Min Points</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={pointsMinFilter}
+                  onChange={(e) => setPointsMinFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                  min="0"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Points</label>
-            <input
-              type="number"
-              placeholder="∞"
-              value={pointsMaxFilter}
-              onChange={(e) => setPointsMaxFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              min="0"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Max Points</label>
+                <input
+                  type="number"
+                  placeholder="∞"
+                  value={pointsMaxFilter}
+                  onChange={(e) => setPointsMaxFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                  min="0"
+                />
+              </div>
             </div>
 
-            <div className="mt-4 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md">
-              📊 Showing {filteredTally.length} of {tally.length} departments
+            <div className="mt-4 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md dark:bg-gray-700 dark:text-gray-400">
+              📊 Showing {filteredLeaderboard.length} of {leaderboard.length} departments
             </div>
           </div>
         )}
@@ -274,43 +218,50 @@ export default function MedalTallyPage() {
       <div className="table-container">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="table-header">
-              <tr><th className="table-cell text-left font-semibold">Rank</th><th className="table-cell text-left font-semibold">Department</th><th className="table-cell text-center font-semibold">🥇 Gold</th><th className="table-cell text-center font-semibold">🥈 Silver</th><th className="table-cell text-center font-semibold">🥉 Bronze</th><th className="table-cell text-center font-semibold">Total Points</th></tr>
+            <thead className="table-header dark:bg-gray-700 dark:border-gray-600">
+              <tr>
+                <th className="table-cell text-left font-semibold">Rank</th>
+                <th className="table-cell text-left font-semibold">Department</th>
+                <th className="table-cell text-center font-semibold">🥇 Gold</th>
+                <th className="table-cell text-center font-semibold">🥈 Silver</th>
+                <th className="table-cell text-center font-semibold">🥉 Bronze</th>
+                <th className="table-cell text-center font-semibold">Total Points</th>
+              </tr>
             </thead>
-            <tbody>
-              {filteredTally.map((row, idx) => (
-                <tr key={row.department_id} className="table-row animate-fadeIn">
-                  <td className="table-cell font-bold">{idx + 1}</td>
+            <tbody className="dark:bg-gray-800 dark:border-gray-700">
+              {filteredLeaderboard.map((dept, index) => (
+                <tr key={dept.id} className="table-row animate-fadeIn">
+                  <td className="table-cell font-bold">#{index + 1}</td>
                   <td className="table-cell">
-                    <div className="flex items-center gap-3" title={row.department_name}>
-                      {row.image_url ? (
+                    <div className="flex items-center gap-3">
+                      {dept.image_url ? (
                         <Image
-                          src={row.image_url}
-                          alt={row.department_name}
+                          src={dept.image_url}
+                          alt={dept.name}
                           width={40}
                           height={40}
-                          className="w-10 h-10 object-cover rounded-full shadow-sm"
+                          className="w-10 h-10 object-cover rounded-full"
                         />
                       ) : (
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shadow-sm text-sm font-bold text-gray-600">
-                          {row.department_abbreviation}
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-300">
+                          {dept.name.substring(0, 3)}
                         </div>
                       )}
-                      <span className="font-semibold text-gray-800">{row.department_abbreviation}</span>
+                      <span className="font-semibold">{dept.name}</span>
                     </div>
                   </td>
-                  <td className="table-cell text-center text-yellow-500 font-bold">{row.gold}</td>
-                  <td className="table-cell text-center text-gray-400">{row.silver}</td>
-                  <td className="table-cell text-center text-orange-400">{row.bronze}</td>
-                  <td className="table-cell text-center font-extrabold">{row.total_points.toFixed(2)}</td>
+                  <td className="table-cell text-center">{dept.golds}</td>
+                  <td className="table-cell text-center">{dept.silvers}</td>
+                  <td className="table-cell text-center">{dept.bronzes}</td>
+                  <td className="table-cell text-center font-bold text-monument-green dark:text-green-400">{dept.total_points}</td>
                 </tr>
               ))}
-              {filteredTally.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="table-cell text-center py-12 text-gray-500">
+              {filteredLeaderboard.length === 0 && (
+                <tr className="dark:bg-gray-800">
+                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500">
                     <div className="flex flex-col items-center">
                       <div className="text-4xl mb-2">🏆</div>
-                      <p>{tally.length === 0 
+                      <p>{leaderboard.length === 0 
                         ? "No medal tally yet. Check back soon!" 
                         : "No departments match the current filters. Try adjusting your filter criteria."}</p>
                     </div>

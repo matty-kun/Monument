@@ -110,21 +110,25 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Events' }]} />
-      <h1 className="text-2xl font-bold mb-4">🗓️ Manage Events</h1>
+      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🏟️ Manage Events</h1>
       <form
         onSubmit={handleAddOrUpdate}
-        className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow"
+        className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <button
               type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="w-full h-full border rounded px-3 py-2 bg-white flex items-center justify-center"
+              className="w-full h-full border rounded px-3 py-2 bg-white flex items-center justify-center dark:bg-gray-700 dark:border-gray-600"
             >
-              {icon ? <span className="text-2xl">{icon}</span> : "Select Icon"}
+              {icon ? (
+                <span className="text-2xl">{icon}</span>
+              ) : (
+                <span className="text-gray-500 dark:text-gray-400">Select Icon</span>
+              )}
             </button>
             {showEmojiPicker && (
               <div className="absolute z-10">
@@ -137,7 +141,7 @@ export default function EventsPage() {
             placeholder="Enter event name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600"
             required
           />
           <SingleSelectDropdown
@@ -151,7 +155,7 @@ export default function EventsPage() {
         <div className="flex gap-2">
           <button
             type="submit"
-            className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {editingId ? "Update Event" : "Add Event"}
           </button>
@@ -159,7 +163,7 @@ export default function EventsPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              className="btn btn-secondary"
             >
               Cancel
             </button>
@@ -167,23 +171,23 @@ export default function EventsPage() {
         </div>
       </form>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="bg-white shadow rounded-lg overflow-hidden dark:bg-gray-800">
         <div className="table-container">
           <table className="min-w-full">
-            <thead className="table-header">
+            <thead className="table-header bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="table-cell text-left">Icon</th>
-                <th className="table-cell text-left">Event</th>
-                <th className="table-cell text-left">Category</th>
-                <th className="table-cell text-center">Actions</th>
+                <th className="table-cell text-left dark:text-gray-300">Icon</th>
+                <th className="table-cell text-left dark:text-gray-300">Event</th>
+                <th className="table-cell text-left dark:text-gray-300">Category</th>
+                <th className="table-cell text-center dark:text-gray-300">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
               {events.map((event) => (
-                <tr key={event.id} className="table-row">
+                <tr key={event.id} className="table-row dark:hover:bg-gray-700/50">
                   <td className="table-cell text-2xl">{event.icon}</td>
-                  <td className="table-cell font-medium">{event.name}</td>
-                  <td className="table-cell">{event.category || "—"}</td>
+                  <td className="table-cell font-medium dark:text-gray-100">{event.name}</td>
+                  <td className="table-cell dark:text-gray-300">{event.category || "—"}</td>
                   <td className="table-cell">
                     <div className="flex gap-2 justify-center">
                       <button
@@ -204,7 +208,7 @@ export default function EventsPage() {
               ))}
               {events.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-gray-500">
+                  <td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center">
                       <span className="text-4xl mb-2">🗓️</span>
                       <span>No events yet. Add your first event!</span>
