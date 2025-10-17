@@ -26,7 +26,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
   ];
 
   // Empty podium slot component
-  const EmptyPodiumSlot = ({ position, height, medal }: { position: string; height: string; medal: string }) => (
+  const EmptyPodiumSlot = ({ position, medal }: { position: string; medal: string }) => (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="w-24 md:w-40 rounded-t-lg bg-gradient-to-br from-gray-300 via-gray-500 to-gray-700 shadow-xl h-24 md:h-32"></div>
         </motion.div>
       ) : (
-        <EmptyPodiumSlot position="2nd" height="h-24 md:h-32" medal="🥈" />
+        <EmptyPodiumSlot position="2nd" medal="🥈" />
       )}
 
       {/* 1st place - center */}
@@ -116,7 +116,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="w-32 md:w-52 rounded-t-lg bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 shadow-xl h-40 md:h-64"></div>
         </motion.div>
       ) : (
-        <EmptyPodiumSlot position="1st" height="h-40 md:h-64" medal="🥇" />
+        <EmptyPodiumSlot position="1st" medal="🥇" />
       )}
 
       {/* 3rd place - right */}
@@ -150,7 +150,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="w-20 md:w-36 rounded-t-lg bg-gradient-to-br from-orange-300 via-orange-500 to-orange-700 shadow-xl h-20 md:h-28"></div>
         </motion.div>
       ) : (
-        <EmptyPodiumSlot position="3rd" height="h-20 md:h-28" medal="🥉" />
+        <EmptyPodiumSlot position="3rd" medal="🥉" />
       )}
     </div>
   );

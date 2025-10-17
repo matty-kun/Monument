@@ -32,7 +32,7 @@ export default function MedalsPage() {
   const fetchLeaderboard = useCallback(async () => {
     const { data, error } = await supabase.rpc("get_leaderboard");
     if (!error && data) {
-      const calculated = (data as any[]).map((row: LeaderboardRow) => ({
+      const calculated = (data as Omit<LeaderboardRow, 'total_points'>[]).map((row) => ({
         ...row,
         total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
       }));
