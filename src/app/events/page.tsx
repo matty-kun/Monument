@@ -39,7 +39,7 @@ export default function EventResultsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [medalFilter, setMedalFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const supabase = createClient();
 

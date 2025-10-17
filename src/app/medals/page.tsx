@@ -26,7 +26,7 @@ export default function MedalsPage() {
   const [pointsMinFilter, setPointsMinFilter] = useState<string>("");
   const [pointsMaxFilter, setPointsMaxFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("points");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const supabase = createClient();
 
   const fetchLeaderboard = useCallback(async () => {
@@ -96,8 +96,8 @@ export default function MedalsPage() {
     setSortBy("points");
   };
 
-  // Check if there are any scores to determine if ranking should be shown
-  const hasScores = leaderboard.some(dept => dept.total_points > 0);
+  // Check if there are any medals at all (not just scores > 0)
+  const hasMedals = leaderboard.some(dept => dept.golds > 0 || dept.silvers > 0 || dept.bronzes > 0);
 
   return (
     <div className="dark:text-gray-200">
@@ -232,43 +232,40 @@ export default function MedalsPage() {
               </tr>
             </thead>
             <tbody className="dark:bg-gray-800 dark:border-gray-700">
-              {filteredLeaderboard.map((dept, index) => (
-                <tr key={dept.id} className="table-row animate-fadeIn">
-                  <td className="table-cell font-bold text-center">
-                    {hasScores ? `#${index + 1}` : '-'}
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex items-center gap-3">
-                      {dept.image_url ? (
-                        <Image
-                          src={dept.image_url}
-                          alt={dept.name}
-                          width={40}
-                          height={40}
-                          className="w-10 h-10 object-cover rounded-full"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-300">
-                          {dept.name.substring(0, 3)}
-                        </div>
-                      )}
-                      <span className="font-semibold">{dept.name}</span>
-                    </div>
-                  </td>
-                  <td className="table-cell text-center">{dept.golds}</td>
-                  <td className="table-cell text-center">{dept.silvers}</td>
-                  <td className="table-cell text-center">{dept.bronzes}</td>
-                  <td className="table-cell text-center font-bold text-monument-green dark:text-green-400">{dept.total_points}</td>
-                </tr>
-              ))}
-              {filteredLeaderboard.length === 0 && (
-                <tr className="dark:bg-gray-800">
-                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500">
+              {hasMedals && filteredLeaderboard.length > 0 ? (
+                filteredLeaderboard.map((dept, index) => (
+                  <tr key={dept.id} className="table-row animate-fadeIn">
+                    <td className="table-cell font-bold text-center">#{index + 1}</td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        {dept.image_url ? (
+                          <Image
+                            src={dept.image_url}
+                            alt={dept.name}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 object-cover rounded-full"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-300">
+                            {dept.name.substring(0, 3)}
+                          </div>
+                        )}
+                        <span className="font-semibold">{dept.name}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell text-center">{dept.golds}</td>
+                    <td className="table-cell text-center">{dept.silvers}</td>
+                    <td className="table-cell text-center">{dept.bronzes}</td>
+                    <td className="table-cell text-center font-bold text-monument-green dark:text-green-400">{dept.total_points}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500 dark:text-gray-400">
                     <div className="flex flex-col items-center">
-                      <div className="text-4xl mb-2">🏆</div>
-                      <p>{leaderboard.length === 0 
-                        ? "No medal tally yet. Check back soon!" 
-                        : "No departments match the current filters. Try adjusting your filter criteria."}</p>
+                      <div className="text-4xl mb-2">🏅</div>
+                      <p>{!hasMedals ? "No medal results yet. Check back soon!" : "No departments match the current filters. Try adjusting your filter criteria."}</p>
                     </div>
                   </td>
                 </tr>

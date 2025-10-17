@@ -40,7 +40,7 @@ const SchedulePage: NextPage = () => {
   const [dateToFilter, setDateToFilter] = useState<string>("");
   const [timeFromFilter, setTimeFromFilter] = useState<string>("");
   const [timeToFilter, setTimeToFilter] = useState<string>("");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const supabase = createClient();
 
   const fetchEvents = useCallback(async () => {
@@ -399,11 +399,16 @@ const SchedulePage: NextPage = () => {
                 </tr>
               ))}
               {filteredSchedules.length === 0 && (
-                <tr className="dark:bg-gray-800">
-                  <td colSpan={6} className="text-center py-4 text-gray-500">
-                    {schedules.length === 0 
-                      ? "No events scheduled yet." 
-                      : "No events match the current filters. Try adjusting your filter criteria."}
+                <tr>
+                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl mb-2">🗓️</div>
+                      <p>
+                        {schedules.length === 0
+                          ? "No schedule results yet, check back soon."
+                          : "No events match the current filters. Try adjusting your filter criteria."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               )}
