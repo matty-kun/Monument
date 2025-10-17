@@ -93,12 +93,12 @@ export default function AdminDashboard({ email }: AdminDashboardProps) {
         </Link>
 
         <Link
-          href="/admin/locations"
+          href="/admin/venues"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline dark:bg-gray-800 dark:hover:bg-gray-700"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📍</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2 dark:text-white">Manage Locations</h3>
-          <p className="text-gray-600 text-sm dark:text-gray-300">Add and organize event locations</p>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2 dark:text-white">Manage Venues</h3>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Add and organize event venues</p>
         </Link>
       </div>
     </div>

@@ -22,7 +22,7 @@ interface Event {
   category?: string | null;
 }
 
-interface Location {
+interface Venue {
   id: string;
   name: string;
 }
@@ -30,10 +30,10 @@ interface Location {
 interface Schedule {
   id: string;
   event_id: string; // Foreign key to events table
-  location_id: string; // Foreign key to locations table
+  venue_id: string; // Foreign key to venues table
   // The following is from the related tables
   events: { name: string; icon: string | null } | null;
-  locations: { name: string } | null;
+  venues: { name: string } | null;
   departments: string[];
   time: string;
   date: string;
@@ -44,10 +44,10 @@ export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [eventId, setEventId] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [locationId, setLocationId] = useState("");
+  const [venueId, setVenueId] = useState("");
   const [time, setTime] = useState("");
   // New state for robust time picker
   const [hour, setHour] = useState("");
@@ -90,7 +90,7 @@ export default function SchedulePage() {
       .select(`
         *,
         events ( name, icon ),
-        locations ( name )
+        venues ( name )
       `).order("date");
     if (error) {
       console.error("Error fetching schedules:", error);
@@ -118,12 +118,12 @@ export default function SchedulePage() {
     }
   }, [supabase]);
 
-  const fetchAllLocations = useCallback(async () => {
-    const { data, error } = await supabase.from("locations").select("id, name").order("name");
+  const fetchAllVenues = useCallback(async () => {
+    const { data, error } = await supabase.from("venues").select("id, name").order("name");
     if (error) {
-      toast.error("Could not fetch locations.");
+      toast.error("Could not fetch venues.");
     } else if (data) {
-      setAllLocations(data);
+      setAllVenues(data);
     }
   }, [supabase]);
 
@@ -131,8 +131,8 @@ export default function SchedulePage() {
     fetchSchedules();
     fetchAllDepartments();
     fetchAllEvents();
-    fetchAllLocations();
-  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllLocations]);
+    fetchAllVenues();
+  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues]);
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -140,12 +140,12 @@ export default function SchedulePage() {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ event_id: eventId, departments: selectedDepartments, location_id: locationId, time, date, status })
+          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, time, date, status })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, location_id: locationId, time, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, time, date, status }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
@@ -153,14 +153,14 @@ export default function SchedulePage() {
       fetchSchedules();
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(`Error saving schedule: ${err.message.replace('location', 'location_id')}`);
+      toast.error(`Error saving schedule: ${err.message.replace('venue', 'venue_id')}`);
     }
   }
 
   function resetForm() {
     setEventId("");
     setSelectedDepartments([]);
-    setLocationId("");
+    setVenueId("");
     setTime("");
     setHour("");
     setMinute("");
@@ -265,10 +265,10 @@ export default function SchedulePage() {
           />
 
           <SingleSelectDropdown
-            options={allLocations.map(location => ({ id: location.id, name: location.name }))}
-            selectedValue={locationId}
-            onChange={setLocationId}
-            placeholder="Select Location"
+            options={allVenues.map(venue => ({ id: venue.id, name: venue.name }))}
+            selectedValue={venueId}
+            onChange={setVenueId}
+            placeholder="Select Venue"
           />
           {/* Robust Time Picker */}
           <div className="grid grid-cols-3 gap-2">
@@ -344,7 +344,7 @@ export default function SchedulePage() {
             <tr>
                 <th className="table-cell text-left dark:text-gray-300">Event</th>
                 <th className="table-cell text-left dark:text-gray-300">Departments</th>
-                <th className="table-cell text-left dark:text-gray-300">Location</th>
+                <th className="table-cell text-left dark:text-gray-300">Venue</th>
                 <th className="table-cell text-left dark:text-gray-300">Time</th>
                 <th className="table-cell text-left dark:text-gray-300">Date</th>
                 <th className="table-cell text-left dark:text-gray-300">Status</th>
@@ -386,7 +386,7 @@ export default function SchedulePage() {
                     })}
                   </div>
                 </td>
-                  <td className="table-cell">{schedule.locations?.name || 'N/A'}</td>
+                  <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
                   <td className="table-cell">{schedule.time}</td>
                   <td className="table-cell">{schedule.date}</td>
                   <td className="table-cell">
@@ -407,7 +407,7 @@ export default function SchedulePage() {
                       setEditingId(schedule.id);
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
-                      setLocationId(schedule.location_id);
+                      setVenueId(schedule.venue_id);
                       // Deconstruct time for the robust picker
                       if (schedule.time) {
                         const [h24, m] = schedule.time.split(':').map(Number);

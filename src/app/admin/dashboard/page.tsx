@@ -81,12 +81,12 @@ export default function AdminDashboardPage() {
         </Link>
 
         <Link
-          href="/admin/locations"
+          href="/admin/venues"
           className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline"
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📍</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Locations</h3>
-          <p className="text-gray-600 text-sm">Add and organize event locations</p>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Venues</h3>
+          <p className="text-gray-600 text-sm">Add and organize event venues</p>
         </Link>
       </div>
     </div>

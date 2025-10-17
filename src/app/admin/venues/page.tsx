@@ -6,144 +6,144 @@ import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
-interface Location {
+interface Venue {
   id: string;
   name: string;
 }
 
-export default function LocationsPage() {
+export default function VenuesPage() {
   const supabase = createClient();
-  const [locations, setLocations] = useState<Location[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newLocationName, setNewLocationName] = useState("");
-  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [newVenueName, setNewVenueName] = useState("");
+  const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [locationToDeleteId, setLocationToDeleteId] = useState<string | null>(null);
+  const [venueToDeleteId, setVenueToDeleteId] = useState<string | null>(null);
 
-  const fetchLocations = useCallback(async () => {
+  const fetchVenues = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("locations")
+      .from("venues")
       .select("id, name")
       .order("name", { ascending: true });
 
     if (error) {
-      toast.error("Error fetching locations.");
-      console.error("Error fetching locations:", error);
+      toast.error("Error fetching venues.");
+      console.error("Error fetching venues:", error);
     } else {
-      setLocations(data);
+      setVenues(data);
     }
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
+    fetchVenues();
+  }, [fetchVenues]);
 
   const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const nameToSubmit = editingLocation ? editingLocation.name : newLocationName;
+    const nameToSubmit = editingVenue ? editingVenue.name : newVenueName;
 
     if (!nameToSubmit.trim()) {
-      toast.error("Location name cannot be empty.");
+      toast.error("Venue name cannot be empty.");
       return;
     }
 
-    if (editingLocation) {
-      // Update existing location
+    if (editingVenue) {
+      // Update existing venue
       const { error } = await supabase
-        .from("locations")
+        .from("venues")
         .update({ name: nameToSubmit.trim() })
-        .eq("id", editingLocation.id);
+        .eq("id", editingVenue.id);
 
       if (error) {
         if (error.code === '23505') { // Handle unique constraint violation
-          toast.error("A location with this name already exists.");
+          toast.error("A venue with this name already exists.");
         } else {
-          toast.error(`Error updating location: ${error.message}`);
+          toast.error(`Error updating venue: ${error.message}`);
         }
       } else {
-        toast.success("Location updated successfully!");
-        setEditingLocation(null);
-        fetchLocations();
+        toast.success("Venue updated successfully!");
+        setEditingVenue(null);
+        fetchVenues();
       }
     } else {
-      // Add new location
+      // Add new venue
       const { error } = await supabase
-        .from("locations")
+        .from("venues")
         .insert([{ name: nameToSubmit.trim() }]);
 
       if (error) {
         if (error.code === '23505') { // Handle unique constraint violation
-          toast.error("A location with this name already exists.");
+          toast.error("A venue with this name already exists.");
         } else {
-          toast.error(`Error adding location: ${error.message}`);
+          toast.error(`Error adding venue: ${error.message}`);
         }
       } else {
-        toast.success("Location added successfully!");
-        setNewLocationName("");
-        fetchLocations();
+        toast.success("Venue added successfully!");
+        setNewVenueName("");
+        fetchVenues();
       }
     }
   };
 
   const handleDeleteClick = (id: string) => {
-    setLocationToDeleteId(id);
+    setVenueToDeleteId(id);
     setShowConfirmModal(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!locationToDeleteId) return;
+    if (!venueToDeleteId) return;
 
-    const { error } = await supabase.from("locations").delete().eq("id", locationToDeleteId);
+    const { error } = await supabase.from("venues").delete().eq("id", venueToDeleteId);
 
     if (error) {
-      toast.error("Error deleting location. It might be in use in a schedule.");
+      toast.error("Error deleting venue. It might be in use in a schedule.");
     } else {
-      toast.success("Location deleted successfully!");
-      fetchLocations();
+      toast.success("Venue deleted successfully!");
+      fetchVenues();
     }
     setShowConfirmModal(false);
-    setLocationToDeleteId(null);
+    setVenueToDeleteId(null);
   };
 
   return (
     <div className="max-w-4xl mx-auto dark:text-gray-200">
       <Toaster position="top-center" />
-      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Locations' }]} />
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Venues' }]} />
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">📍 Manage Locations</h1>
-        <p className="text-gray-600 dark:text-gray-400">Add, edit, or delete event locations.</p>
+        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">📍 Manage Venues</h1>
+        <p className="text-gray-600 dark:text-gray-400">Add, edit, or delete event venues.</p>
       </div>
 
       <div className="card mb-8 dark:bg-gray-800">
         <form onSubmit={handleFormSubmit} className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-grow w-full">
-            <label htmlFor="location-name" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-              {editingLocation ? "Edit Location Name" : "New Location Name"}
+            <label htmlFor="venue-name" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+              {editingVenue ? "Edit Venue Name" : "New Venue Name"}
             </label>
             <input
-              id="location-name"
+              id="venue-name"
               type="text"
               placeholder="e.g., University Gym"
               className="input dark:bg-gray-700 dark:border-gray-600"
-              value={editingLocation ? editingLocation.name : newLocationName}
+              value={editingVenue ? editingVenue.name : newVenueName}
               onChange={(e) =>
-                editingLocation
-                  ? setEditingLocation({ ...editingLocation, name: e.target.value })
-                  : setNewLocationName(e.target.value)
+                editingVenue
+                  ? setEditingVenue({ ...editingVenue, name: e.target.value })
+                  : setNewVenueName(e.target.value)
               }
               required
             />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            {editingLocation && (
-              <button type="button" onClick={() => setEditingLocation(null)} className="btn btn-secondary w-1/2 sm:w-auto">
+            {editingVenue && (
+              <button type="button" onClick={() => setEditingVenue(null)} className="btn btn-secondary w-1/2 sm:w-auto">
                 Cancel
               </button>
             )}
             <button type="submit" className="btn btn-primary w-full sm:w-auto">
-              {editingLocation ? "💾 Save" : "➕ Add"}
+              {editingVenue ? "💾 Save" : "➕ Add"}
             </button>
           </div>
         </form>
@@ -156,30 +156,30 @@ export default function LocationsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="table-header bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider dark:text-gray-300">Location Name</th>
+                <th className="table-cell text-left text-xs font-medium uppercase tracking-wider dark:text-gray-300">Venue Name</th>
                 <th className="table-cell text-center text-xs font-medium uppercase tracking-wider dark:text-gray-300">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
-              {locations.map((location) => (
-                <tr key={location.id} className="table-row dark:hover:bg-gray-700/50">
-                  <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{location.name}</td>                  
+              {venues.map((venue) => (
+                <tr key={venue.id} className="table-row dark:hover:bg-gray-700/50">
+                  <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{venue.name}</td>                  
                   <td className="table-cell text-center text-sm font-medium">
                     <div className="flex gap-2 justify-center">
-                      <button onClick={() => setEditingLocation(location)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">
+                      <button onClick={() => setEditingVenue(venue)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">
                         ✏️ Edit
                       </button>
-                      <button onClick={() => handleDeleteClick(location.id)} className="btn-danger py-1 px-3 text-sm rounded">
+                      <button onClick={() => handleDeleteClick(venue.id)} className="btn-danger py-1 px-3 text-sm rounded">
                         🗑️ Delete
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-              {locations.length === 0 && (
+              {venues.length === 0 && (
                 <tr>
                   <td colSpan={2} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No locations found. Add one using the form above.
+                    No venues found. Add one using the form above.
                   </td>
                 </tr>
               )}
@@ -193,7 +193,7 @@ export default function LocationsPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
-        message="Are you sure you want to delete this location? This action cannot be undone."
+        message="Are you sure you want to delete this venue? This action cannot be undone."
       />
     </div>
   );

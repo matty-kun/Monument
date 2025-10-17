@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 p-4 overflow-hidden">
+    <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 overflow-hidden">
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
           src="/monument-logo.png"
@@ -68,22 +68,22 @@ export default function AdminLoginPage() {
           height={300}
           className="mb-4"
         />
-  <h1 className="text-5xl font-bold text-monument-green">MONUMENT</h1>
-        <p className="text-gray-600 mt-2">Notre Dame of Midsayap College Score Tracking System</p>
+        <h1 className="text-5xl font-bold text-monument-green dark:text-green-400">MONUMENT</h1>
+        <p className="text-gray-600 mt-2 dark:text-gray-300">Notre Dame of Midsayap College Score Tracking System</p>
       </div>
 
       <div className="md:w-1/2 max-w-md w-full">
-        <div className="card bg-white/80 backdrop-blur-sm p-8 shadow-2xl rounded-2xl">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-sm p-8 shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-700">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-monument-green">Admin Portal</h2>
-            <p className="text-gray-600">Sign in to manage the system</p>
+            <h2 className="text-3xl font-bold text-monument-green dark:text-green-400">Admin Portal</h2>
+            <p className="text-gray-600 dark:text-gray-300">Sign in to manage the system</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Email Address
               </label>
@@ -101,7 +101,7 @@ export default function AdminLoginPage() {
             <div className="relative">
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
                 Password
               </label>
@@ -117,7 +117,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-monument-green"
+                className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-monument-green dark:text-green-400"
                 tabIndex={-1}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -125,7 +125,7 @@ export default function AdminLoginPage() {
             </div>
 
             {errorMsg && (
-              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg dark:bg-red-900/50 dark:text-red-300 dark:border-red-400">
                 <p>{errorMsg}</p>
               </div>
             )}
@@ -133,7 +133,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full text-lg py-3"
+              className="btn btn-primary w-full text-lg py-3 text-white"
             >
               {loading ? (
                 <div className="spinner-sm mx-auto"></div>
@@ -143,9 +143,9 @@ export default function AdminLoginPage() {
             </button>
           </form>
           <div className="text-center mt-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Don&apos;t have an account?{' '}
-              <a href="/register" className="font-medium text-monument-green hover:underline">
+              <a href="/register" className="font-medium text-monument-green dark:text-green-400 hover:underline">
                 Register
               </a>
             </p>

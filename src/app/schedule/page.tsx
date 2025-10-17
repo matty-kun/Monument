@@ -15,9 +15,9 @@ interface Department {
 interface Schedule {
   id: string;
   event_id: string;
-  location_id: string;
+  venue_id: string;
   events: { name: string; icon: string | null } | null;
-  locations: { name: string } | null;
+  venues: { name: string } | null;
   departments: (Department | string)[];
   time: string;
   date: string;
@@ -28,13 +28,13 @@ const SchedulePage: NextPage = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>([]);
   const [allEvents, setAllEvents] = useState<{id: string, name: string, icon: string | null}[]>([]);
-  const [allLocations, setAllLocations] = useState<{id: string, name: string}[]>([]);
+  const [allVenues, setAllVenues] = useState<{id: string, name: string}[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
-  const [locationFilter, setLocationFilter] = useState<string>("all");
+  const [venueFilter, setVenueFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [dateFromFilter, setDateFromFilter] = useState<string>("");
   const [dateToFilter, setDateToFilter] = useState<string>("");
@@ -54,7 +54,7 @@ const SchedulePage: NextPage = () => {
         status,
         departments,
         events ( name, icon ),
-        locations ( name )
+        venues ( name )
       `)
       .order("date");
 
@@ -108,14 +108,14 @@ const SchedulePage: NextPage = () => {
       .select("id, name, icon")
       .order("name");
 
-    // Fetch all locations
-    const { data: locationsData } = await supabase
-      .from("locations")
+    // Fetch all venues
+    const { data: venuesData } = await supabase
+      .from("venues")
       .select("id, name")
       .order("name");
 
     if (eventsData) setAllEvents(eventsData);
-    if (locationsData) setAllLocations(locationsData);
+    if (venuesData) setAllVenues(venuesData);
   }, [supabase]);
 
   useEffect(() => {
@@ -134,8 +134,8 @@ const SchedulePage: NextPage = () => {
       filtered = filtered.filter(schedule => schedule.event_id === eventFilter);
     }
 
-    if (locationFilter !== "all") {
-      filtered = filtered.filter(schedule => schedule.location_id === locationFilter);
+    if (venueFilter !== "all") {
+      filtered = filtered.filter(schedule => schedule.venue_id === venueFilter);
     }
 
     if (departmentFilter !== "all") {
@@ -163,12 +163,12 @@ const SchedulePage: NextPage = () => {
     }
 
     setFilteredSchedules(filtered);
-  }, [schedules, statusFilter, eventFilter, locationFilter, departmentFilter, dateFromFilter, dateToFilter, timeFromFilter, timeToFilter]);
+  }, [schedules, statusFilter, eventFilter, venueFilter, departmentFilter, dateFromFilter, dateToFilter, timeFromFilter, timeToFilter]);
 
   const clearFilters = () => {
     setStatusFilter("all");
     setEventFilter("all");
-    setLocationFilter("all");
+    setVenueFilter("all");
     setDepartmentFilter("all");
     setDateFromFilter("");
     setDateToFilter("");
@@ -246,18 +246,18 @@ const SchedulePage: NextPage = () => {
             </select>
           </div>
 
-          {/* Location Filter */}
+          {/* Venue Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Location</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Venue</label>
             <select
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
+              value={venueFilter}
+              onChange={(e) => setVenueFilter(e.target.value)}
               className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             >
-              <option value="all">All Locations</option>
-              {allLocations.map(location => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
+              <option value="all">All Venues</option>
+              {allVenues.map(venue => (
+                <option key={venue.id} value={venue.id}>
+                  {venue.name}
                 </option>
               ))}
             </select>
@@ -337,7 +337,7 @@ const SchedulePage: NextPage = () => {
               <tr>
                 <th className="table-cell text-left font-semibold">Event Name</th>
                 <th className="table-cell text-left font-semibold">Competing Departments</th>
-                <th className="table-cell text-left font-semibold">Location</th>
+                <th className="table-cell text-left font-semibold">Venue</th>
                 <th className="table-cell text-left font-semibold">Time</th>
                 <th className="table-cell text-left font-semibold">Date</th>
                 <th className="table-cell text-center font-semibold">Status</th>
@@ -380,7 +380,7 @@ const SchedulePage: NextPage = () => {
                       ))}
                     </div>
                   </td>
-                  <td className="table-cell">{schedule.locations?.name || 'N/A'}</td>
+                  <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
                   <td className="table-cell">{schedule.time}</td>
                   <td className="table-cell">{schedule.date}</td>
                   <td className="table-cell text-center">

@@ -12,6 +12,7 @@ module.exports = {
         'monument-green': '#269a7a',
         'monument-gold': '#d6b14e',
         'monument-dark': '#33404e',
+        'monument-dark-uniform': '#111827',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

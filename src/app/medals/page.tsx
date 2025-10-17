@@ -96,6 +96,9 @@ export default function MedalsPage() {
     setSortBy("points");
   };
 
+  // Check if there are any scores to determine if ranking should be shown
+  const hasScores = leaderboard.some(dept => dept.total_points > 0);
+
   return (
     <div className="dark:text-gray-200">
       <div className="mb-8">
@@ -231,7 +234,9 @@ export default function MedalsPage() {
             <tbody className="dark:bg-gray-800 dark:border-gray-700">
               {filteredLeaderboard.map((dept, index) => (
                 <tr key={dept.id} className="table-row animate-fadeIn">
-                  <td className="table-cell font-bold">#{index + 1}</td>
+                  <td className="table-cell font-bold text-center">
+                    {hasScores ? `#${index + 1}` : '-'}
+                  </td>
                   <td className="table-cell">
                     <div className="flex items-center gap-3">
                       {dept.image_url ? (
