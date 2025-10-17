@@ -108,13 +108,13 @@ export default function MedalsPage() {
 
       {/* Filters Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between gap-4 p-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/50">
                 <span className="text-blue-600 text-sm dark:text-blue-300">🔍</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Filters</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 self-center">Filters</h3>
             </div>
             <button
               onClick={clearFilters}

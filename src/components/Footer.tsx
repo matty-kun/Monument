@@ -6,9 +6,6 @@ export default function Footer() {
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-0">
             © {new Date().getFullYear()} SIDLAK Intramurals – All Rights Reserved
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Made with ❤️ for NDMC
-          </div>
         </div>
       </div>
     </footer>
