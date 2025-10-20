@@ -216,7 +216,7 @@ const SchedulePage: NextPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1 dark:white">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -385,7 +385,7 @@ const SchedulePage: NextPage = () => {
                   <td className="table-cell">{schedule.date}</td>
                   <td className="table-cell text-center">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      className={`px-2 py-1 rounded-full text-xs font-semibold dark:text-white ${
                         schedule.status === 'upcoming'
                           ? 'bg-yellow-500'
                           : schedule.status === 'ongoing'
