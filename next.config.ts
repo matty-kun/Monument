@@ -4,20 +4,17 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'qaokldmdmvdghhopriet.supabase.co',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "qaokldmdmvdghhopriet.supabase.co",
+        pathname: "/storage/v1/object/public/**",
       },
       {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "placehold.co",
+        pathname: "/**",
       },
     ],
   },
-  // other config options...
 };
 
 export default nextConfig;

@@ -58,14 +58,14 @@ export default function ScoreboardPage() {
       {hasScores ? (
         <>
           {/* Podium */}
-          <div className="min-h-screen flex flex-col justify-center items-center py-8 px-4 md:px-6">
+          <div className="flex flex-col justify-start items-center px-4 md:px-6">
             <div className="w-full flex justify-center">
               <Podium leaderboard={leaderboard.slice(0, 3)} />
             </div>
           </div>
 
           {/* Full Leaderboard */}
-          <div className="w-full max-w-4xl mx-auto mt-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full table-auto">
                 <thead className="bg-white dark:bg-gray-800 py-2">
@@ -89,9 +89,9 @@ export default function ScoreboardPage() {
                         className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-lg font-bold text-gray-700 dark:text-gray-300">#{index + 4}</span>
+                          <span className="text-lg font-bold text-gray-700 dark:text-gray-300">{index + 4}</span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap max-w-xs">
                           <div className="flex items-center gap-4">
                             <div className="flex-shrink-0">
                               {dept.image_url ? (
@@ -108,8 +108,8 @@ export default function ScoreboardPage() {
                                 </div>
                               )}
                             </div>
-                            <div>
-                              <span className="text-base font-semibold text-gray-900 dark:text-gray-100">{dept.name}</span>
+                            <div className="truncate">
+                              <span className="text-base font-semibold text-gray-900 dark:text-gray-100" title={dept.name}>{dept.name}</span>
                             </div>
                           </div>
                         </td>

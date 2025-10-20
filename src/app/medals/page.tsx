@@ -235,8 +235,8 @@ export default function MedalsPage() {
               {hasMedals && filteredLeaderboard.length > 0 ? (
                 filteredLeaderboard.map((dept, index) => (
                   <tr key={dept.id} className="table-row animate-fadeIn">
-                    <td className="table-cell font-bold text-center">#{index + 1}</td>
-                    <td className="table-cell">
+                    <td className="table-cell font-bold text-center">{index + 1}</td>
+                    <td className="table-cell max-w-xs">
                       <div className="flex items-center gap-3">
                         {dept.image_url ? (
                           <Image
@@ -251,7 +251,7 @@ export default function MedalsPage() {
                             {dept.name.substring(0, 3)}
                           </div>
                         )}
-                        <span className="font-semibold">{dept.name}</span>
+                        <span className="font-semibold truncate" title={dept.name}>{dept.name}</span>
                       </div>
                     </td>
                     <td className="table-cell text-center">{dept.golds}</td>
