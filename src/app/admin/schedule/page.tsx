@@ -20,6 +20,8 @@ interface Event {
   name: string;
   icon?: string;
   category?: string | null;
+  gender?: string | null;
+  division?: string | null;
 }
 
 interface Venue {
@@ -32,7 +34,7 @@ interface Schedule {
   event_id: string; // Foreign key to events table
   venue_id: string; // Foreign key to venues table
   // The following is from the related tables
-  events: { name: string; icon: string | null } | null;
+  events: { name: string; icon: string | null; gender: string | null; division: string | null; } | null;
   venues: { name: string } | null;
   departments: string[];
   time: string;
@@ -110,7 +112,7 @@ export default function SchedulePage() {
   }, [supabase]);
 
   const fetchAllEvents = useCallback(async () => {
-    const { data, error } = await supabase.from("events").select("id, name, icon, category").order("category,name");
+    const { data, error } = await supabase.from("events").select("id, name, icon, category, gender, division").order("category,name");
     if (error) {
       toast.error("Could not fetch events.");
     } else if (data) {
@@ -204,6 +206,15 @@ export default function SchedulePage() {
     return new Map(allDepartments.map(dept => [dept.name, dept]));
   }, [allDepartments]);
 
+  // Helper to format the full event name for display
+  const formatEventName = (event: Event | { name: string; gender: string | null; division: string | null; }) => {
+    if (!event) return 'N/A';
+    const parts = [event.name];
+    if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
+    if (event.gender) parts.push(`- ${event.gender}`);
+    return parts.join(' ');
+  };
+
   const groupedEvents = useMemo(() => {
     if (!allEvents.length) return [];
     const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
@@ -212,9 +223,13 @@ export default function SchedulePage() {
       acc[category].push(event);
       return acc;
     }, {} as { [key: string]: Event[] });
-
-    return Object.entries(groups).map(([category, events]) => ({ label: category, options: events }));
-  }, [allEvents]);
+    
+    // Now, map the events within each group to have a formatted name for the dropdown
+    return Object.entries(groups).map(([category, events]) => ({
+      label: category,
+      options: events.map(event => ({ ...event, id: event.id, name: formatEventName(event) }))
+    }));
+  }, [allEvents, formatEventName]);
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -355,8 +370,8 @@ export default function SchedulePage() {
             {schedules.map((schedule) => (
                 <tr key={schedule.id} className="table-row dark:hover:bg-gray-700/50">
                   <td className="table-cell flex items-center gap-2 dark:text-gray-100">
-                  <span className="text-xl">{schedule.events?.icon}</span>
-                  <span>{schedule.events?.name}</span>
+                  <span className="text-xl">{schedule.events?.icon || '❓'}</span>
+                  <span>{schedule.events ? formatEventName(schedule.events) : 'N/A'}</span>
                 </td>
                   <td className="table-cell">
                   <div className="flex flex-wrap items-center gap-2">
