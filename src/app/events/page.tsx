@@ -11,6 +11,7 @@ interface Result {
   events: {
     name: string;
     category: string | null;
+    icon: string | null;
   } | null;
   departments: {
     name: string;
@@ -22,6 +23,7 @@ interface Result {
 interface ProcessedResult {
   event_name: string;
   category: string | null;
+  event_icon: string | null;
   department_id: string;
   department_name: string;
   department_abbreviation: string;
@@ -48,7 +50,7 @@ export default function EventResultsPage() {
         id,
         department_id,
         medal_type,
-        events ( name, category ),
+        events ( name, category, icon ),
         departments ( name, abbreviation, image_url )
       `);
 
@@ -60,6 +62,7 @@ export default function EventResultsPage() {
       const processed: ProcessedResult[] = typedData.map((r) => ({
         event_name: r.events?.name || "Unknown Event",
         category: r.events?.category || null,
+        event_icon: r.events?.icon || null,
         department_id: r.department_id,
         department_name: r.departments?.name || "Unknown Dept",
         department_abbreviation: r.departments?.abbreviation || "",
@@ -91,6 +94,7 @@ export default function EventResultsPage() {
     let processed: ProcessedResult[] = results.map((r: Result) => ({
       event_name: r.events?.name || "Unknown Event",
       category: r.events?.category || null,
+      event_icon: r.events?.icon || null,
       department_id: r.department_id,
       department_name: r.departments?.name || "Unknown Dept",
       department_abbreviation: r.departments?.abbreviation || "",
@@ -113,16 +117,19 @@ export default function EventResultsPage() {
   const grouped = useMemo(() => {
     return filteredResults.reduce((acc, result) => {
       if (!acc[result.event_name]) {
-        acc[result.event_name] = {};
+        acc[result.event_name] = {
+          icon: result.event_icon,
+          winners: {},
+        };
       }
-      acc[result.event_name][result.medal_type] = {
+      acc[result.event_name].winners[result.medal_type] = {
         department_id: result.department_id,
         department_name: result.department_name,
         department_abbreviation: result.department_abbreviation,
         image_url: result.department_image_url,
       };
       return acc;
-    }, {} as Record<string, Record<string, { department_id: string; department_name: string; department_abbreviation: string; image_url?: string }>>);
+    }, {} as Record<string, { icon: string | null; winners: Record<string, { department_id: string; department_name: string; department_abbreviation: string; image_url?: string }> }>);
   }, [filteredResults]);
 
   const clearFilters = () => {
@@ -222,25 +229,28 @@ export default function EventResultsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {Object.entries(grouped).map(([eventName, winners]) => (
+              {Object.entries(grouped).map(([eventName, data]) => (
                 <tr key={eventName} className="table-row animate-fadeIn">
                   <td className="table-cell">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">{eventName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{data.icon || '🏅'}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{eventName}</span>
+                    </div>
                   </td>
                   {(["gold", "silver", "bronze"] as const).map((medal) => (
                     <td key={medal} className="table-cell text-center">
-                      {winners[medal] ? (
-                        <div className="flex items-center justify-center gap-2" title={winners[medal].department_name}>
-                          {winners[medal].image_url ? (
-                            <Image src={winners[medal].image_url!} alt={winners[medal].department_name} width={40} height={40} className="w-10 h-10 object-cover rounded-full shadow-sm" />
+                      {data.winners[medal] ? (
+                        <div className="flex items-center justify-center gap-2" title={data.winners[medal].department_name}>
+                          {data.winners[medal].image_url ? (
+                            <Image src={data.winners[medal].image_url!} alt={data.winners[medal].department_name} width={48} height={48} className="w-12 h-12 object-cover rounded-full shadow-sm" />
                           ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 shadow-sm dark:bg-gray-600 dark:text-gray-300">
-                              {winners[medal].department_abbreviation ||
-                                winners[medal].department_name.substring(0, 3).toUpperCase()}
+                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-500 shadow-sm dark:bg-gray-600 dark:text-gray-300">
+                              {data.winners[medal].department_abbreviation ||
+                                data.winners[medal].department_name.substring(0, 3).toUpperCase()}
                             </div>
                           )}
                           <span className="font-semibold text-sm w-12 text-left">
-                            {winners[medal].department_abbreviation}
+                            {data.winners[medal].department_abbreviation}
                           </span>
                         </div>
                       ) : (
