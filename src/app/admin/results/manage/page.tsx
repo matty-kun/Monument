@@ -77,14 +77,6 @@ export default function ManageResultsPage() {
     setResultToDeleteId(null);
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto mt-10 text-center">
-        <p>Loading results...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Results' }]} />

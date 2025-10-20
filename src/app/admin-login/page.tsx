@@ -142,14 +142,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Don&apos;t have an account?{' '}
-              <a href="/register" className="font-medium text-monument-green dark:text-green-400 hover:underline">
-                Register
-              </a>
-            </p>
-          </div>
         </div>
       </div>
     </div>

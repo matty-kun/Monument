@@ -108,3 +108,37 @@ export async function updateUserRole(userId: string, newRole: string) {
   revalidatePath("/admin/users"); // Refresh the users page
   return { success: true, message: "Role updated successfully!" };
 }
+
+
+/**
+ * Creates a new user (admin or user). Only super_admin can do this.
+ */
+export async function createUser(email: string, password: string, role: string = "user") {
+  const { user } = await verifySuperAdmin(); // Ensure only super admins can do this
+  const supabase = createServiceClient();
+
+  // 1. Create the user in Supabase Auth
+  const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true, // Skip confirmation for admin-created accounts
+  });
+
+  if (createError || !createdUser.user) {
+    console.error("Error creating user:", createError);
+    return { success: false, message: createError?.message || "Failed to create user" };
+  }
+
+  // 2. Create a profile entry
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .insert([{ id: createdUser.user.id, email, role }]);
+
+  if (profileError) {
+    console.error("Error creating profile:", profileError);
+    return { success: false, message: profileError.message };
+  }
+
+  revalidatePath("/admin/users");
+  return { success: true, message: `${role} account created successfully!` };
+}
