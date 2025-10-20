@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
       if (profileError) {
         setErrorMsg(profileError.message);
         setLoading(false);
-      } else if (profiles.role === 'admin') {
+      } else if (profiles.role === 'admin' || profiles.role === 'super_admin') {
         router.push('/admin/dashboard');
         router.refresh();
       } else if (profiles) {

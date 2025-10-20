@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
   async function handleLogout() {
     const { error } = await supabase.auth.signOut();
     if (!error) {
-      router.push("/login");
+      router.push("/");
     } else {
       console.error('Logout failed:', error);
     }
@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold text-monument-green mb-2">⚙️ Admin Dashboard</h1>
-          <p className="text-gray-600">Manage your intramurals system</p>
+          <p className="text-gray-600 dark:text-gray-300">Manage your intramurals system</p>
         </div>
         <button
           onClick={handleLogout}
@@ -41,7 +41,7 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">➕</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Add Results</h3>
-          <p className="text-gray-600 text-sm">Record competition results and award medals</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Record competition results and award medals</p>
         </Link>
         
         <Link
@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏟️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Events</h3>
-          <p className="text-gray-600 text-sm">Create and organize competition events</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Create and organize competition events</p>
         </Link>
 
         <Link
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🗓️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Schedule</h3>
-          <p className="text-gray-600 text-sm">Manage the schedule of events</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Manage the schedule of events</p>
         </Link>
         
         <Link
@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏫</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Departments</h3>
-          <p className="text-gray-600 text-sm">Add and organize participating departments</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Add and organize participating departments</p>
         </Link>
 
         <Link
@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🏷️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Categories</h3>
-          <p className="text-gray-600 text-sm">Organize events into different categories</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Organize events into different categories</p>
         </Link>
 
         <Link
@@ -86,7 +86,17 @@ export default function AdminDashboardPage() {
         >
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📍</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Manage Venues</h3>
-          <p className="text-gray-600 text-sm">Add and organize event venues</p>
+          <p className="text-gray-600 text-sm dark:text-gray-300">Add and organize event venues</p>
+        </Link>
+        <Link
+          href="/admin/users"
+          className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline dark:bg-gray-800 dark:hover:bg-gray-700"
+        >
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">👥</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2 dark:text-white">Manage Users</h3>
+          <p className="text-gray-600 text-sm dark:text-gray-300">
+            Promote users to admin roles (Super Admin Only)
+          </p>
         </Link>
       </div>
     </div>

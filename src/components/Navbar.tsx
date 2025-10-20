@@ -81,7 +81,7 @@ export default function Navbar() {
             ))}
           </div>
           <div className="flex items-center space-x-2">
-            {role === "admin" && (
+            {(role === "admin" || role === "super_admin") && (
               <Link href="/admin/dashboard" className={`px-4 py-2 rounded-lg text-sm font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-green-500 dark:ring-offset-gray-800' : ''}`}>
                 📊 Dashboard
               </Link>
@@ -106,7 +106,7 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
-            {role === "admin" && (
+            {(role === "admin" || role === "super_admin") &&  (
               <Link href="/admin/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 ${pathname.startsWith('/admin') ? 'ring-2 ring-white' : ''}`} onClick={closeMenu}>
                 📊 Dashboard
               </Link>

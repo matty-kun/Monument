@@ -90,7 +90,7 @@ export default function ManageResultsPage() {
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Results' }]} />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold text-monument-green dark:text-green-400">📊 Manage Results</h1>
-        <Link href="/admin/results" className="btn btn-primary">
+        <Link href="/admin/results" className="btn btn-primary dark:text-white">
           ➕ Add New Result
         </Link>
       </div>
@@ -106,7 +106,7 @@ export default function ManageResultsPage() {
       {results.length === 0 ? (
         <div className="text-center py-10 bg-white shadow rounded-lg dark:bg-gray-800">
           <p className="text-gray-500 text-lg">No results recorded yet.</p>
-          <Link href="/admin/results" className="mt-4 inline-block btn btn-primary">
+          <Link href="/admin/results" className="mt-4 inline-block btn btn-primary dark:text-white">
             Add your first result
           </Link>
         </div>
