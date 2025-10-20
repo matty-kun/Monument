@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  Fragment,
+} from "react";
 import type { NextPage } from "next";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
@@ -12,13 +18,13 @@ interface Department {
 }
 
 interface Event {
-  id: string;
+  id?: string;
   name: string;
   icon: string | null;
 }
 
 interface Venue {
-  id: string;
+  id?: string;
   name: string;
 }
 
@@ -35,7 +41,7 @@ interface Schedule {
   status: "upcoming" | "ongoing" | "finished";
 }
 
-const supabase = createClient(); // ✅ create only once
+const supabase = createClient();
 
 const SchedulePage: NextPage = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -81,10 +87,21 @@ const SchedulePage: NextPage = () => {
     }
 
     if (data) {
-      const allDeptNames = Array.from(new Set(data.flatMap((s) => s.departments)));
+      // Normalize event/venue structure (flatten arrays)
+      const normalized = data.map((s: any) => ({
+        ...s,
+        events: Array.isArray(s.events) ? s.events[0] || null : s.events || null,
+        venues: Array.isArray(s.venues) ? s.venues[0] || null : s.venues || null,
+      }));
+
+      // Collect department names
+      const allDeptNames = Array.from(
+        new Set(normalized.flatMap((s: any) => s.departments))
+      );
+
       if (allDeptNames.length === 0) {
-        setSchedules(data as Schedule[]);
-        setFilteredSchedules(data as Schedule[]);
+        setSchedules(normalized as Schedule[]);
+        setFilteredSchedules(normalized as Schedule[]);
         return;
       }
 
@@ -95,13 +112,13 @@ const SchedulePage: NextPage = () => {
 
       if (deptError) {
         console.warn("Error fetching departments:", deptError);
-        setSchedules(data as Schedule[]);
-        setFilteredSchedules(data as Schedule[]);
+        setSchedules(normalized as Schedule[]);
+        setFilteredSchedules(normalized as Schedule[]);
         return;
       }
 
       const deptMap = new Map(deptData.map((d) => [d.name, d]));
-      const enriched = data.map((sched) => ({
+      const enriched = normalized.map((sched: any) => ({
         ...sched,
         departments: sched.departments.map(
           (name: string) => deptMap.get(name) || name
@@ -131,7 +148,7 @@ const SchedulePage: NextPage = () => {
     fetchFilterOptions();
   }, [fetchSchedules, fetchFilterOptions]);
 
-  // ✅ Dynamic status (auto-updates based on current time)
+  // ✅ Dynamic status
   const getDynamicStatus = useCallback((schedule: Schedule) => {
     if (!schedule.date || !schedule.start_time) {
       return { status: "upcoming", label: "Upcoming" };
@@ -149,7 +166,7 @@ const SchedulePage: NextPage = () => {
     return { status: "finished", label: "Finished" };
   }, []);
 
-  // ✅ Re-filter when something changes
+  // ✅ Re-filter
   useEffect(() => {
     let filtered = [...schedules];
 
@@ -194,7 +211,7 @@ const SchedulePage: NextPage = () => {
     getDynamicStatus,
   ]);
 
-  // Clear filters
+  // ✅ Clear filters
   const clearFilters = () => {
     setStatusFilter("all");
     setEventFilter("all");
@@ -206,7 +223,6 @@ const SchedulePage: NextPage = () => {
     setTimeToFilter("");
   };
 
-  // Memoized counts
   const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
   const totalCount = useMemo(() => schedules.length, [schedules]);
 
@@ -269,7 +285,7 @@ const SchedulePage: NextPage = () => {
               >
                 <option value="all">All Events</option>
                 {allEvents.map((e) => (
-                  <option key={e.id} value={e.id}>
+                  <option key={e.id || e.name} value={e.id}>
                     {e.icon} {e.name}
                   </option>
                 ))}
@@ -286,7 +302,7 @@ const SchedulePage: NextPage = () => {
               >
                 <option value="all">All Venues</option>
                 {allVenues.map((v) => (
-                  <option key={v.id} value={v.id}>
+                  <option key={v.id || v.name} value={v.id}>
                     {v.name}
                   </option>
                 ))}
@@ -408,10 +424,11 @@ const SchedulePage: NextPage = () => {
                                 {typeof d === "string" ? d.slice(0, 2) : d.name.slice(0, 2)}
                               </div>
                             )}
-                            {i < s.departments.length - 1 &&
+                            {i < s.departments.length - 1 && (
                               <div className="h-8 flex items-center justify-center">
                                 <span className="text-gray-400 font-bold">vs</span>
-                              </div>}
+                              </div>
+                            )}
                           </Fragment>
                         ))}
                       </div>

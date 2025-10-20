@@ -53,57 +53,12 @@ export default function SchedulePage() {
   const [venueId, setVenueId] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  // State for start time picker
-  const [startHour, setStartHour] = useState("");
-  const [startMinute, setStartMinute] = useState("");
-  const [startAmPm, setStartAmPm] = useState("AM");
-  // State for end time picker
-  const [endHour, setEndHour] = useState("");
-  const [endMinute, setEndMinute] = useState("");
-  const [endAmPm, setEndAmPm] = useState("AM");
-  // New state for robust date picker
-  const [year, setYear] = useState(() => new Date().getFullYear().toString());
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
   const [date, setDate] = useState("");
   const [status, setStatus] = useState<"upcoming" | "ongoing" | "finished">("upcoming");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
   const supabase = createClient();
-
-  // Combine start time parts into a 24-hour format time string
-  useEffect(() => {
-    if (startHour && startMinute && startAmPm) {
-      let h24 = parseInt(startHour, 10);
-      if (startAmPm === 'PM' && h24 < 12) {
-        h24 += 12;
-      } else if (startAmPm === 'AM' && h24 === 12) {
-        h24 = 0;
-      }
-      setStartTime(`${h24.toString().padStart(2, '0')}:${startMinute}`);
-    }
-  }, [startHour, startMinute, startAmPm]);
-
-  // Combine end time parts into a 24-hour format time string
-  useEffect(() => {
-    if (endHour && endMinute && endAmPm) {
-      let h24 = parseInt(endHour, 10);
-      if (endAmPm === 'PM' && h24 < 12) {
-        h24 += 12;
-      } else if (endAmPm === 'AM' && h24 === 12) {
-        h24 = 0;
-      }
-      setEndTime(`${h24.toString().padStart(2, '0')}:${endMinute}`);
-    }
-  }, [endHour, endMinute, endAmPm]);
-
-  // Combine year, month, day into a YYYY-MM-DD format date string
-  useEffect(() => {
-    if (year && month && day) {
-      setDate(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-    }
-  }, [year, month, day]);
 
   const fetchSchedules = useCallback(async () => {
     const { data, error } = await supabase
@@ -183,16 +138,7 @@ export default function SchedulePage() {
     setSelectedDepartments([]);
     setVenueId("");
     setStartTime("");
-    setStartHour("");
-    setStartMinute("");
-    setStartAmPm("AM");
     setEndTime("");
-    setEndHour("");
-    setEndMinute("");
-    setEndAmPm("AM");
-    setYear(new Date().getFullYear().toString());
-    setMonth("");
-    setDay("");
     setDate("");
     setStatus("upcoming");
     setEditingId(null);
@@ -230,13 +176,13 @@ export default function SchedulePage() {
   }, [allDepartments]);
 
   // Helper to format the full event name for display
-  const formatEventName = (event: Event | { name: string; gender: string | null; division: string | null; }) => {
+  const formatEventName = useCallback((event: Event | { name: string; gender: string | null; division: string | null; }) => {
     if (!event) return 'N/A';
     const parts = [event.name];
     if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
     if (event.gender) parts.push(`- ${event.gender}`);
     return parts.join(' ');
-  };
+  }, []);
 
   const groupedEvents = useMemo(() => {
     if (!allEvents.length) return [];
@@ -254,27 +200,6 @@ export default function SchedulePage() {
     }));
   }, [allEvents, formatEventName]);
 
-  const years = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return [currentYear, currentYear + 1].map(y => ({ id: y.toString(), name: y.toString() }));
-  }, []);
-
-  const months = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      value: (i + 1).toString(),
-      name: new Date(0, i).toLocaleString('default', { month: 'long' }),
-    }));
-  }, []);
-
-  const daysInMonth = useMemo(() => {
-    if (year && month) {
-      // The '0' for the day gets the last day of the previous month.
-      // So, for month '2' (February), it gets the last day of month '2', which is correct.
-      return new Date(parseInt(year), parseInt(month), 0).getDate();
-    }
-    return 31; // Default to 31 days
-  }, [year, month]);
-  
   const statusOptions = useMemo(() => [
     { id: 'upcoming', name: '🟡 Upcoming' },
     { id: 'ongoing', name: '🟢 Ongoing' },
@@ -313,66 +238,20 @@ export default function SchedulePage() {
           </div>
 
           {/* Row 3: Start Time & End Time */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
-            <div className="grid grid-cols-3 gap-2">
-              <select value={startHour} onChange={e => setStartHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="" disabled>Hour</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (<option key={h} value={h}>{h}</option>))}
-              </select>
-              <select value={startMinute} onChange={e => setStartMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="" disabled>Min</option>
-                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => (<option key={m} value={m}>{m}</option>))}
-              </select>
-              <select value={startAmPm} onChange={e => setStartAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+          <div className="flex flex-col">
+            <label htmlFor="start-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
+            <input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
-            <div className="grid grid-cols-3 gap-2">
-              <select value={endHour} onChange={e => setEndHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="" disabled>Hour</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (<option key={h} value={h}>{h}</option>))}
-              </select>
-              <select value={endMinute} onChange={e => setEndMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="" disabled>Min</option>
-                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => (<option key={m} value={m}>{m}</option>))}
-              </select>
-              <select value={endAmPm} onChange={e => setEndAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+          <div className="flex flex-col">
+            <label htmlFor="end-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
+            <input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
           </div>
 
           {/* Row 4: Date & Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-            <div className="grid grid-cols-3 gap-2">
-              <SingleSelectDropdown
-                options={years}
-                selectedValue={year}
-                onChange={setYear}
-                placeholder="Year"
-              />
-              <SingleSelectDropdown
-                options={months.map(m => ({ id: m.value, name: m.name }))}
-                selectedValue={month}
-                onChange={setMonth}
-                placeholder="Month"
-              />
-              <SingleSelectDropdown
-                options={Array.from({ length: daysInMonth }, (_, i) => ({ id: (i + 1).toString(), name: (i + 1).toString() }))}
-                selectedValue={day}
-                onChange={setDay}
-                placeholder="Day"
-                disabled={!year || !month}
-              />
-            </div>
+          <div className="flex flex-col">
+            <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
           </div>
           
           <SingleSelectDropdown
@@ -463,33 +342,9 @@ export default function SchedulePage() {
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
                       setVenueId(schedule.venue_id);
-                      // Deconstruct start_time for the picker
-                      if (schedule.start_time) {
-                        const [h24, m] = schedule.start_time.split(':').map(Number);
-                        const newAmPm = h24 >= 12 ? 'PM' : 'AM';
-                        let h12 = h24 % 12;
-                        if (h12 === 0) h12 = 12; // 12 PM or 12 AM
-                        setStartHour(h12.toString());
-                        setStartMinute(m.toString().padStart(2, '0'));
-                        setStartAmPm(newAmPm);
-                      }
-                      // Deconstruct end_time for the picker
-                      if (schedule.end_time) {
-                        const [h24, m] = schedule.end_time.split(':').map(Number);
-                        const newAmPm = h24 >= 12 ? 'PM' : 'AM';
-                        let h12 = h24 % 12;
-                        if (h12 === 0) h12 = 12; // 12 PM or 12 AM
-                        setEndHour(h12.toString());
-                        setEndMinute(m.toString().padStart(2, '0'));
-                        setEndAmPm(newAmPm);
-                      }
-                      // Deconstruct date for the robust picker
-                      if (schedule.date) {
-                        const [y, mo, d] = schedule.date.split('-').map(Number);
-                        setYear(y.toString());
-                        setMonth(mo.toString());
-                        setDay(d.toString());
-                      }
+                      setStartTime(schedule.start_time);
+                      setEndTime(schedule.end_time);
+                      setDate(schedule.date);
                       setStatus(schedule.status);
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
