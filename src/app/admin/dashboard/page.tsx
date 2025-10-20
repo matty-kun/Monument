@@ -20,7 +20,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <Breadcrumbs items={[{ label: 'Dashboard' }]} />
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold text-monument-green mb-2">⚙️ Admin Dashboard</h1>

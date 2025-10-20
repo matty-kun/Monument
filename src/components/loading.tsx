@@ -1,52 +1,23 @@
-import Breadcrumbs from "./Breadcrumbs";
-
 export default function Loading() {
   return (
-    <div className="max-w-6xl mx-auto mt-10 px-4 animate-pulse">
-      <Breadcrumbs
-        items={[
-          { href: "/admin/dashboard", label: "📊 Dashboard" },
-          { label: "Manage Users" },
-        ]}
-      />
-      <div className="mb-8">
-        <div className="h-10 bg-gray-300 rounded-md dark:bg-gray-600 w-72 mb-3"></div>
-        <div className="h-4 bg-gray-200 rounded-md dark:bg-gray-700 w-96"></div>
+    <div className="space-y-8 animate-pulse">
+      {/* Breadcrumbs Skeleton */}
+      <div className="h-5 bg-gray-200 rounded-md dark:bg-gray-700 w-1/4"></div>
+
+      {/* Header Skeleton */}
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="h-10 bg-gray-300 rounded-md dark:bg-gray-600 w-80 mb-3"></div>
+          <div className="h-4 bg-gray-200 rounded-md dark:bg-gray-700 w-52"></div>
+        </div>
+        <div className="h-10 bg-gray-300 rounded-md dark:bg-gray-600 w-28"></div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gradient-to-r from-monument-green to-green-600 dark:from-green-700 dark:to-green-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Current Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Change Role
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded-md dark:bg-gray-700 w-3/4"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-6 bg-gray-200 rounded-full dark:bg-gray-700 w-24"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-10 bg-gray-200 rounded-md dark:bg-gray-700 w-full"></div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Cards Grid Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 7 }).map((_, index) => (
+          <div key={index} className="h-40 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        ))}
       </div>
     </div>
   );
