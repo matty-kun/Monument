@@ -37,7 +37,8 @@ interface Schedule {
   events: { name: string; icon: string | null; gender: string | null; division: string | null; } | null;
   venues: { name: string } | null;
   departments: string[];
-  time: string;
+  start_time: string;
+  end_time: string;
   date: string;
   status: "upcoming" | "ongoing" | "finished";
 }
@@ -50,11 +51,16 @@ export default function SchedulePage() {
   const [eventId, setEventId] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [venueId, setVenueId] = useState("");
-  const [time, setTime] = useState("");
-  // New state for robust time picker
-  const [hour, setHour] = useState("");
-  const [minute, setMinute] = useState("");
-  const [ampm, setAmPm] = useState("AM");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  // State for start time picker
+  const [startHour, setStartHour] = useState("");
+  const [startMinute, setStartMinute] = useState("");
+  const [startAmPm, setStartAmPm] = useState("AM");
+  // State for end time picker
+  const [endHour, setEndHour] = useState("");
+  const [endMinute, setEndMinute] = useState("");
+  const [endAmPm, setEndAmPm] = useState("AM");
   // New state for robust date picker
   const [year, setYear] = useState(() => new Date().getFullYear().toString());
   const [month, setMonth] = useState("");
@@ -66,18 +72,31 @@ export default function SchedulePage() {
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
   const supabase = createClient();
 
-  // Combine hour, minute, ampm into a 24-hour format time string
+  // Combine start time parts into a 24-hour format time string
   useEffect(() => {
-    if (hour && minute && ampm) {
-      let h24 = parseInt(hour, 10);
-      if (ampm === 'PM' && h24 < 12) {
+    if (startHour && startMinute && startAmPm) {
+      let h24 = parseInt(startHour, 10);
+      if (startAmPm === 'PM' && h24 < 12) {
         h24 += 12;
-      } else if (ampm === 'AM' && h24 === 12) {
+      } else if (startAmPm === 'AM' && h24 === 12) {
         h24 = 0;
       }
-      setTime(`${h24.toString().padStart(2, '0')}:${minute}`);
+      setStartTime(`${h24.toString().padStart(2, '0')}:${startMinute}`);
     }
-  }, [hour, minute, ampm]);
+  }, [startHour, startMinute, startAmPm]);
+
+  // Combine end time parts into a 24-hour format time string
+  useEffect(() => {
+    if (endHour && endMinute && endAmPm) {
+      let h24 = parseInt(endHour, 10);
+      if (endAmPm === 'PM' && h24 < 12) {
+        h24 += 12;
+      } else if (endAmPm === 'AM' && h24 === 12) {
+        h24 = 0;
+      }
+      setEndTime(`${h24.toString().padStart(2, '0')}:${endMinute}`);
+    }
+  }, [endHour, endMinute, endAmPm]);
 
   // Combine year, month, day into a YYYY-MM-DD format date string
   useEffect(() => {
@@ -90,7 +109,7 @@ export default function SchedulePage() {
     const { data, error } = await supabase
       .from("schedules")
       .select(`
-        *,
+        *, start_time, end_time,
         events ( name, icon ),
         venues ( name )
       `).order("date");
@@ -142,12 +161,12 @@ export default function SchedulePage() {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, time, date, status })
+          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date, status })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, time, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date, status }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
@@ -163,10 +182,14 @@ export default function SchedulePage() {
     setEventId("");
     setSelectedDepartments([]);
     setVenueId("");
-    setTime("");
-    setHour("");
-    setMinute("");
-    setAmPm("AM");
+    setStartTime("");
+    setStartHour("");
+    setStartMinute("");
+    setStartAmPm("AM");
+    setEndTime("");
+    setEndHour("");
+    setEndMinute("");
+    setEndAmPm("AM");
     setYear(new Date().getFullYear().toString());
     setMonth("");
     setDay("");
@@ -264,79 +287,94 @@ export default function SchedulePage() {
       <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🗓️ Manage Schedule</h1>
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          {/* Row 1: Event & Venue */}
           <SingleSelectDropdown
             options={groupedEvents}
             selectedValue={eventId}
             onChange={setEventId}
             placeholder="Select Event"
           />
-
-          <MultiSelectDropdown
-            options={allDepartments}
-            selectedValues={selectedDepartments}
-            onChange={handleDeptSelection}
-            placeholder="Select Departments"
-          />
-
           <SingleSelectDropdown
             options={allVenues.map(venue => ({ id: venue.id, name: venue.name }))}
             selectedValue={venueId}
             onChange={setVenueId}
             placeholder="Select Venue"
           />
-          {/* Robust Time Picker */}
-          <div className="grid grid-cols-3 gap-2">
-            <select value={hour} onChange={e => setHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-              <option value="" disabled>Hour</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                <option key={h} value={h}>{h}</option>
-              ))}
-            </select>
-            <select value={minute} onChange={e => setMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-              <option value="" disabled>Min</option>
-              <option value="00">00</option>
-              <option value="05">05</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-              <option value="25">25</option>
-              <option value="30">30</option>
-              <option value="35">35</option>
-              <option value="40">40</option>
-              <option value="45">45</option>
-              <option value="50">50</option>
-              <option value="55">55</option>
-            </select>
-            <select value={ampm} onChange={e => setAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
 
-          {/* Robust Date Picker */}
-          <div className="grid grid-cols-3 gap-2">
-            <SingleSelectDropdown
-              options={years}
-              selectedValue={year}
-              onChange={setYear}
-              placeholder="Year"
-            />
-            <SingleSelectDropdown
-              options={months.map(m => ({ id: m.value, name: m.name }))}
-              selectedValue={month}
-              onChange={setMonth}
-              placeholder="Month"
-            />
-            <SingleSelectDropdown
-              options={Array.from({ length: daysInMonth }, (_, i) => ({ id: (i + 1).toString(), name: (i + 1).toString() }))}
-              selectedValue={day}
-              onChange={setDay}
-              placeholder="Day"
-              disabled={!year || !month}
+          {/* Row 2: Departments (Full Width) */}
+          <div className="md:col-span-2">
+            <MultiSelectDropdown
+              options={allDepartments}
+              selectedValues={selectedDepartments}
+              onChange={handleDeptSelection}
+              placeholder="Select Departments"
             />
           </div>
 
+          {/* Row 3: Start Time & End Time */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
+            <div className="grid grid-cols-3 gap-2">
+              <select value={startHour} onChange={e => setStartHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="" disabled>Hour</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (<option key={h} value={h}>{h}</option>))}
+              </select>
+              <select value={startMinute} onChange={e => setStartMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="" disabled>Min</option>
+                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => (<option key={m} value={m}>{m}</option>))}
+              </select>
+              <select value={startAmPm} onChange={e => setStartAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
+            <div className="grid grid-cols-3 gap-2">
+              <select value={endHour} onChange={e => setEndHour(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="" disabled>Hour</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (<option key={h} value={h}>{h}</option>))}
+              </select>
+              <select value={endMinute} onChange={e => setEndMinute(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="" disabled>Min</option>
+                {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => (<option key={m} value={m}>{m}</option>))}
+              </select>
+              <select value={endAmPm} onChange={e => setEndAmPm(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Row 4: Date & Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <div className="grid grid-cols-3 gap-2">
+              <SingleSelectDropdown
+                options={years}
+                selectedValue={year}
+                onChange={setYear}
+                placeholder="Year"
+              />
+              <SingleSelectDropdown
+                options={months.map(m => ({ id: m.value, name: m.name }))}
+                selectedValue={month}
+                onChange={setMonth}
+                placeholder="Month"
+              />
+              <SingleSelectDropdown
+                options={Array.from({ length: daysInMonth }, (_, i) => ({ id: (i + 1).toString(), name: (i + 1).toString() }))}
+                selectedValue={day}
+                onChange={setDay}
+                placeholder="Day"
+                disabled={!year || !month}
+              />
+            </div>
+          </div>
+          
           <SingleSelectDropdown
             options={statusOptions}
             selectedValue={status}
@@ -395,14 +433,16 @@ export default function SchedulePage() {
                               </div>
                             )}
                           </div>
-                          {index < schedule.departments.length - 1 && <span className="font-bold text-gray-400 dark:text-gray-500">vs</span>}
+                          {index < schedule.departments.length - 1 && <div className="h-8 flex items-center justify-center">
+                            <span className="font-bold text-gray-400 dark:text-gray-500">vs</span>
+                          </div>}
                         </Fragment>
                       );
                     })}
                   </div>
                 </td>
                   <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
-                  <td className="table-cell">{schedule.time}</td>
+                  <td className="table-cell">{schedule.start_time} - {schedule.end_time}</td>
                   <td className="table-cell">{schedule.date}</td>
                   <td className="table-cell">
                   <span
@@ -423,15 +463,25 @@ export default function SchedulePage() {
                       setEventId(schedule.event_id);
                       setSelectedDepartments(schedule.departments);
                       setVenueId(schedule.venue_id);
-                      // Deconstruct time for the robust picker
-                      if (schedule.time) {
-                        const [h24, m] = schedule.time.split(':').map(Number);
+                      // Deconstruct start_time for the picker
+                      if (schedule.start_time) {
+                        const [h24, m] = schedule.start_time.split(':').map(Number);
                         const newAmPm = h24 >= 12 ? 'PM' : 'AM';
                         let h12 = h24 % 12;
                         if (h12 === 0) h12 = 12; // 12 PM or 12 AM
-                        setHour(h12.toString());
-                        setMinute(m.toString().padStart(2, '0'));
-                        setAmPm(newAmPm);
+                        setStartHour(h12.toString());
+                        setStartMinute(m.toString().padStart(2, '0'));
+                        setStartAmPm(newAmPm);
+                      }
+                      // Deconstruct end_time for the picker
+                      if (schedule.end_time) {
+                        const [h24, m] = schedule.end_time.split(':').map(Number);
+                        const newAmPm = h24 >= 12 ? 'PM' : 'AM';
+                        let h12 = h24 % 12;
+                        if (h12 === 0) h12 = 12; // 12 PM or 12 AM
+                        setEndHour(h12.toString());
+                        setEndMinute(m.toString().padStart(2, '0'));
+                        setEndAmPm(newAmPm);
                       }
                       // Deconstruct date for the robust picker
                       if (schedule.date) {

@@ -1,10 +1,9 @@
 "use client";
 
-import React, { Fragment, useCallback } from "react";
-import type { NextPage } from 'next';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { createClient } from '@/utils/supabase/client';
+import React, { useState, useEffect, useCallback, useMemo, Fragment } from "react";
+import type { NextPage } from "next";
+import Image from "next/image";
+import { createClient } from "@/utils/supabase/client";
 
 interface Department {
   id: string;
@@ -12,159 +11,190 @@ interface Department {
   image_url?: string;
 }
 
+interface Event {
+  id: string;
+  name: string;
+  icon: string | null;
+}
+
+interface Venue {
+  id: string;
+  name: string;
+}
+
 interface Schedule {
   id: string;
   event_id: string;
   venue_id: string;
-  events: { name: string; icon: string | null } | null;
-  venues: { name: string } | null;
+  events: Event | null;
+  venues: Venue | null;
   departments: (Department | string)[];
-  time: string;
+  start_time: string;
+  end_time: string;
   date: string;
-  status: 'upcoming' | 'ongoing' | 'finished';
+  status: "upcoming" | "ongoing" | "finished";
 }
+
+const supabase = createClient(); // ✅ create only once
 
 const SchedulePage: NextPage = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>([]);
-  const [allEvents, setAllEvents] = useState<{id: string, name: string, icon: string | null}[]>([]);
-  const [allVenues, setAllVenues] = useState<{id: string, name: string}[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
-  
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [eventFilter, setEventFilter] = useState<string>("all");
-  const [venueFilter, setVenueFilter] = useState<string>("all");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [dateFromFilter, setDateFromFilter] = useState<string>("");
-  const [dateToFilter, setDateToFilter] = useState<string>("");
-  const [timeFromFilter, setTimeFromFilter] = useState<string>("");
-  const [timeToFilter, setTimeToFilter] = useState<string>("");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const supabase = createClient();
 
-  const fetchEvents = useCallback(async () => {
-    // Fetch schedules and the related event name in a single query
-    const { data: schedulesData, error: schedulesError } = await supabase
+  // Filters
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [eventFilter, setEventFilter] = useState("all");
+  const [venueFilter, setVenueFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [dateFromFilter, setDateFromFilter] = useState("");
+  const [dateToFilter, setDateToFilter] = useState("");
+  const [timeFromFilter, setTimeFromFilter] = useState("");
+  const [timeToFilter, setTimeToFilter] = useState("");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // ✅ Fetch schedules
+  const fetchSchedules = useCallback(async () => {
+    const { data, error } = await supabase
       .from("schedules")
-      .select(`
+      .select(
+        `
         id,
-        time,
+        event_id,
+        venue_id,
+        start_time,
+        end_time,
         date,
         status,
         departments,
         events ( name, icon ),
         venues ( name )
-      `)
-      .order("date");
+      `
+      )
+      .order("date", { ascending: true });
 
-    if (schedulesError) {
-      console.error("Error fetching schedules:", schedulesError);
+    if (error) {
+      console.error("Error fetching schedules:", error);
       return;
     }
 
-    if (schedulesData) {
-      const allDepartmentNames = Array.from(new Set(schedulesData.flatMap(s => s.departments)));
-
-      if (allDepartmentNames.length === 0) {
-        setSchedules(schedulesData as unknown as Schedule[]);
+    if (data) {
+      const allDeptNames = Array.from(new Set(data.flatMap((s) => s.departments)));
+      if (allDeptNames.length === 0) {
+        setSchedules(data as Schedule[]);
+        setFilteredSchedules(data as Schedule[]);
         return;
       }
 
-      const { data: departmentsData, error: departmentsError } = await supabase
+      const { data: deptData, error: deptError } = await supabase
         .from("departments")
         .select("id, name, image_url")
-        .in("name", allDepartmentNames);
+        .in("name", allDeptNames);
 
-      if (departmentsError) {
-        console.error("Error fetching departments:", departmentsError, "Serving schedules with department names only.");
-        setSchedules(schedulesData as unknown as Schedule[]);
+      if (deptError) {
+        console.warn("Error fetching departments:", deptError);
+        setSchedules(data as Schedule[]);
+        setFilteredSchedules(data as Schedule[]);
         return;
       }
 
-      const departmentMap = new Map(departmentsData.map((department: Department) => [department.name, department]));
-
-      const enrichedSchedules = schedulesData.map(schedule => ({
-        ...schedule,
-        departments: (schedule.departments || [])
-          .map((deptName: string) => departmentMap.get(deptName) || deptName)
+      const deptMap = new Map(deptData.map((d) => [d.name, d]));
+      const enriched = data.map((sched) => ({
+        ...sched,
+        departments: sched.departments.map(
+          (name: string) => deptMap.get(name) || name
+        ),
       }));
 
-      setSchedules(enrichedSchedules as unknown as Schedule[]);
-      setFilteredSchedules(enrichedSchedules as unknown as Schedule[]);
-      setAllDepartments(departmentsData);
+      setSchedules(enriched as Schedule[]);
+      setFilteredSchedules(enriched as Schedule[]);
+      setAllDepartments(deptData);
     }
-  }, [supabase]);
+  }, []);
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
-
-  // Fetch filter options
+  // ✅ Fetch filter options
   const fetchFilterOptions = useCallback(async () => {
-    // Fetch all events
-    const { data: eventsData } = await supabase
-      .from("events")
-      .select("id, name, icon")
-      .order("name");
+    const [{ data: events }, { data: venues }] = await Promise.all([
+      supabase.from("events").select("id, name, icon").order("name"),
+      supabase.from("venues").select("id, name").order("name"),
+    ]);
 
-    // Fetch all venues
-    const { data: venuesData } = await supabase
-      .from("venues")
-      .select("id, name")
-      .order("name");
+    if (events) setAllEvents(events);
+    if (venues) setAllVenues(venues);
+  }, []);
 
-    if (eventsData) setAllEvents(eventsData);
-    if (venuesData) setAllVenues(venuesData);
-  }, [supabase]);
-
+  // Run on mount
   useEffect(() => {
+    fetchSchedules();
     fetchFilterOptions();
-  }, [fetchFilterOptions]);
+  }, [fetchSchedules, fetchFilterOptions]);
 
-  // Filter schedules based on selected filters
+  // ✅ Dynamic status (auto-updates based on current time)
+  const getDynamicStatus = useCallback((schedule: Schedule) => {
+    if (!schedule.date || !schedule.start_time) {
+      return { status: "upcoming", label: "Upcoming" };
+    }
+
+    const now = new Date();
+    const start = new Date(`${schedule.date}T${schedule.start_time}`);
+    const end = new Date(`${schedule.date}T${schedule.end_time}`);
+
+    if (isNaN(start.getTime())) return { status: "upcoming", label: "Upcoming" };
+
+    if (now < start) return { status: "upcoming", label: "Upcoming" };
+    if (now >= start && now <= end)
+      return { status: "ongoing", label: "Ongoing" };
+    return { status: "finished", label: "Finished" };
+  }, []);
+
+  // ✅ Re-filter when something changes
   useEffect(() => {
     let filtered = [...schedules];
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter(schedule => schedule.status === statusFilter);
+      filtered = filtered.filter(
+        (s) => getDynamicStatus(s).status === statusFilter
+      );
     }
 
     if (eventFilter !== "all") {
-      filtered = filtered.filter(schedule => schedule.event_id === eventFilter);
+      filtered = filtered.filter((s) => s.event_id === eventFilter);
     }
 
     if (venueFilter !== "all") {
-      filtered = filtered.filter(schedule => schedule.venue_id === venueFilter);
+      filtered = filtered.filter((s) => s.venue_id === venueFilter);
     }
 
     if (departmentFilter !== "all") {
-      filtered = filtered.filter(schedule => 
-        schedule.departments.some(dept => 
-          typeof dept === 'string' ? dept === departmentFilter : dept.name === departmentFilter
+      filtered = filtered.filter((s) =>
+        s.departments.some((d) =>
+          typeof d === "string" ? d === departmentFilter : d.name === departmentFilter
         )
       );
     }
 
-    if (dateFromFilter) {
-      filtered = filtered.filter(schedule => schedule.date >= dateFromFilter);
-    }
-
-    if (dateToFilter) {
-      filtered = filtered.filter(schedule => schedule.date <= dateToFilter);
-    }
-
-    if (timeFromFilter) {
-      filtered = filtered.filter(schedule => schedule.time >= timeFromFilter);
-    }
-
-    if (timeToFilter) {
-      filtered = filtered.filter(schedule => schedule.time <= timeToFilter);
-    }
+    if (dateFromFilter) filtered = filtered.filter((s) => s.date >= dateFromFilter);
+    if (dateToFilter) filtered = filtered.filter((s) => s.date <= dateToFilter);
+    if (timeFromFilter) filtered = filtered.filter((s) => s.start_time >= timeFromFilter);
+    if (timeToFilter) filtered = filtered.filter((s) => s.end_time <= timeToFilter);
 
     setFilteredSchedules(filtered);
-  }, [schedules, statusFilter, eventFilter, venueFilter, departmentFilter, dateFromFilter, dateToFilter, timeFromFilter, timeToFilter]);
+  }, [
+    schedules,
+    statusFilter,
+    eventFilter,
+    venueFilter,
+    departmentFilter,
+    dateFromFilter,
+    dateToFilter,
+    timeFromFilter,
+    timeToFilter,
+    getDynamicStatus,
+  ]);
 
+  // Clear filters
   const clearFilters = () => {
     setStatusFilter("all");
     setEventFilter("all");
@@ -176,245 +206,243 @@ const SchedulePage: NextPage = () => {
     setTimeToFilter("");
   };
 
+  // Memoized counts
+  const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
+  const totalCount = useMemo(() => schedules.length, [schedules]);
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200">
+    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200 p-6 rounded-lg">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🗓️ Schedule</h1>
-        <p className="text-gray-600 dark:text-gray-400">Upcoming, ongoing, and finished events</p>
+        <h1 className="text-4xl font-bold text-monument-green dark:text-green-400 mb-2">
+          🗓️ Schedule
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          View upcoming, ongoing, and finished events
+        </p>
       </div>
 
-      {/* Filters Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex items-center justify-between gap-4 p-4 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center dark:bg-blue-900/50">
-                <span className="text-blue-600 text-sm dark:text-blue-300">🔍</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 self-center">Filters</h3>
-            </div>
+      {/* ---------- FILTERS ---------- */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🔍</span>
+            <h3 className="font-semibold text-lg">Filters</h3>
             <button
               onClick={clearFilters}
-              className="px-3 py-1 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors duration-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
+              className="ml-4 px-3 py-1 text-sm text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
             >
               Clear All
             </button>
           </div>
-          <button 
+          <button
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200 border border-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
+            className="text-sm border px-3 py-2 rounded-md hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
           >
-            <span className="text-xs dark:text-gray-400">
-              {isFiltersOpen ? '▼' : '▶'}
-            </span>
-            {isFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+            {isFiltersOpen ? "Hide Filters ▲" : "Show Filters ▼"}
           </button>
         </div>
-        
+
         {isFiltersOpen && (
-          <div className="p-4 animate-fadeIn dark:bg-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:white">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            >
-              <option value="all">All Status</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="ongoing">Ongoing</option>
-              <option value="finished">Finished</option>
-            </select>
-          </div>
-
-          {/* Event Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Event</label>
-            <select
-              value={eventFilter}
-              onChange={(e) => setEventFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            >
-              <option value="all">All Events</option>
-              {allEvents.map(event => (
-                <option key={event.id} value={event.id}>
-                  {event.icon} {event.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Venue Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Venue</label>
-            <select
-              value={venueFilter}
-              onChange={(e) => setVenueFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            >
-              <option value="all">All Venues</option>
-              {allVenues.map(venue => (
-                <option key={venue.id} value={venue.id}>
-                  {venue.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Department Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
-            <select
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            >
-              <option value="all">All Departments</option>
-              {allDepartments.map(dept => (
-                <option key={dept.id} value={dept.name}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date Range Filters */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Date From</label>
-            <input
-              type="date"
-              value={dateFromFilter}
-              onChange={(e) => setDateFromFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Date To</label>
-            <input
-              type="date"
-              value={dateToFilter}
-              onChange={(e) => setDateToFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            />
-          </div>
-
-          {/* Time Range Filters */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Time From</label>
-            <input
-              type="time"
-              value={timeFromFilter}
-              onChange={(e) => setTimeFromFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Time To</label>
-            <input
-              type="time"
-              value={timeToFilter}
-              onChange={(e) => setTimeToFilter(e.target.value)}
-              className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-            />
-          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="all">All</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="finished">Finished</option>
+              </select>
             </div>
 
-            <div className="mt-4 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md dark:bg-gray-700 dark:text-gray-400">
-              📊 Showing {filteredSchedules.length} of {schedules.length} events
+            {/* Event */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Event</label>
+              <select
+                value={eventFilter}
+                onChange={(e) => setEventFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="all">All Events</option>
+                {allEvents.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.icon} {e.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Venue */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Venue</label>
+              <select
+                value={venueFilter}
+                onChange={(e) => setVenueFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="all">All Venues</option>
+                {allVenues.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Department */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Department</label>
+              <select
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              >
+                <option value="all">All Departments</option>
+                {allDepartments.map((d) => (
+                  <option key={d.id} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Range */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Date From</label>
+              <input
+                type="date"
+                value={dateFromFilter}
+                onChange={(e) => setDateFromFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Date To</label>
+              <input
+                type="date"
+                value={dateToFilter}
+                onChange={(e) => setDateToFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+
+            {/* Time Range */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Time From</label>
+              <input
+                type="time"
+                value={timeFromFilter}
+                onChange={(e) => setTimeFromFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Time To</label>
+              <input
+                type="time"
+                value={timeToFilter}
+                onChange={(e) => setTimeToFilter(e.target.value)}
+                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
+              />
             </div>
           </div>
         )}
       </div>
 
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-gray-800">
-            <thead className="table-header bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
-              <tr>
-                <th className="table-cell text-left font-semibold">Event Name</th>
-                <th className="table-cell text-left font-semibold">Competing Departments</th>
-                <th className="table-cell text-left font-semibold">Venue</th>
-                <th className="table-cell text-left font-semibold">Time</th>
-                <th className="table-cell text-left font-semibold">Date</th>
-                <th className="table-cell text-center font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredSchedules.map((schedule) => (
-                <tr key={schedule.id} className="table-row animate-fadeIn dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700/50">
-                  <td className="table-cell font-medium">
-                    <div className="flex items-center gap-2">
-                      {schedule.events?.icon && (
-                        <span className="text-xl">{schedule.events.icon}</span>
-                      )}
-                      <span>{schedule.events?.name || 'N/A'}</span>
-                    </div>
-                  </td>
-                  <td className="table-cell">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {schedule.departments.map((department, index) => (
-                        <Fragment key={typeof department === 'string' ? department : department.id}>
-                          <div className="flex items-center" title={typeof department === 'string' ? department : department.name}>
-                            {typeof department === 'object' && department.image_url ? (
+      <div className="text-sm text-gray-500 mb-4 dark:text-gray-400">
+        📊 Showing {filterCount} of {totalCount} events
+      </div>
+
+      {/* ---------- TABLE ---------- */}
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+            <tr>
+              <th className="px-4 py-2 text-left font-semibold">Event</th>
+              <th className="px-4 py-2 text-left font-semibold">Departments</th>
+              <th className="px-4 py-2 text-left font-semibold">Venue</th>
+              <th className="px-4 py-2 text-left font-semibold">Time</th>
+              <th className="px-4 py-2 text-left font-semibold">Date</th>
+              <th className="px-4 py-2 text-center font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredSchedules.length > 0 ? (
+              filteredSchedules.map((s) => {
+                const { status, label } = getDynamicStatus(s);
+                const color =
+                  status === "upcoming"
+                    ? "bg-yellow-500"
+                    : status === "ongoing"
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-red-500";
+
+                return (
+                  <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        {s.events?.icon && <span>{s.events.icon}</span>}
+                        <span>{s.events?.name || "N/A"}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-2">
+                        {s.departments.map((d, i) => (
+                          <Fragment key={typeof d === "string" ? d : d.id}>
+                            {typeof d === "object" && d.image_url ? (
                               <Image
-                                src={department.image_url}
-                                alt={department.name}
+                                src={d.image_url}
+                                alt={d.name}
                                 width={32}
                                 height={32}
-                                className="w-8 h-8 object-cover rounded-full"
+                                className="rounded-full w-8 h-8 object-cover"
                               />
                             ) : (
-                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-300">
-                                {typeof department === 'string' ? department.substring(0, 2) : department.name.substring(0, 2)}
+                              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 text-xs font-bold">
+                                {typeof d === "string" ? d.slice(0, 2) : d.name.slice(0, 2)}
                               </div>
                             )}
-                          </div>
-                          {index < schedule.departments.length - 1 && (
-                            <span className="font-bold text-gray-400 dark:text-gray-500">vs</span>
-                          )}
-                        </Fragment>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
-                  <td className="table-cell">{schedule.time}</td>
-                  <td className="table-cell">{schedule.date}</td>
-                  <td className="table-cell text-center">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold dark:text-white ${
-                        schedule.status === 'upcoming'
-                          ? 'bg-yellow-500'
-                          : schedule.status === 'ongoing'
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
-                      }`}
-                    >
-                      {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {filteredSchedules.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="table-cell text-center py-12 text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center">
-                      <div className="text-4xl mb-2">🗓️</div>
-                      <p>
-                        {schedules.length === 0
-                          ? "No schedule results yet, check back soon."
-                          : "No events match the current filters. Try adjusting your filter criteria."}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                            {i < s.departments.length - 1 &&
+                              <div className="h-8 flex items-center justify-center">
+                                <span className="text-gray-400 font-bold">vs</span>
+                              </div>}
+                          </Fragment>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">{s.venues?.name || "N/A"}</td>
+                    <td className="px-4 py-2">
+                      {s.start_time} - {s.end_time}
+                    </td>
+                    <td className="px-4 py-2">{s.date}</td>
+                    <td className="px-4 py-2 text-center">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs text-white font-semibold ${color}`}
+                      >
+                        {label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="text-center py-12 text-gray-500 dark:text-gray-400"
+                >
+                  🗓️ No events found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
