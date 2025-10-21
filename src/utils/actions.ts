@@ -9,17 +9,6 @@ export interface UserProfile {
   email: string;
 }
 
-interface Profile {
-  id: string;
-  role: string;
-  email?: string | null;
-}
-
-interface AuthUser {
-  id: string;
-  email?: string | null;
-}
-
 /**
  * Verifies that the currently logged-in user is a super admin.
  */
@@ -114,7 +103,7 @@ export async function updateUserRole(userId: string, newRole: string) {
  * Creates a new user (admin or user). Only super_admin can do this.
  */
 export async function createUser(email: string, password: string, role: string = "user") {
-  const { user } = await verifySuperAdmin(); // Ensure only super admins can do this
+  await verifySuperAdmin(); // Ensure only super admins can do this
   const supabase = createServiceClient();
 
   // 1. Create the user in Supabase Auth

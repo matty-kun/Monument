@@ -9,17 +9,6 @@ export interface UserProfile {
   email: string;
 }
 
-interface Profile {
-  id: string;
-  role: string;
-  email?: string | null;
-}
-
-interface AuthUser {
-  id: string;
-  email?: string | null;
-}
-
 /**
  * Verifies that the currently logged-in user is a super admin.
  */

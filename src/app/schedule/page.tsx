@@ -41,6 +41,18 @@ interface Schedule {
   status: "upcoming" | "ongoing" | "finished";
 }
 
+// Type for the raw data from Supabase before normalization
+type RawScheduleFromSupabase = Omit<
+  Schedule,
+  "events" | "venues" | "departments"
+> & {
+  // Supabase might return an array for relationships, even if it's one-to-one
+  events: Event | Event[] | null;
+  venues: Venue | Venue[] | null;
+  // Departments are initially just an array of names (strings)
+  departments: string[];
+};
+
 const supabase = createClient();
 
 const SchedulePage: NextPage = () => {
@@ -88,7 +100,7 @@ const SchedulePage: NextPage = () => {
 
     if (data) {
       // Normalize event/venue structure (flatten arrays)
-      const normalized = data.map((s: any) => ({
+      const normalized = data.map((s: RawScheduleFromSupabase) => ({
         ...s,
         events: Array.isArray(s.events) ? s.events[0] || null : s.events || null,
         venues: Array.isArray(s.venues) ? s.venues[0] || null : s.venues || null,
@@ -96,7 +108,7 @@ const SchedulePage: NextPage = () => {
 
       // Collect department names
       const allDeptNames = Array.from(
-        new Set(normalized.flatMap((s: any) => s.departments))
+        new Set(normalized.flatMap((s) => s.departments))
       );
 
       if (allDeptNames.length === 0) {
@@ -118,7 +130,7 @@ const SchedulePage: NextPage = () => {
       }
 
       const deptMap = new Map(deptData.map((d) => [d.name, d]));
-      const enriched = normalized.map((sched: any) => ({
+      const enriched = normalized.map((sched) => ({
         ...sched,
         departments: sched.departments.map(
           (name: string) => deptMap.get(name) || name
