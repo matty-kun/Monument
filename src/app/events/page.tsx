@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { motion, AnimatePresence } from "framer-motion";
+import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { FaTable, FaThLarge } from "react-icons/fa"; // Icons for toggle
 
 // Types
@@ -54,11 +55,24 @@ interface GroupedResult {
   winners: Partial<Record<"gold" | "silver" | "bronze", WinnerInfo>>;
 }
 
+const getCategoryIcon = (categoryName: string | null): string => {
+  if (!categoryName) return '🏅';
+  const lowerCaseName = categoryName.toLowerCase();
+  if (lowerCaseName.includes('ball')) return '🏀';
+  if (lowerCaseName.includes('board')) return '♟️';
+  if (lowerCaseName.includes('track') || lowerCaseName.includes('field')) return '🏃';
+  if (lowerCaseName.includes('vocal')) return '🎤';
+  if (lowerCaseName.includes('dance')) return '💃';
+  if (lowerCaseName.includes('esports')) return '🎮';
+  if (lowerCaseName.includes('literary')) return '✍️';
+  return '🏆'; // Default icon
+};
+
 export default function EventResultsPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>([]);
-  const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([]);
-  const [allDepartments, setAllDepartments] = useState<string[]>([]); // Keep as string[] for filter dropdown
+  const [allCategories, setAllCategories] = useState<{ id: string; name: string; icon?: string }[]>([]);
+  const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filter states
@@ -98,9 +112,6 @@ export default function EventResultsPage() {
         medal_type: r.medal_type,
       }));
 
-      const departments = [...new Set(processed.map(r => r.department_name))];
-      setAllDepartments(departments);
-
       // Fetch all categories to map UUIDs to names
       const { data: categoriesData, error: categoriesError } = await supabase
         .from("categories")
@@ -109,7 +120,7 @@ export default function EventResultsPage() {
       if (categoriesError) {
         console.error("Error fetching categories:", categoriesError);
       } else {
-        setAllCategories(categoriesData || []);
+        setAllCategories(categoriesData?.map(c => ({ ...c, icon: getCategoryIcon(c.name) })) || []);
       }
     }
     setLoading(false);
@@ -158,6 +169,18 @@ export default function EventResultsPage() {
     if (departmentFilter !== "all") {
       processed = processed.filter(r => r.department_name === departmentFilter);
     }
+    if (allDepartments.length === 0 && processed.length > 0) {
+      const departmentMap = new Map<string, { name: string; image_url: string | null }>();
+      results.forEach(r => {
+        if (r.departments && !departmentMap.has(r.departments.name)) {
+          departmentMap.set(r.departments.name, {
+            name: r.departments.name,
+            image_url: r.departments.image_url,
+          });
+        }
+      });
+      setAllDepartments(Array.from(departmentMap.values()));
+    }
     setFilteredResults(processed);
   }, [results, categoryFilter, medalFilter, departmentFilter, getCategoryName]);
 
@@ -197,6 +220,13 @@ export default function EventResultsPage() {
       </div>
     );
   }
+
+  const medalOptions = [
+    { id: 'all', name: 'All Medals' },
+    { id: 'gold', name: '🥇 Gold' },
+    { id: 'silver', name: '🥈 Silver' },
+    { id: 'bronze', name: '🥉 Bronze' },
+  ];
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200">
@@ -245,44 +275,42 @@ export default function EventResultsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Category</label>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                >
-                  <option value="all">All Categories</option>
-                  {allCategories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
+                <SingleSelectDropdown
+                  options={[
+                    { id: 'all', name: 'All Categories' },
+                    ...allCategories.map(c => ({ id: c.name, name: c.name, icon: c.icon }))
+                  ]}
+                  selectedValue={categoryFilter}
+                  onChange={(value) => setCategoryFilter(value)}
+                  placeholder="Select Category"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Medal Type</label>
-                <select
-                  value={medalFilter}
-                  onChange={(e) => setMedalFilter(e.target.value)}
-                  className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                >
-                  <option value="all">All Medals</option>
-                  <option value="gold">🥇 Gold</option>
-                  <option value="silver">🥈 Silver</option>
-                  <option value="bronze">🥉 Bronze</option>
-                </select>
+                <SingleSelectDropdown
+                  options={medalOptions}
+                  selectedValue={medalFilter}
+                  onChange={(value) => setMedalFilter(value)}
+                  placeholder="Select Medal"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
-                <select
-                  value={departmentFilter}
-                  onChange={(e) => setDepartmentFilter(e.target.value)}
-                  className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-                >
-                  <option value="all">All Departments</option>
-                  {allDepartments.map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
+                <SingleSelectDropdown
+                  options={[
+                    { id: 'all', name: 'All Departments' },
+                    ...allDepartments.map(dept => ({ 
+                      id: dept.name, 
+                      name: dept.name, 
+                      image_url: dept.image_url || undefined 
+                    })),
+                  ]}
+                  selectedValue={departmentFilter}
+                  onChange={(value) => setDepartmentFilter(value)}
+                  placeholder="Select Department"
+                />
               </div>
             </div>
           </div>
