@@ -5,10 +5,30 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
   title: "Monument",
-  description: "Real-time Intramurals score tracking system",
+  description: "Real-time Intramural Score Tracking System",
+  openGraph: {
+    title: "Monument",
+    description: "This Is Your Moment.",
+    url: "https://themonument.vercel.app",
+    siteName: "Monument",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Monument Open Graph Image",
+      },
+    ],
+  },
   icons: {
-    icon: '/monument-logo.png',
-  }
+    icon: "/monument-logo.png",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Monument",
+    description: "This Is Your Moment — Real-time Intramural Score Tracking System",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
