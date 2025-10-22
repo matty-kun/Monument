@@ -91,11 +91,13 @@ export default function ManageUsersPage() {
     const result = await createUser(newEmail, newPassword, newRole);
 
     if (result.success) {
-      toast.success(result.message, { id: toastId });
+      toast.success(result.message, { id: toastId });      
+      // Optimistically add the new user to the list
+      if (result.user) {
+        setUsers(prevUsers => [result.user, ...prevUsers].sort((a, b) => a.email.localeCompare(b.email)));
+      }
       setNewEmail("");
       setNewPassword("");
-      setNewRole("admin");
-      fetchUsers();
     } else {
       toast.error(`Failed: ${result.message}`, { id: toastId });
     }

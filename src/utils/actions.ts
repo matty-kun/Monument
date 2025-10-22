@@ -171,5 +171,9 @@ export async function createUser(email: string, password: string, role: string =
 
   revalidatePath("/admin/users");
   const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ');
-  return { success: true, message: `${capitalizedRole} account created successfully!` };
+  return { 
+    success: true, 
+    message: `${capitalizedRole} account created successfully!`,
+    user: { id: createdUser.user.id, email, role } as UserProfile
+  };
 }
