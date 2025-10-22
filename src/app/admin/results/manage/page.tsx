@@ -7,6 +7,7 @@ import Link from "next/link";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../../components/ConfirmModal';
 import Breadcrumbs from "../../../../components/Breadcrumbs";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface Result {
   id: string;
@@ -95,13 +96,18 @@ export default function ManageResultsPage() {
         </div>
       )}
 
-      {results.length === 0 ? (
-        <div className="text-center py-10 bg-white shadow rounded-lg dark:bg-gray-800">
-          <p className="text-gray-500 text-lg">No results recorded yet.</p>
-          <Link href="/admin/results" className="mt-4 inline-block btn btn-primary dark:text-white">
-            Add your first result
-          </Link>
+      {loading ? (
+        <div className="flex flex-col justify-center items-center p-10">
+          <BouncingBallsLoader />
+          <p className="mt-4 text-gray-500 dark:text-gray-400">Fetching results...</p>
         </div>
+      ) : results.length === 0 ? (
+          <div className="text-center py-10 bg-white shadow rounded-lg dark:bg-gray-800">
+            <p className="text-gray-500 text-lg">No results recorded yet.</p>
+            <Link href="/admin/results" className="mt-4 inline-block btn btn-primary dark:text-white">
+              Add your first result
+            </Link>
+          </div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden overflow-x-auto dark:bg-gray-800">
           <table className="min-w-full">
@@ -109,6 +115,7 @@ export default function ManageResultsPage() {
               <tr>
                 <th className="table-cell text-left dark:text-gray-300">Event</th>
                 <th className="table-cell text-left dark:text-gray-300">Department</th>
+
                 <th className="table-cell text-left dark:text-gray-300">Medal</th>
                 <th className="table-cell text-left dark:text-gray-300">Points</th>
                 <th className="table-cell text-center dark:text-gray-300">Actions</th>
