@@ -33,7 +33,6 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: "/", label: "🏆 Podium" },
-    { href: "/medals", label: "🏅 Medals" },
     { href: "/events", label: "🏟️ Events" },
     { href: "/schedule", label: "🗓️ Schedule" },
   ], []);

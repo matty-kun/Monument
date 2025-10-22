@@ -76,73 +76,71 @@ export default function ScoreboardPage() {
             </div>
           </div>
 
-          {/* Full Leaderboard */}
-          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead className="bg-white dark:bg-gray-800 py-2">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rank</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
-                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Medals</th>
-                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Points</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  <AnimatePresence>
-                    {leaderboard.slice(3).map((dept, index) => (
-                      <motion.tr
-                        key={dept.id}
-                        layout
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.3 }}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-lg font-bold text-gray-700 dark:text-gray-300">{index + 4}</span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap max-w-xs">
-                          <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0">
-                              {dept.image_url ? (
-                                <Image 
-                                  src={dept.image_url} 
-                                  alt={dept.name}
-                                  width={48}
-                                  height={48}
-                                  className="w-12 h-12 object-cover rounded-full shadow-md"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
-                                  <span className="text-2xl text-gray-400">🏫</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="truncate">
-                              <span className="text-base font-semibold text-gray-900 dark:text-gray-100" title={dept.name}>{dept.name}</span>
-                            </div>
+          {/* Leaderboard Cards (Rank 4+) */}
+          <div className="w-full max-w-5xl mx-auto px-4 py-8">
+            <AnimatePresence>
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.05 } }
+                }}
+              >
+                {leaderboard.slice(3).map((dept, index) => (
+                  <motion.div
+                    key={dept.id}
+                    layout
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-5 flex flex-col justify-between"
+                  >
+                    {/* Rank number in the background */}
+                    <div className="absolute -top-10 -left-0 text-[150px] font-black text-gray-100 dark:text-gray-700/50 z-0 select-none">
+                      {index + 4}
+                    </div>
+
+                    <div className="relative z-10 flex flex-col h-full">
+                      {/* Department Info */}
+                      <div className="flex items-center gap-4 mb-4">
+                        {dept.image_url ? (
+                          <Image 
+                            src={dept.image_url} 
+                            alt={dept.name}
+                            width={48}
+                            height={48}
+                            className="w-12 h-12 object-cover rounded-full shadow-md border-2 border-white dark:border-gray-700"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
+                            <span className="text-2xl text-gray-400">🏫</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-center">
-                          <div className="flex justify-center gap-3">
-                            <span className="text-base">🥇 {dept.golds}</span>
-                            <span className="text-base">🥈 {dept.silvers}</span>
-                            <span className="text-base">🥉 {dept.bronzes}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right">
-                          <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                            {dept.total_points}
-                          </span>
-                        </td>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </table>
-            </div>
+                        )}
+                        <span className="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight" title={dept.name}>
+                          {dept.name}
+                        </span>
+                      </div>
+
+                      {/* Medals and Points */}
+                      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <div className="flex gap-4 text-lg">
+                          <span>🥇 {dept.golds}</span>
+                          <span>🥈 {dept.silvers}</span>
+                          <span>🥉 {dept.bronzes}</span>
+                        </div>
+                        <div className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-lg font-bold px-3 py-1 rounded-full">
+                          {dept.total_points}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </>
       ) : (
