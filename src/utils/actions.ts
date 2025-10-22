@@ -98,6 +98,46 @@ export async function updateUserRole(userId: string, newRole: string) {
   return { success: true, message: "Role updated successfully!" };
 }
 
+/**
+ * Deletes a user from Supabase Auth.
+ * Requires a valid super_admin session.
+ */
+export async function deleteUser(userId: string) {
+  const { user: currentAdminUser } = await verifySuperAdmin();
+
+  // Prevent a user from deleting their own account
+  if (currentAdminUser.id === userId) {
+    return { success: false, message: "You cannot delete your own account." };
+  }
+
+  // Use the service role client to delete the user from Supabase Auth
+  const adminSupabase = createServiceClient();
+  const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(userId);
+
+  if (deleteError) {
+    // The profile will cascade delete, but if it fails, we should log it.
+    // The most common error is if the user doesn't exist.
+    console.error("Error deleting user from auth:", deleteError.message);
+
+    // Also attempt to delete the profile as a fallback.
+    const { error: profileDeleteError } = await adminSupabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+
+    if (profileDeleteError) {
+      console.error("Error deleting user profile as fallback:", profileDeleteError.message);
+      return { success: false, message: `Primary error: ${deleteError.message}. Fallback error: ${profileDeleteError.message}` };
+    }
+
+    // If only the auth deletion failed but profile deletion succeeded, it might be a partial success.
+    return { success: false, message: deleteError.message };
+  }
+
+  revalidatePath("/admin/users");
+  return { success: true, message: "User deleted successfully." };
+}
+
 
 /**
  * Creates a new user (admin or user). Only super_admin can do this.

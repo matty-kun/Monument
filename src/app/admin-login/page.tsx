@@ -137,7 +137,7 @@ export default function AdminLoginPage() {
               className="btn btn-primary w-full text-lg py-3 text-white"
             >
               {loading ? (
-                <BouncingBallsLoader />
+                <BouncingBallsLoader size="text-xl" />
               ) : (
                 '🚀 Sign In'
               )}

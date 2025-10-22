@@ -1,5 +1,9 @@
-export default function BouncingBallsLoader() {
-  const ballStyle = "text-6xl";
+interface BouncingBallsLoaderProps {
+  size?: string;
+}
+
+export default function BouncingBallsLoader({ size = "text-6xl" }: BouncingBallsLoaderProps) {
+  const ballStyle = size;
 
   return (
     <div className="flex justify-center items-center gap-4">

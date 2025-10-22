@@ -5,12 +5,14 @@ import toast, { Toaster } from "react-hot-toast";
 import {
   getUsers,
   updateUserRole,
+  deleteUser, // Import the new delete action
   createUser,
   UserProfile,
 } from "../../../utils/actions";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import ConfirmModal from "@/components/ConfirmModal";
 import { FiShield, FiUser } from 'react-icons/fi';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -18,6 +20,8 @@ export default function ManageUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
   // For new user form
   const [newEmail, setNewEmail] = useState("");
@@ -95,6 +99,29 @@ export default function ManageUsersPage() {
     } else {
       toast.error(`Failed: ${result.message}`, { id: toastId });
     }
+  };
+
+  const handleDeleteClick = (user: UserProfile) => {
+    setUserToDelete(user);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    const toastId = toast.loading(`Deleting user ${userToDelete.email}...`);
+    const result = await deleteUser(userToDelete.id);
+
+    if (result.success) {
+      toast.success(result.message, { id: toastId });
+      // Optimistically remove the user from the UI
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+    } else {
+      toast.error(`Failed: ${result.message}`, { id: toastId });
+    }
+
+    setShowConfirmModal(false);
+    setUserToDelete(null);
   };
 
   const capitalizeWords = (str: string): string => {
@@ -228,6 +255,9 @@ export default function ManageUsersPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                   Change Role
                 </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -266,12 +296,36 @@ export default function ManageUsersPage() {
                       ]}
                     />
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <button
+                      onClick={() => handleDeleteClick(user)}
+                      className="btn-danger py-1 px-3 text-sm rounded inline-flex items-center gap-1"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {userToDelete && (
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmDelete}
+          title="Confirm User Deletion"
+          message={
+            <span>
+              Are you sure you want to permanently delete the user{" "}
+              <strong className="text-red-500">{userToDelete.email}</strong>? This
+              action cannot be undone.
+            </span>
+          }
+        />
+      )}
 
       <Toaster />
     </div>
