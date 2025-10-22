@@ -10,6 +10,7 @@ import React, {
 import type { NextPage } from "next";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface Department {
   id: string;
@@ -61,6 +62,7 @@ const SchedulePage: NextPage = () => {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("all");
@@ -75,6 +77,7 @@ const SchedulePage: NextPage = () => {
 
   // ✅ Fetch schedules
   const fetchSchedules = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("schedules")
       .select(
@@ -95,6 +98,7 @@ const SchedulePage: NextPage = () => {
 
     if (error) {
       console.error("Error fetching schedules:", error);
+      setLoading(false);
       return;
     }
 
@@ -114,6 +118,7 @@ const SchedulePage: NextPage = () => {
       if (allDeptNames.length === 0) {
         setSchedules(normalized as Schedule[]);
         setFilteredSchedules(normalized as Schedule[]);
+        setLoading(false);
         return;
       }
 
@@ -126,6 +131,7 @@ const SchedulePage: NextPage = () => {
         console.warn("Error fetching departments:", deptError);
         setSchedules(normalized as Schedule[]);
         setFilteredSchedules(normalized as Schedule[]);
+        setLoading(false);
         return;
       }
 
@@ -141,6 +147,7 @@ const SchedulePage: NextPage = () => {
       setFilteredSchedules(enriched as Schedule[]);
       setAllDepartments(deptData);
     }
+    setLoading(false);
   }, []);
 
   // ✅ Fetch filter options
@@ -237,6 +244,14 @@ const SchedulePage: NextPage = () => {
 
   const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
   const totalCount = useMemo(() => schedules.length, [schedules]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <BouncingBallsLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200 p-6 rounded-lg">

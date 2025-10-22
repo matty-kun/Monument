@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface Category {
   id: string;
@@ -142,7 +143,9 @@ export default function CategoriesPage() {
       </div>
 
       {loading ? (
-        <div className="text-center p-10"><div className="spinner mx-auto"></div></div>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <BouncingBallsLoader />
+        </div>
       ) : (
         <div className="table-container bg-white shadow rounded-lg overflow-hidden dark:bg-gray-800">
           <table className="min-w-full divide-y divide-gray-200">

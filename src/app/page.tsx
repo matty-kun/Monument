@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface LeaderboardRow {
   id: string;
@@ -19,9 +20,11 @@ interface LeaderboardRow {
 
 export default function ScoreboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const supabase = createClient(); // Add this line
 
   const fetchLeaderboard = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase.rpc("get_leaderboard");
     if (!error && data) {
       // Calculate total_points using the scoring logic
@@ -31,6 +34,7 @@ export default function ScoreboardPage() {
       }));
       setLeaderboard(calculated);
     }
+    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -52,6 +56,14 @@ export default function ScoreboardPage() {
 
   // Check if there are any scores to determine if ranking should be shown
   const hasScores = leaderboard.some(dept => dept.total_points > 0);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <BouncingBallsLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 text-black dark:text-gray-200">

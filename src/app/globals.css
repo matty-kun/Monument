@@ -116,13 +116,6 @@
     @apply bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300;
   }
 
-  .spinner {
-    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-monument-green;
-  }
-
-  .spinner-sm {
-    @apply animate-spin rounded-full h-5 w-5 border-b-2 border-white;
-  }
 
   .gradient-primary {
     @apply bg-gradient-to-r from-monument-green to-monument-dark;

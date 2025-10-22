@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface LeaderboardRow {
   id: string;
@@ -19,6 +20,7 @@ export default function MedalsPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [filteredLeaderboard, setFilteredLeaderboard] = useState<LeaderboardRow[]>([]);
   const [allDepartments, setAllDepartments] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Filter states
   const [medalFilter, setMedalFilter] = useState<string>("all");
@@ -30,6 +32,7 @@ export default function MedalsPage() {
   const supabase = createClient();
 
   const fetchLeaderboard = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase.rpc("get_leaderboard");
     if (!error && data) {
       const calculated = (data as Omit<LeaderboardRow, 'total_points'>[]).map((row) => ({
@@ -39,6 +42,7 @@ export default function MedalsPage() {
       setLeaderboard(calculated);
       setAllDepartments([...new Set(calculated.map((dept: LeaderboardRow) => dept.name))]);
     }
+    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -98,6 +102,14 @@ export default function MedalsPage() {
 
   // Check if there are any medals at all (not just scores > 0)
   const hasMedals = leaderboard.some(dept => dept.golds > 0 || dept.silvers > 0 || dept.bronzes > 0);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <BouncingBallsLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="dark:text-gray-200">

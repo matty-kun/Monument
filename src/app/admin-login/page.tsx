@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import BouncingBallsLoader from '@/components/BouncingBallsLoader';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -136,7 +137,7 @@ export default function AdminLoginPage() {
               className="btn btn-primary w-full text-lg py-3 text-white"
             >
               {loading ? (
-                <div className="spinner-sm mx-auto"></div>
+                <BouncingBallsLoader />
               ) : (
                 '🚀 Sign In'
               )}

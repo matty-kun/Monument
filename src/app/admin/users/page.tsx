@@ -10,6 +10,7 @@ import {
 } from "../../../utils/actions";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { FiShield, FiUser } from 'react-icons/fi';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -105,8 +106,8 @@ export default function ManageUsersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-monument-green"></div>
+      <div className="flex flex-col justify-center items-center h-64">
+        <BouncingBallsLoader />
       </div>
     );
   }

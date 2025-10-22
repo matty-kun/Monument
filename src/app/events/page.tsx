@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface Result {
   id: string;
@@ -36,6 +37,7 @@ export default function EventResultsPage() {
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [allDepartments, setAllDepartments] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Filter states
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -46,6 +48,7 @@ export default function EventResultsPage() {
   const supabase = createClient();
 
   const fetchEventResults = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase.from("results").select(`
         id,
         department_id,
@@ -74,6 +77,7 @@ export default function EventResultsPage() {
       setAllCategories(categories);
       setAllDepartments(departments);
     }
+    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -137,6 +141,14 @@ export default function EventResultsPage() {
     setMedalFilter("all");
     setDepartmentFilter("all");
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <BouncingBallsLoader />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200">
