@@ -33,19 +33,19 @@ export default function AdminLoginPage() {
 
     // After successful login, check the user's role
     if (data.user) {
-      const { data: profiles, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to safely handle cases where a profile might not exist
 
       if (profileError) {
         setErrorMsg(profileError.message);
         setLoading(false);
-      } else if (profiles.role === 'admin' || profiles.role === 'super_admin') {
+      } else if (profile && (profile.role === 'admin' || profile.role === 'super_admin')) {
         router.push('/admin/dashboard');
         router.refresh();
-      } else if (profiles) {
+      } else if (profile) {
         setErrorMsg('You are not authorized to access this page.');
         setLoading(false);
         // router.push('/not-authorized'); // Optional: redirect to a 'not authorized' page

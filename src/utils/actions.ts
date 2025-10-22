@@ -158,16 +158,18 @@ export async function createUser(email: string, password: string, role: string =
     return { success: false, message: createError?.message || "Failed to create user" };
   }
 
-  // 2. Create a profile entry
+  // 2. The user's profile is created by a trigger. Update it with the specified role.
   const { error: profileError } = await supabase
     .from("profiles")
-    .insert([{ id: createdUser.user.id, email, role }]);
+    .update({ role, email }) // Also update the email field
+    .eq("id", createdUser.user.id);
 
   if (profileError) {
-    console.error("Error creating profile:", profileError);
-    return { success: false, message: profileError.message };
+    console.error("Error updating profile for new user:", profileError);
+    return { success: false, message: `User created, but failed to set role: ${profileError.message}` };
   }
 
   revalidatePath("/admin/users");
-  return { success: true, message: `${role} account created successfully!` };
+  const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ');
+  return { success: true, message: `${capitalizedRole} account created successfully!` };
 }
