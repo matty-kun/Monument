@@ -15,8 +15,8 @@ interface Result {
   department_id: string;
   medal_type: string;
   points: number;
-  events: { name: string } | null; // Joined from events table
-  departments: { name: string, image_url: string | null } | null; // Joined from departments table
+  events: { name: string; icon: string | null } | null; // Joined from events table
+  departments: { name: string; image_url: string | null; abbreviation: string | null } | null; // Joined from departments table
 }
 
 export default function ManageResultsPage() {
@@ -37,8 +37,8 @@ export default function ManageResultsPage() {
         department_id,
         medal_type,
         points,
-        events!fk_results_event (name),
-        departments!fk_results_department (name, image_url)
+        events!fk_results_event (name, icon),
+        departments!fk_results_department (name, image_url, abbreviation)
       `)
       .order("id", { ascending: false }); // Order by ID for consistent display
 
@@ -124,7 +124,12 @@ export default function ManageResultsPage() {
             <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
               {results.map((result) => (
                 <tr key={result.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{result.events?.name || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{result.events?.icon || '🏅'}</span>
+                      <span>{result.events?.name || 'N/A'}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center gap-2">
                       {result.departments?.image_url ? (
@@ -138,7 +143,7 @@ export default function ManageResultsPage() {
                       ) : (
                         <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-300">{result.departments?.name?.substring(0, 2) || '??'}</div>
                       )}
-                      <span>{result.departments?.name || 'N/A'}</span>
+                      <span title={result.departments?.name || ''}>{result.departments?.abbreviation || result.departments?.name || 'N/A'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
