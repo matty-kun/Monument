@@ -27,6 +27,7 @@ export default function AddResultPage() {
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [competingDepartments, setCompetingDepartments] = useState<Department[]>([]);
   const [eventId, setEventId] = useState("");
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [departmentId, setDepartmentId] = useState("");
@@ -47,6 +48,34 @@ export default function AddResultPage() {
   useEffect(() => {
     fetchDropdownData();
   }, [fetchDropdownData]);
+
+  useEffect(() => {
+    const fetchCompetingDepartments = async () => {
+      if (!eventId) {
+        setCompetingDepartments([]);
+        setDepartmentId('');
+        return;
+      }
+
+      const { data: schedule, error } = await supabase
+        .from('schedules')
+        .select('departments')
+        .eq('event_id', eventId)
+        .single();
+
+      if (error || !schedule || !schedule.departments) {
+        console.warn(`No schedule found for event ID: ${eventId}. Showing all departments.`);
+        setCompetingDepartments(departments); // Fallback to all departments
+      } else {
+        const competingDeptNames = schedule.departments as string[];
+        const filteredDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
+        setCompetingDepartments(filteredDepts);
+      }
+      setDepartmentId(''); // Reset department selection when event changes
+    };
+
+    fetchCompetingDepartments();
+  }, [eventId, departments, supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,10 +159,11 @@ export default function AddResultPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
           <SingleSelectDropdown
-            options={departments}
+            options={competingDepartments}
             selectedValue={departmentId}
             onChange={setDepartmentId}
             placeholder="Select Department"
+            disabled={!eventId || competingDepartments.length === 0}
           />
         </div>
 
