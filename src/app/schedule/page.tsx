@@ -339,8 +339,8 @@ const SchedulePage: NextPage = () => {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200 p-4 md:p-6">
-      <div className="mb-6">
+    <>
+      <div className="mb-4">
         <h1 className="text-3xl md:text-4xl font-bold text-monument-green dark:text-green-400 mb-2">
           🗓️ Schedule
         </h1>
@@ -740,7 +740,7 @@ const SchedulePage: NextPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 

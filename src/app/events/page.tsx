@@ -69,7 +69,7 @@ const getCategoryIcon = (categoryName: string | null): string => {
 };
 
 export default function EventResultsPage() {
-  const [results, setResults] = useState<Result[]>([]);
+  const [results, setResults] = useState<ProcessedResult[]>([]);
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>([]);
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; icon?: string }[]>([]);
   const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null }[]>([]);
@@ -98,7 +98,7 @@ export default function EventResultsPage() {
       console.error("Error fetching event results:", error);
     } else if (data) {
       const typedData = data as unknown as Result[];
-      setResults(typedData);
+      
       const processed: ProcessedResult[] = typedData.map((r) => ({
         event_name: r.events?.name || "Unknown Event",
         category: r.events?.category || null,
@@ -111,7 +111,7 @@ export default function EventResultsPage() {
         department_image_url: r.departments?.image_url || undefined,
         medal_type: r.medal_type,
       }));
-
+      setResults(processed);
       // Fetch all categories to map UUIDs to names
       const { data: categoriesData, error: categoriesError } = await supabase
         .from("categories")
@@ -146,20 +146,7 @@ export default function EventResultsPage() {
   }, [allCategories]);
 
   useEffect(() => {
-    let processed: ProcessedResult[] = results.map((r: Result) => ({
-      event_name: r.events?.name || "Unknown Event",
-      // We map category ID to name later in `grouped` memo
-      category: getCategoryName(r.events?.category || null),
-      division: r.events?.division || null,
-      gender: r.events?.gender || null,
-      event_icon: r.events?.icon || null,
-      department_id: r.department_id,
-      department_name: r.departments?.name || "Unknown Dept",
-      department_abbreviation: r.departments?.abbreviation || "",
-      department_image_url: r.departments?.image_url || undefined,
-      medal_type: r.medal_type,
-    }));
-
+    let processed = [...results];
     if (categoryFilter !== "all") {
       processed = processed.filter(r => r.category === categoryFilter);
     }
@@ -170,19 +157,20 @@ export default function EventResultsPage() {
       processed = processed.filter(r => r.department_name === departmentFilter);
     }
     if (allDepartments.length === 0 && processed.length > 0) {
-      const departmentMap = new Map<string, { name: string; image_url: string | null }>();
+      const departmentMap = new Map<string, { name: string; image_url: string | null; abbreviation: string }>();
       results.forEach(r => {
-        if (r.departments && !departmentMap.has(r.departments.name)) {
-          departmentMap.set(r.departments.name, {
-            name: r.departments.name,
-            image_url: r.departments.image_url,
+        if (r.department_name && !departmentMap.has(r.department_name)) {
+          departmentMap.set(r.department_name, {
+            name: r.department_name,
+            image_url: r.department_image_url || null,
+            abbreviation: r.department_abbreviation,
           });
         }
       });
       setAllDepartments(Array.from(departmentMap.values()));
     }
     setFilteredResults(processed);
-  }, [results, categoryFilter, medalFilter, departmentFilter, getCategoryName]);
+  }, [results, categoryFilter, medalFilter, departmentFilter]);
 
   const grouped = useMemo(() => {
     return filteredResults.reduce((acc, result) => {
@@ -229,8 +217,8 @@ export default function EventResultsPage() {
   ];
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 dark:text-gray-200">
-      <div className="mb-8">
+    <>
+      <div className="mb-4">
         <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🏟️ Event Results</h1>
         <p className="text-gray-600 dark:text-gray-400">Competition results and winners by event</p>
       </div>
@@ -341,7 +329,7 @@ export default function EventResultsPage() {
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs mt-2">
                         {data.category && (
                           <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
-                            {data.category}
+                            {getCategoryName(data.category)}
                           </span>
                         )}
                         {data.division && data.division !== 'N/A' && (
@@ -426,7 +414,7 @@ export default function EventResultsPage() {
                           <div className="flex flex-wrap items-center gap-1 text-xs ml-2">
                             {data.category && (
                               <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
-                                {data.category}
+                                {getCategoryName(data.category)}
                               </span>
                             )}
                             {data.division && data.division !== 'N/A' && (
@@ -484,6 +472,6 @@ export default function EventResultsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
