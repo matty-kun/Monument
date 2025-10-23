@@ -50,31 +50,43 @@ export default function AddResultPage() {
   }, [fetchDropdownData]);
 
   useEffect(() => {
-    const fetchCompetingDepartments = async () => {
+    const fetchEventData = async () => {
       if (!eventId) {
         setCompetingDepartments([]);
         setDepartmentId('');
         return;
       }
 
-      const { data: schedule, error } = await supabase
-        .from('schedules')
-        .select('departments')
-        .eq('event_id', eventId)
-        .single();
+      // Fetch both schedule for competing depts and existing results for this event
+      const [scheduleRes, resultsRes] = await Promise.all([
+        supabase.from('schedules').select('departments').eq('event_id', eventId).single(),
+        supabase.from('results').select('department_id').eq('event_id', eventId)
+      ]);
 
-      if (error || !schedule || !schedule.departments) {
+      const { data: schedule, error: scheduleError } = scheduleRes;
+      const { data: existingResults, error: resultsError } = resultsRes;
+
+      if (resultsError) {
+        console.error("Error fetching existing results:", resultsError);
+      }
+
+      const awardedDeptIds = new Set((existingResults || []).map(r => r.department_id));
+
+      if (scheduleError || !schedule || !schedule.departments) {
         console.warn(`No schedule found for event ID: ${eventId}. Showing all departments.`);
-        setCompetingDepartments(departments); // Fallback to all departments
+        // Fallback to all departments, but still filter out those already awarded.
+        const availableDepts = departments.filter(dept => !awardedDeptIds.has(dept.id));
+        setCompetingDepartments(availableDepts);
       } else {
         const competingDeptNames = schedule.departments as string[];
-        const filteredDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
-        setCompetingDepartments(filteredDepts);
+        const competingDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
+        const availableDepts = competingDepts.filter(dept => !awardedDeptIds.has(dept.id));
+        setCompetingDepartments(availableDepts);
       }
       setDepartmentId(''); // Reset department selection when event changes
     };
-
-    fetchCompetingDepartments();
+    
+    fetchEventData();
   }, [eventId, departments, supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
