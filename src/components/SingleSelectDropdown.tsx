@@ -6,7 +6,7 @@ import Image from 'next/image';
 interface Option {
   id: string;
   name: string;
-  icon?: string;
+  icon?: React.ReactNode;
   image_url?: string;
 }
 

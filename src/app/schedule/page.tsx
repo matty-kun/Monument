@@ -12,7 +12,8 @@ import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { Card, CardContent } from "@/components/ui/Card";
-import { FaClock, FaMapMarkerAlt, FaTable, FaThLarge } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge } from "react-icons/fa";
+import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 
@@ -24,7 +25,7 @@ interface Department {
 }
 
 interface Event {
-  id?: string;
+  id: string;
   name: string;
   abbreviation?: string;
   icon: string | null;
@@ -36,12 +37,6 @@ interface Event {
 interface Category {
   id: string;
   name: string;
-}
-
-interface FilterEvent {
-  id: string;
-  name: string;
-  icon: string | null;
 }
 
 interface Venue {
@@ -81,7 +76,7 @@ const supabase = createClient();
 const SchedulePage: NextPage = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>([]);
-  const [allEvents, setAllEvents] = useState<FilterEvent[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
@@ -114,7 +109,7 @@ const SchedulePage: NextPage = () => {
         date,
         status,
         departments,
-        events ( name, icon, division, gender, category ),
+        events ( id, name, icon, division, gender, category ),
         venues ( name )
       `
       )
@@ -177,12 +172,12 @@ const SchedulePage: NextPage = () => {
   // ✅ Fetch filter options
   const fetchFilterOptions = useCallback(async () => {
     const [{ data: events }, { data: venues }, { data: categories }] = await Promise.all([
-      supabase.from("events").select("id, name, icon").order("name"),
+      supabase.from("events").select("id, name, icon, category, gender, division").order("category,name"),
       supabase.from("venues").select("id, name").order("name"),
       supabase.from("categories").select("id, name").order("name"),
     ]);
 
-    if (events) setAllEvents(events as FilterEvent[]);
+    if (events) setAllEvents(events as Event[]);
     if (venues) setAllVenues(venues);
     if (categories) setAllCategories(categories);
   }, []);
@@ -299,13 +294,41 @@ const SchedulePage: NextPage = () => {
     return `${month}-${day}-${year}`;
   };
 
-  const getCategoryName = useCallback((categoryId: string | null | undefined) => {
+  const getCategoryName = useCallback((categoryId: string | { name: string } | null | undefined) => {
     if (!categoryId) return null;
-    return allCategories.find(c => c.id === categoryId)?.name || null;
+    if (typeof categoryId === 'object' && categoryId !== null && 'name' in categoryId) {
+      return categoryId.name;
+    }
+    return allCategories.find(c => c.id === categoryId)?.name || categoryId.toString();
   }, [allCategories]);
 
   const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
   const totalCount = useMemo(() => schedules.length, [schedules]);
+
+  // Helper to format the full event name for display
+  const formatEventName = useCallback((event: Event) => {
+    if (!event) return 'N/A';
+    const parts = [event.name];
+    if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
+    if (event.gender && event.gender !== 'N/A') parts.push(`- ${event.gender}`);
+    return parts.join(' ');
+  }, []);
+
+  const groupedEvents = useMemo(() => {
+    if (!allEvents.length || !allCategories.length) return [];
+    const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
+      const categoryName = getCategoryName(event.category as string) || "Uncategorized";
+      if (!acc[categoryName]) acc[categoryName] = [];
+      acc[categoryName].push(event);
+      return acc;
+    }, {} as { [key: string]: Event[] });
+    
+    // Now, map the events within each group to have a formatted name for the dropdown
+    return Object.entries(groups).map(([category, events]) => ({
+      label: category,
+      options: events.map(event => ({ id: event.id, name: formatEventName(event), icon: event.icon ?? undefined }))
+    }));
+  }, [allEvents, allCategories, getCategoryName, formatEventName]);
 
   if (loading) {
     return (
@@ -366,109 +389,112 @@ const SchedulePage: NextPage = () => {
             {/* Status */}
             <div>
               <label className="block text-sm font-medium mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="finished">Finished</option>
-              </select>
+              <SingleSelectDropdown
+                options={[
+                  { id: "all", name: "All Statuses" },
+                  { id: "upcoming", name: "Upcoming", icon: "⏳" },
+                  { id: "ongoing", name: "Ongoing", icon: "🔴" },
+                  { id: "finished", name: "Finished", icon: "✅" },
+                ]}
+                selectedValue={statusFilter}
+                onChange={setStatusFilter}
+                placeholder="Select Status"
+              />
             </div>
 
             {/* Event */}
             <div>
               <label className="block text-sm font-medium mb-1">Event</label>
-              <select
-                value={eventFilter}
-                onChange={(e) => setEventFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All Events</option>
-                {allEvents.map((e) => (
-                  <option key={e.id || e.name} value={e.id}>
-                    {e.icon} {e.name}
-                  </option>
-                ))}
-              </select>
+              <SingleSelectDropdown
+                options={[{ id: "all", name: "All Events" }, ...groupedEvents]}
+                selectedValue={eventFilter}
+                onChange={setEventFilter}
+                placeholder="Select Event"
+              />
             </div>
 
             {/* Venue */}
             <div>
               <label className="block text-sm font-medium mb-1">Venue</label>
-              <select
-                value={venueFilter}
-                onChange={(e) => setVenueFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All Venues</option>
-                {allVenues.map((v) => (
-                  <option key={v.id || v.name} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+              <SingleSelectDropdown
+                options={[
+                  { id: "all", name: "All Venues" },
+                  ...allVenues.map((v) => ({ id: v.id!, name: v.name })),
+                ]}
+                selectedValue={venueFilter}
+                onChange={setVenueFilter}
+                placeholder="Select Venue"
+              />
             </div>
 
             {/* Department */}
             <div>
               <label className="block text-sm font-medium mb-1">Department</label>
-              <select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All Departments</option>
-                {allDepartments.map((d) => (
-                  <option key={d.id} value={d.name}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+              <SingleSelectDropdown
+                options={[
+                  { id: "all", name: "All Departments" },
+                  ...allDepartments.map((d) => ({
+                    id: d.name,
+                    name: d.name,
+                    image_url: d.image_url,
+                  })),
+                ]}
+                selectedValue={departmentFilter}
+                onChange={setDepartmentFilter}
+                placeholder="Select Department"
+              />
             </div>
 
             {/* Date Range */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Date From</label>
-              <input
-                type="date"
-                value={dateFromFilter}
-                onChange={(e) => setDateFromFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Date To</label>
-              <input
-                type="date"
-                value={dateToFilter}
-                onChange={(e) => setDateToFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Date Range</label>
+              <div className="flex items-center gap-2 ">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <FaCalendarAlt />
+                  </div>
+                  <input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="input pl-10"
+                    aria-label="Date From"
+                  />
+                </div>
+                <span className="text-gray-500 dark:text-gray-400">to</span>
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <FaCalendarAlt />
+                  </div>
+                  <input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className="input pl-10"
+                    aria-label="Date To"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Time Range */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Time From</label>
-              <input
-                type="time"
-                value={timeFromFilter}
-                onChange={(e) => setTimeFromFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Time To</label>
-              <input
-                type="time"
-                value={timeToFilter}
-                onChange={(e) => setTimeToFilter(e.target.value)}
-                className="w-full rounded border px-3 py-2 dark:bg-gray-700 dark:border-gray-600"
-              />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Time Range</label>
+              <div className="flex items-center gap-2 ">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <FaClock />
+                  </div>
+                  <input type="time" value={timeFromFilter} onChange={(e) => setTimeFromFilter(e.target.value)} className="input pl-10" />
+                </div>
+                <span className="text-gray-500 dark:text-gray-400">to</span>
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <FaClock />
+                  </div>
+                  <input type="time" value={timeToFilter} onChange={(e) => setTimeToFilter(e.target.value)} className="input pl-10" />
+                </div>
+              </div>
             </div>
           </div>
         )}
