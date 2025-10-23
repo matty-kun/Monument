@@ -10,9 +10,11 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
   const supabase = createClient();
   const [role, setRole] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
+    setMounted(true);
     const fetchRole = async () => {
       const {
         data: { user },
@@ -27,7 +29,7 @@ export default function Navbar() {
       }
     };
     fetchRole();
-  }, [supabase]);
+  }, [supabase, setMounted]);
 
 
   const navLinks = useMemo(() => [
@@ -93,9 +95,14 @@ export default function Navbar() {
                 📊 Dashboard
               </Link>
             )}
-            <ThemeSwitcher />
+            <ThemeSwitcher mounted={mounted} />
           </div>
         </div>
+        {mounted && (
+          <div className="md:hidden">
+            <ThemeSwitcher mounted={mounted} />
+          </div>
+        )}
       </div>
 
       {/* Bottom Navigation for Mobile */}

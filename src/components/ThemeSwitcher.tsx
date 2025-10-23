@@ -1,16 +1,13 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
 
-export const ThemeSwitcher = () => {
-  const [mounted, setMounted] = useState(false);
+interface ThemeSwitcherProps {
+  mounted: boolean;
+}
+
+export const ThemeSwitcher = ({ mounted }: ThemeSwitcherProps) => {
   const { resolvedTheme, setTheme } = useTheme();
-
-  // useEffect only runs on the client, so now we can safely show the UI
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return null;
