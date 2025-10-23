@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, use } from "react";
+import { useState, useEffect, useCallback, use, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from 'react-hot-toast';
 import SingleSelectDropdown from '../../../../../components/SingleSelectDropdown';
 import Breadcrumbs from '../../../../../components/Breadcrumbs';
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface Department {
   id: string;
@@ -16,6 +17,12 @@ interface Event {
   id: string;
   name: string;
   icon?: string;
+  category?: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +31,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [eventId, setEventId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [medalType, setMedalType] = useState("gold");
@@ -33,9 +41,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const fetchDropdownData = useCallback(async () => {
     const { data: deptData } = await supabase.from("departments").select("id, name, image_url");
-    const { data: eventData } = await supabase.from("events").select("id, name, icon").order("name");
+    const { data: eventData } = await supabase.from("events").select("id, name, icon, category").order("category,name");
+    const { data: categoriesData } = await supabase.from("categories").select("id, name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
+    if (categoriesData) setAllCategories(categoriesData);
   }, [supabase]);
 
   const fetchResult = useCallback(async () => {
@@ -94,11 +104,30 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }
   }
 
+  const groupedEvents = useMemo(() => {
+    if (!events.length || !allCategories.length) return [];
+
+    const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
+
+    const groups: { [key: string]: Event[] } = events.reduce((acc, event) => {
+      const categoryName = event.category ? categoryMap.get(event.category) || "Uncategorized" : "Uncategorized";
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
+      }
+      acc[categoryName].push(event);
+      return acc;
+    }, {} as { [key: string]: Event[] });
+
+    return Object.entries(groups).map(([category, events]) => ({
+      label: category, options: events
+    }));
+  }, [events, allCategories]);
+
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto mt-10 text-center dark:text-gray-300">
-        <p>Loading...</p>
-      </div>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <BouncingBallsLoader />
+      </div>    
     );
   }
 
@@ -123,7 +152,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Event</label>
             <SingleSelectDropdown
-              options={events.map(e => ({ id: e.id, name: e.name, icon: e.icon }))}
+              options={groupedEvents}
               selectedValue={eventId}
               onChange={setEventId}
               placeholder="Select Event"
@@ -142,43 +171,28 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">Medal Type</label>
-            <div className="grid grid-cols-3 gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="gold"
-                  checked={medalType === "gold"}
-                  onChange={(e) => {
-                    setMedalType(e.target.value);
-                  }}
-                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
-                />
-                <span className="badge badge-gold">🥇 Gold (1 pt)</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="silver"
-                  checked={medalType === "silver"}
-                  onChange={(e) => {
-                    setMedalType(e.target.value);
-                  }}
-                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
-                />
-                <span className="badge badge-silver">🥈 Silver (0.20 pt)</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="bronze"
-                  checked={medalType === "bronze"}
-                  onChange={(e) => {
-                    setMedalType(e.target.value);
-                  }}
-                  className="text-monument-green focus:ring-monument-green dark:bg-gray-700 dark:border-gray-600"
-                />
-                <span className="badge badge-bronze">🥉 Bronze (0.04 pt)</span>
-              </label>
+            <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 rounded-lg dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={() => setMedalType('gold')}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'gold' ? 'bg-yellow-400 text-yellow-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'}`}
+              >
+                🥇 Gold
+              </button>
+              <button
+                type="button"
+                onClick={() => setMedalType('silver')}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'silver' ? 'bg-gray-300 text-gray-800 shadow-sm font-bold dark:bg-gray-500 dark:text-gray-100' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'}`}
+              >
+                🥈 Silver
+              </button>
+              <button
+                type="button"
+                onClick={() => setMedalType('bronze')}
+                className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'bronze' ? 'bg-orange-400 text-orange-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'}`}
+              >
+                🥉 Bronze
+              </button>
             </div>
           </div>
 
