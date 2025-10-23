@@ -158,7 +158,7 @@ export default function ManageResultsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{result.points}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <div className="flex gap-2 justify-center">
-                      <Link href={`/admin/results/edit/${result.id}`} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm no-underline transition-colors">
+                      <Link href={`/admin/results/edit/${result.id}`} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium dark:text-black py-1 px-3 rounded text-sm no-underline transition-colors">
                         ✏️ Edit
                       </Link>
                       <button
