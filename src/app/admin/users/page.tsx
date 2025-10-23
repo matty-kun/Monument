@@ -39,14 +39,13 @@ export default function ManageUsersPage() {
     try {
       const { users: fetchedUsers, currentUserId } = await getUsers();
 
-      const filteredUsers = fetchedUsers.filter(
-        (user) => user.id !== currentUserId
+      const filteredUsers = fetchedUsers.filter(user => 
+        user.id !== currentUserId && (user.role === 'admin' || user.role === 'super_admin')
       );
 
-      const roleOrder: Record<"super_admin" | "admin" | "user", number> = {
+      const roleOrder: Record<"super_admin" | "admin", number> = {
         super_admin: 0,
         admin: 1,
-        user: 2,
       };
 
       filteredUsers.sort((a, b) => {
@@ -292,7 +291,6 @@ export default function ManageUsersPage() {
                         handleRoleChange(user.id, newRole)
                       }
                       options={[
-                        { id: "user", name: "User", icon: "👤" },
                         { id: "admin", name: "Admin", icon: "🛡️" },
                         { id: "super_admin", name: "Super Admin", icon: "👑" },
                       ]}

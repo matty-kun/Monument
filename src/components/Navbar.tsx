@@ -10,7 +10,6 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
   const supabase = createClient();
   const [role, setRole] = useState<string | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -49,7 +48,16 @@ export default function Navbar() {
     return `${baseClasses} text-gray-700 hover:bg-gray-100 hover:text-monument-green dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-green-400`;
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const getBottomNavLinkClass = (href: string) => {
+    const isActive = pathname === href || (href === "/admin/dashboard" && pathname.startsWith("/admin"));
+    const baseClasses = "flex flex-col items-center justify-center flex-1 text-center py-2 px-1 transition-colors";
+
+    if (isActive) {
+      return `${baseClasses} text-monument-green dark:text-green-400`;
+    }
+    return `${baseClasses} text-gray-500 hover:text-monument-green dark:text-gray-400 dark:hover:text-green-400`;
+  };
+
 
 
   return (
@@ -88,31 +96,26 @@ export default function Navbar() {
             <ThemeSwitcher />
           </div>
         </div>
-        <div className="md:hidden flex items-center">
-          <ThemeSwitcher />
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="ml-2 text-gray-700 dark:text-gray-300 hover:text-monument-green dark:hover:text-green-400 focus:outline-none">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-            </svg>
-          </button>
+      </div>
+
+      {/* Bottom Navigation for Mobile */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden">
+        <div className="flex justify-around items-center h-16">
+          {navLinks.map(({ href, label }) => (
+            <Link key={href} href={href} className={getBottomNavLinkClass(href)}>
+              {/* Extract emoji from label for icon, keep full label for text */}
+              <span className="text-xl">{label.split(' ')[0]}</span>
+              <span className="text-xs">{label.split(' ').slice(1).join(' ')}</span>
+            </Link>
+          ))}
+          {(role === "admin" || role === "super_admin") && (
+            <Link href="/admin/dashboard" className={getBottomNavLinkClass("/admin/dashboard")}>
+              <span className="text-xl">📊</span>
+              <span className="text-xs">Dashboard</span>
+            </Link>
+          )}
         </div>
       </div>
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map(({ href, label }) => (
-              <Link key={href} href={href} className={getLinkClass(href, true)} onClick={closeMenu}>
-                {label}
-              </Link>
-            ))}
-            {(role === "admin" || role === "super_admin") &&  (
-              <Link href="/admin/dashboard" className={`block px-3 py-2 rounded-md text-base font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 ${pathname.startsWith('/admin') ? 'ring-2 ring-white' : ''}`} onClick={closeMenu}>
-                📊 Dashboard
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
