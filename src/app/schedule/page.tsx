@@ -57,6 +57,8 @@ interface Schedule {
   status: "upcoming" | "ongoing" | "finished";
 }
 
+type ScheduleStatus = "ongoing" | "upcoming" | "finished";
+
 // Type for the raw data from Supabase before normalization
 type RawScheduleFromSupabase = Omit<
   Schedule,
@@ -113,7 +115,7 @@ const SchedulePage: NextPage = () => {
         venues ( name )
       `
       )
-      .order("date", { ascending: true });
+      .order("date", { ascending: true }).order("start_time", { ascending: true });
 
     if (error) {
       console.error("Error fetching schedules:", error);
@@ -162,8 +164,21 @@ const SchedulePage: NextPage = () => {
         ),
       }));
 
-      setSchedules(enriched as Schedule[]);
-      setFilteredSchedules(enriched as Schedule[]);
+      // Custom sort: ongoing > upcoming > finished
+      const statusOrder: Record<ScheduleStatus, number> = { ongoing: 1, upcoming: 2, finished: 3 };
+      const sorted = (enriched as Schedule[]).sort((a, b) => {
+        const statusA = getDynamicStatus(a).status;
+        const statusB = getDynamicStatus(b).status;
+        
+        const orderA = statusOrder[statusA] || 4;
+        const orderB = statusOrder[statusB] || 4;
+
+        if (orderA !== orderB) return orderA - orderB;
+
+        return new Date(a.date + 'T' + a.start_time).getTime() - new Date(b.date + 'T' + b.start_time).getTime();
+      });
+
+      setSchedules(sorted);
       setAllDepartments(deptData);
     }
     setLoading(false);
@@ -189,7 +204,7 @@ const SchedulePage: NextPage = () => {
   }, [fetchSchedules, fetchFilterOptions]);
 
   // ✅ Dynamic status
-  const getDynamicStatus = useCallback((schedule: Schedule) => {
+  const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
     if (!schedule.date || !schedule.start_time || !schedule.end_time)
       return {
         status: "upcoming",
@@ -366,12 +381,12 @@ const SchedulePage: NextPage = () => {
       {/* ---------- FILTERS ---------- */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🔍</span>
-            <h3 className="font-semibold text-base md:text-lg">Filters</h3>
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center justify-center text-xl leading-none">🔍</div>
+            <h3 className="font-semibold text-base md:text-lg leading-none">Filters</h3>
             <button
               onClick={clearFilters}
-              className="ml-2 md:ml-4 px-2 md:px-3 py-1 text-xs md:text-sm text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
+              className="ml-2 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
             >
               Clear
             </button>
