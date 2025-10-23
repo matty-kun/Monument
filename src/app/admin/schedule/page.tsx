@@ -8,6 +8,7 @@ import ConfirmModal from '../../../components/ConfirmModal';
 import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import { formatTime } from "@/lib/utils";
 
 interface Department {
   id: string;
@@ -22,6 +23,11 @@ interface Event {
   category?: string | null;
   gender?: string | null;
   division?: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 interface Venue {
@@ -43,18 +49,28 @@ interface Schedule {
   status: "upcoming" | "ongoing" | "finished";
 }
 
+const formatDate = (dateString: string) => {
+  if (!dateString) return "TBA";
+  // Adding T00:00:00 ensures the date isn't affected by timezone shifts
+  const date = new Date(dateString + 'T00:00:00');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
+};
+
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [allDepartments, setAllDepartments] = useState<Department[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [allVenues, setAllVenues] = useState<Venue[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [eventId, setEventId] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [venueId, setVenueId] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [date, setDate] = useState("");
-  const [status, setStatus] = useState<"upcoming" | "ongoing" | "finished">("upcoming");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
@@ -103,12 +119,22 @@ export default function SchedulePage() {
     }
   }, [supabase]);
 
+  const fetchAllCategories = useCallback(async () => {
+    const { data, error } = await supabase.from("categories").select("id, name").order("name");
+    if (error) {
+      toast.error("Could not fetch categories.");
+    } else if (data) {
+      setAllCategories(data);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     fetchSchedules();
     fetchAllDepartments();
     fetchAllEvents();
     fetchAllVenues();
-  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues]);
+    fetchAllCategories();
+  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues, fetchAllCategories]);
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -116,7 +142,7 @@ export default function SchedulePage() {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date, status })
+          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
@@ -140,7 +166,6 @@ export default function SchedulePage() {
     setStartTime("");
     setEndTime("");
     setDate("");
-    setStatus("upcoming");
     setEditingId(null);
   }
 
@@ -185,11 +210,15 @@ export default function SchedulePage() {
   }, []);
 
   const groupedEvents = useMemo(() => {
-    if (!allEvents.length) return [];
+    if (!allEvents.length || !allCategories.length) return [];
+    const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
+
     const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
-      const category = event.category || "Uncategorized";
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(event);
+      const categoryName = event.category ? categoryMap.get(event.category) || "Uncategorized" : "Uncategorized";
+      if (!acc[categoryName]) {
+        acc[categoryName] = [];
+      }
+      acc[categoryName].push(event);
       return acc;
     }, {} as { [key: string]: Event[] });
     
@@ -198,13 +227,51 @@ export default function SchedulePage() {
       label: category,
       options: events.map(event => ({ ...event, id: event.id, name: formatEventName(event) }))
     }));
-  }, [allEvents, formatEventName]);
+  }, [allEvents, allCategories, formatEventName]);
 
   const statusOptions = useMemo(() => [
     { id: 'upcoming', name: '🟡 Upcoming' },
     { id: 'ongoing', name: '🟢 Ongoing' },
     { id: 'finished', name: '🔴 Finished' },
   ], []);
+
+  const getDynamicStatus = useCallback((schedule: Schedule) => {
+    if (!schedule.date || !schedule.start_time || !schedule.end_time)
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+
+    const now = new Date();
+    const start = new Date(`${schedule.date}T${schedule.start_time}`);
+    const end = new Date(`${schedule.date}T${schedule.end_time}`);
+
+    if (isNaN(start.getTime()))
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+
+    if (now < start)
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+    if (now >= start && now <= end)
+      return {
+        status: "ongoing",
+        label: "Live Now",
+        color: "bg-green-500 animate-pulse",
+        icon: "🔴",
+      };
+    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
@@ -213,7 +280,6 @@ export default function SchedulePage() {
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          {/* Row 1: Event & Venue */}
           <SingleSelectDropdown
             options={groupedEvents}
             selectedValue={eventId}
@@ -240,26 +306,19 @@ export default function SchedulePage() {
           {/* Row 3: Start Time & End Time */}
           <div className="flex flex-col">
             <label htmlFor="start-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
-            <input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
+            <input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input" required />
           </div>
 
           <div className="flex flex-col">
             <label htmlFor="end-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
-            <input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
+            <input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="input" required />
           </div>
 
           {/* Row 4: Date & Status */}
           <div className="flex flex-col">
             <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-            <input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600" required />
+            <input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="input" required />
           </div>
-          
-          <SingleSelectDropdown
-            options={statusOptions}
-            selectedValue={status}
-            onChange={(value) => setStatus(value as "upcoming" | "ongoing" | "finished")}
-            placeholder="Select Status"
-          />
         </div>
         <button
           type="submit"
@@ -321,19 +380,19 @@ export default function SchedulePage() {
                   </div>
                 </td>
                   <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
-                  <td className="table-cell">{schedule.start_time} - {schedule.end_time}</td>
-                  <td className="table-cell">{schedule.date}</td>
+                  <td className="table-cell">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</td>
+                  <td className="table-cell">{formatDate(schedule.date)}</td>
                   <td className="table-cell">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      schedule.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
-                      schedule.status === 'ongoing' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
-                      'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                    }`}
-                  >
-                    {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
-                  </span>
-                </td>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        getDynamicStatus(schedule).status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                        getDynamicStatus(schedule).status === 'ongoing' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 animate-pulse' :
+                        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                      }`}
+                    >
+                      {getDynamicStatus(schedule).label}
+                    </span>
+                  </td>
                   <td className="table-cell text-center">
                   <div className="flex gap-2 justify-center">
                   <button
@@ -345,7 +404,6 @@ export default function SchedulePage() {
                       setStartTime(schedule.start_time);
                       setEndTime(schedule.end_time);
                       setDate(schedule.date);
-                      setStatus(schedule.status);
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
                   >
