@@ -64,7 +64,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
     let processed = [...results];
 
     if (categoryFilter !== "all") {
-      processed = processed.filter(r => getCategoryName(r.category) === categoryFilter);
+      processed = processed.filter(r => r.category === categoryFilter);
     }
     if (medalFilter !== "all") {
       processed = processed.filter(r => r.medal_type === medalFilter);
@@ -177,7 +177,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                 <SingleSelectDropdown
                   options={[
                     { id: 'all', name: 'All Categories' },
-                    ...allCategories.map(c => ({ id: c.name, name: c.name, icon: c.icon }))
+                    ...allCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))
                   ]}
                   selectedValue={categoryFilter}
                   onChange={(value) => setCategoryFilter(value)}
