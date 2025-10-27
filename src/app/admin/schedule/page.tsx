@@ -410,10 +410,12 @@ export default function SchedulePage() {
                 <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
                   {filteredSchedules.map((schedule) => (
                 <tr key={schedule.id} className="table-row dark:hover:bg-gray-700/50">
-                  <td className="table-cell flex items-center gap-2 dark:text-gray-100">
-                  <span className="text-xl">{schedule.events?.icon || '❓'}</span>
-                  <span>{schedule.events ? formatEventName(schedule.events) : 'N/A'}</span>
-                </td>
+                  <td className="table-cell dark:text-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{schedule.events?.icon || '❓'}</span>
+                      <span>{schedule.events ? formatEventName(schedule.events) : 'N/A'}</span>
+                    </div>
+                  </td>
                   <td className="table-cell">
                   <div className="flex flex-wrap items-center gap-2">
                     {schedule.departments.map((deptName, index) => {
