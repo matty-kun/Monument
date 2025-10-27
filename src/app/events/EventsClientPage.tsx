@@ -194,51 +194,61 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
           </button>
         </div>
 
-        {isFiltersOpen && (
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Category</label>
-                <SingleSelectDropdown
-                  options={[
-                    { id: 'all', name: 'All Categories' },
-                    ...allCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))
-                  ]}
-                  selectedValue={categoryFilter}
-                  onChange={(value) => setCategoryFilter(value)}
-                  placeholder="Select Category"
-                />
-              </div>
+        <AnimatePresence>
+          {isFiltersOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Category</label>
+                    <SingleSelectDropdown
+                      options={[
+                        { id: 'all', name: 'All Categories' },
+                        ...allCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))
+                      ]}
+                      selectedValue={categoryFilter}
+                      onChange={(value) => setCategoryFilter(value)}
+                      placeholder="Select Category"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Medal Type</label>
-                <SingleSelectDropdown
-                  options={medalOptions}
-                  selectedValue={medalFilter}
-                  onChange={(value) => setMedalFilter(value)}
-                  placeholder="Select Medal"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Medal Type</label>
+                    <SingleSelectDropdown
+                      options={medalOptions}
+                      selectedValue={medalFilter}
+                      onChange={(value) => setMedalFilter(value)}
+                      placeholder="Select Medal"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
-                <SingleSelectDropdown
-                  options={[
-                    { id: 'all', name: 'All Departments' },
-                    ...allDepartments.map(dept => ({ 
-                      id: dept.name, 
-                      name: dept.name, 
-                      image_url: dept.image_url || undefined 
-                    })),
-                  ]}
-                  selectedValue={departmentFilter}
-                  onChange={(value) => setDepartmentFilter(value)}
-                  placeholder="Select Department"
-                />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
+                    <SingleSelectDropdown
+                      options={[
+                        { id: 'all', name: 'All Departments' },
+                        ...allDepartments.map(dept => ({ 
+                          id: dept.name, 
+                          name: dept.name, 
+                          image_url: dept.image_url || undefined 
+                        })),
+                      ]}
+                      selectedValue={departmentFilter}
+                      onChange={(value) => setDepartmentFilter(value)}
+                      placeholder="Select Department"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
