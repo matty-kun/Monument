@@ -78,6 +78,7 @@ export default function SchedulePage() {
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [searchQuery, setSearchQuery] = useState("");
+  // cspell:ignore supabase
   const supabase = createClient();
 
   const fetchSchedules = useCallback(async () => {
