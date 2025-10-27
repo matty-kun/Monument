@@ -100,7 +100,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       toast.error(`Error updating result: ${error.message}`);
     } else {
       toast.success("Result updated successfully!");
-      router.push("/admin/results/manage"); // Redirect back to manage page
+      router.push("/admin/results"); // Redirect back to add result page
     }
   }
 
@@ -133,11 +133,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <div className="max-w-2xl mx-auto mt-10 dark:text-gray-200">
-      <Breadcrumbs items={[
-        { href: '/admin/dashboard', label: 'Dashboard' },
-        { href: '/admin/results/manage', label: 'Manage Results' },
-        { label: 'Edit Result' }
-      ]} />
+              <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { href: '/admin/results', label: 'Add Result' }, { label: 'Edit Result' }]} />
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">✏️ Edit Result</h1>
         <p className="text-gray-600 dark:text-gray-400">Modify the details of this competition result</p>
