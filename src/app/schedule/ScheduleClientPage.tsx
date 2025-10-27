@@ -7,10 +7,7 @@ import React, {
   useMemo,
   Fragment,
 } from "react";
-import Image from "next/image";
-import { createClient } from "@/utils/supabase/client";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
-import { Card, CardContent } from "@/components/ui/Card";
+import Image from "next/image";import { CardContent } from "@/components/ui/Card";
 import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge } from "react-icons/fa";
 import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,13 +70,12 @@ export default function ScheduleClientPage({
     initialCategories,
     initialDepartments
 }: ScheduleClientPageProps) {
-  const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
+  const [schedules] = useState<Schedule[]>(initialSchedules);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(initialSchedules);
-  const [allEvents, setAllEvents] = useState<Event[]>(initialEvents);
-  const [allVenues, setAllVenues] = useState<Venue[]>(initialVenues);
-  const [allDepartments, setAllDepartments] = useState<Department[]>(initialDepartments);
-  const [allCategories, setAllCategories] = useState<Category[]>(initialCategories);
-
+  const [allEvents] = useState<Event[]>(initialEvents);
+  const [allVenues] = useState<Venue[]>(initialVenues);
+  const [allDepartments] = useState<Department[]>(initialDepartments);
+  const [allCategories] = useState<Category[]>(initialCategories);
   // Filters
   const [statusFilter, setStatusFilter] = useState("all");
   const [eventFilter, setEventFilter] = useState("all");
@@ -556,7 +552,7 @@ export default function ScheduleClientPage({
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSchedules.length > 0 ? (
                     filteredSchedules.map((s) => {
-                      const { label, color, icon } = getDynamicStatus(s);
+                      const { label } = getDynamicStatus(s);
                       return (
                         <tr key={s.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
                           <td className="px-4 py-3 whitespace-nowrap">

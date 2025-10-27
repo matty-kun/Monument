@@ -24,17 +24,26 @@ interface LeaderboardRow {
   bronzes: number;
 }
 
+type LeaderboardRpcResponse = Omit<LeaderboardRow, 'total_points'>;
+
 export default async function ScoreboardPage() {
   const supabase = await createReadOnlyClient();
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {
-    const { data, error } = await supabase.rpc('get_leaderboard');
+    // Specify the type for the RPC response
+    const { data, error } = await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
     if (error || !data) {
       console.error("Error fetching leaderboard:", error);
       return [];
     }
     
-    const calculated = (data as any[]).map((row: any) => ({
+    // Type guard to ensure data is an array before using .map()
+    if (!Array.isArray(data)) {
+      console.error("Expected an array from get_leaderboard RPC, but got:", data);
+      return [];
+    }
+
+    const calculated = data.map((row) => ({
       ...row,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
     }));
