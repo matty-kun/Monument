@@ -29,6 +29,7 @@ interface Category {
 
 interface ResultWithDepartment {
   id: string;
+  event_id: string;
   department_id: string;
   medal_type: 'gold' | 'silver' | 'bronze';
   departments: Department | Department[] | null;
@@ -214,12 +215,12 @@ export default function AddResultPage() {
     setResultToDeleteId(null);
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     setResultToDeleteId(id);
     setShowConfirmModal(true);
   }
 
-  async function handleEdit(result: any) {
+  async function handleEdit(result: ResultWithDepartment) {
     console.log("Editing result:", result);
     setIsEditing(true);
     setEditingResultId(result.id);
