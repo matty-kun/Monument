@@ -81,6 +81,44 @@ export default function SchedulePage() {
   // cspell:ignore supabase
   const supabase = createClient();
 
+  const getDynamicStatus = useCallback((schedule: Schedule) => {
+    if (!schedule.date || !schedule.start_time || !schedule.end_time)
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+
+    const now = new Date();
+    const start = new Date(`${schedule.date}T${schedule.start_time}`);
+    const end = new Date(`${schedule.date}T${schedule.end_time}`);
+
+    if (isNaN(start.getTime()))
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+
+    if (now < start)
+      return {
+        status: "upcoming",
+        label: "Upcoming",
+        color: "bg-yellow-500",
+        icon: "⏳",
+      };
+    if (now >= start && now <= end)
+      return {
+        status: "ongoing",
+        label: "Live Now",
+        color: "bg-green-500 animate-pulse",
+        icon: "🔴",
+      };
+    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
+  }, []);
+
   const fetchSchedules = useCallback(async () => {
     const { data, error } = await supabase
       .from("schedules")
@@ -169,7 +207,7 @@ export default function SchedulePage() {
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date, status }]);
+        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: startTime, end_time: endTime, date }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
@@ -251,44 +289,6 @@ export default function SchedulePage() {
       options: events.map(event => ({ ...event, id: event.id, name: formatEventName(event) }))
     }));
   }, [allEvents, allCategories, formatEventName]);
-
-  const getDynamicStatus = useCallback((schedule: Schedule) => {
-    if (!schedule.date || !schedule.start_time || !schedule.end_time)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
-    const now = new Date();
-    const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.date}T${schedule.end_time}`);
-
-    if (isNaN(start.getTime()))
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
-    if (now < start)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-    if (now >= start && now <= end)
-      return {
-        status: "ongoing",
-        label: "Live Now",
-        color: "bg-green-500 animate-pulse",
-        icon: "🔴",
-      };
-    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
-  }, []);
 
   // ✅ Filtered Schedules for Search
   const filteredSchedules = useMemo(() => {
