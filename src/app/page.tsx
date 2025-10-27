@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createReadOnlyClient } from "@/utils/supabase/server";
 import { calculateTotalPoints } from "@/utils/scoring";
 import LeaderboardClientPage from "./LeaderboardClientPage";
 import type { Metadata } from "next";
@@ -25,7 +25,7 @@ interface LeaderboardRow {
 }
 
 export default async function ScoreboardPage() {
-  const supabase = await createClient();
+  const supabase = await createReadOnlyClient();
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {
     const { data, error } = await supabase.rpc('get_leaderboard');
