@@ -209,8 +209,8 @@ export default function ScheduleClientPage({
       </div>
 
       {/* Search and View Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-        <div className="relative w-full sm:max-w-sm order-2 sm:order-1">
+      <div className="flex flex-row justify-between items-center mb-4 gap-4">
+        <div className="relative w-full sm:max-w-sm">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
@@ -223,7 +223,7 @@ export default function ScheduleClientPage({
           />
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-end sm:self-center order-1 sm:order-2">
+        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
           <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaThLarge />
             Cards
