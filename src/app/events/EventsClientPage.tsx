@@ -53,6 +53,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
   const [medalFilter, setMedalFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   const getCategoryName = useCallback((categoryId: string | null) => {
@@ -62,6 +63,16 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
 
   useEffect(() => {
     let processed = [...results];
+
+    if (searchQuery) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      processed = processed.filter(r =>
+        r.event_name.toLowerCase().includes(lowercasedQuery) ||
+        r.department_name.toLowerCase().includes(lowercasedQuery) ||
+        r.department_abbreviation.toLowerCase().includes(lowercasedQuery) ||
+        (getCategoryName(r.category) || '').toLowerCase().includes(lowercasedQuery)
+      );
+    }
 
     if (categoryFilter !== "all") {
       processed = processed.filter(r => r.category === categoryFilter);
@@ -88,7 +99,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
     }
 
     setFilteredResults(processed);
-  }, [results, categoryFilter, medalFilter, departmentFilter, allDepartments.length, getCategoryName]);
+  }, [results, categoryFilter, medalFilter, departmentFilter, searchQuery, allDepartments.length, getCategoryName]);
 
   const grouped = useMemo(() => {
     return filteredResults.reduce((acc, result) => {
@@ -118,6 +129,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
     setCategoryFilter("all");
     setMedalFilter("all");
     setDepartmentFilter("all");
+    setSearchQuery("");
   };
 
   const medalOptions = [
@@ -134,9 +146,22 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
         <p className="text-gray-600 dark:text-gray-400">Competition results and winners by event</p>
       </div>
 
-      {/* View Toggle Switch */}
-      <div className="flex justify-end mb-4">
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700">
+      {/* Search and View Controls */}
+      <div className="flex flex-row justify-between items-center mb-4 gap-4">
+        <div className="relative w-full sm:max-w-xs">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by event, department, category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-10 w-full"
+          />
+        </div>
+
+        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
           <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaThLarge />
             Cards
@@ -217,7 +242,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
       </div>
 
       <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
-        📊 Showing {Object.keys(grouped).length} events with {filteredResults.length} results
+        📊 Showing {Object.keys(grouped).length} matching events with {filteredResults.length} results
       </div>
 
       <AnimatePresence mode="wait">
@@ -291,8 +316,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
             {Object.keys(grouped).length === 0 && (
               <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div className="text-6xl mb-4">🏟️</div>
-                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{results.length === 0 ? "No Event Results Yet" : "No Events Match Filters"}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{results.length === 0 ? "Check back soon for the latest winners!" : "Try adjusting your filter criteria."}</p>
+                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Results Match Your Search" : (results.length === 0 ? "No Event Results Yet" : "No Events Match Filters")}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : (results.length === 0 ? "Check back soon for the latest winners!" : "Try adjusting your filter criteria.")}</p>
               </div>
             )}
           </motion.div>
@@ -372,7 +397,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                       <td colSpan={4} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
                         <div className="flex flex-col items-center">
                           <div className="text-4xl mb-2">🏟️</div>
-                          <p>{results.length === 0 ? "No event results yet. Check back soon!" : "No events match the current filters. Try adjusting your filter criteria."}</p>
+                          <p>{searchQuery ? "No results match your search." : (results.length === 0 ? "No event results yet. Check back soon!" : "No events match the current filters. Try adjusting your filter criteria.")}</p>
                         </div>
                       </td>
                     </tr>
