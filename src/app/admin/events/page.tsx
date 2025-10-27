@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { FaTable, FaThLarge } from "react-icons/fa";
 
 interface Category {
   id: string;
@@ -34,6 +37,8 @@ export default function ManageEventsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();
 
   // ✅ Fetch Events
@@ -145,12 +150,12 @@ export default function ManageEventsPage() {
     setEventToDeleteId(null);
   }
 
-  const formatEventName = (event: Event) => {
+  const formatEventName = useCallback((event: Event) => {
     const parts = [event.name];
     if (event.division && event.division !== "N/A") parts.push(`(${event.division})`);
     if (event.gender && event.gender !== "N/A") parts.push(`- ${event.gender}`);
     return parts.join(" ");
-  };
+  }, []);
 
   // ✅ Dropdown Options
   const genderOptions = useMemo(
@@ -175,8 +180,23 @@ export default function ManageEventsPage() {
     []
   );
 
-  const getCategoryName = (id: string) =>
-    categories.find((c) => c.id === id)?.name || "N/A";
+  const getCategoryName = useCallback(
+    (id: string) => categories.find((c) => c.id === id)?.name || "N/A",
+    [categories]
+  );
+
+  // ✅ Filtered Events
+  const filteredEvents = useMemo(() => {
+    if (!searchQuery) {
+      return events;
+    }
+    const lowercasedQuery = searchQuery.toLowerCase();
+    return events.filter((event) => {
+      const eventName = formatEventName(event).toLowerCase();
+      const categoryName = getCategoryName(event.category).toLowerCase();
+      return eventName.includes(lowercasedQuery) || categoryName.includes(lowercasedQuery);
+    });
+  }, [events, searchQuery, formatEventName, getCategoryName]);
 
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
@@ -312,78 +332,139 @@ export default function ManageEventsPage() {
         )}
       </form>
 
-      {/* ✅ Event List */}
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Icon
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Event Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
-              {events.map((event) => (
-                <tr key={event.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-4 py-3 whitespace-nowrap text-xl">
-                    {event.icon || "❓"}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">
-                    {formatEventName(event)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">
-                    {getCategoryName(event.category)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-center">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => {
-                          setEditingId(event.id);
-                          setEventName(event.name);
-                          setSelectedCategory(event.category);
-                          setGender(event.gender || "N/A");
-                          setDivision(event.division || "N/A");
-                          setShowEmojiPicker(false); // Hide picker when editing
-                          setIcon(event.icon || "");
-                        }}
-                        className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
-                      >
-                        ✏️ Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(event.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white font-medium py-1 px-3 rounded text-sm transition-colors"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {events.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-3 text-center text-gray-500">
-                    No events yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Search and View Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+        <div className="relative w-full md:w-1/2">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search events or categories..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-10 w-full"
+          />
+        </div>
+        <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
+          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+            <FaTable />
+            Table
+          </button>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+            <FaThLarge />
+            Cards
+          </button>
         </div>
       </div>
+
+      <AnimatePresence mode="wait">
+        {viewMode === 'table' ? (
+          <motion.div
+            key="table-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="table-container"
+          >
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white dark:bg-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Icon</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Event Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+              <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
+                {filteredEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-3 whitespace-nowrap text-xl">{event.icon || "❓"}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{formatEventName(event)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">{getCategoryName(event.category)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => { setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A"); setShowEmojiPicker(false); setIcon(event.icon || ""); }} className="p-2 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors text-lg" title="Edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                          </button>
+                          <button onClick={() => handleDelete(event.id)} className="p-2 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors text-lg" title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {events.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-3 text-center text-gray-500">No events yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="card-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredEvents.map((event) => (
+              <Card key={event.id} className="flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-fadeIn">
+                <CardHeader className="p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{event.icon || '🏆'}</span>
+                    <div className="flex-1">
+                      <CardTitle className="text-base font-semibold leading-tight">{formatEventName(event)}</CardTitle>
+                      <CardDescription className="text-xs">{getCategoryName(event.category)}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <div className="bg-gray-50 dark:bg-gray-700/50 px-3 py-2 flex gap-2 justify-end rounded-b-lg mt-auto">
+                  <button
+                    onClick={() => {
+                      setEditingId(event.id);
+                      setEventName(event.name);
+                      setSelectedCategory(event.category);
+                      setGender(event.gender || "N/A");
+                      setDivision(event.division || "N/A");
+                      setShowEmojiPicker(false);
+                      setIcon(event.icon || "");
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors text-lg" title="Edit"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(event.id)}
+                    className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors text-lg" title="Delete"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                  </button>
+                </div>
+              </Card>
+            ))}
+            {filteredEvents.length === 0 && (
+              <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div className="text-6xl mb-4">🏆</div>
+                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Events Match Your Search" : "No Events Yet"}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new event using the form above."}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         isOpen={showConfirmModal}
