@@ -48,6 +48,8 @@ export default function AddResultPage() {
   const [awardedMedalTypes, setAwardedMedalTypes] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [resultToDeleteId, setResultToDeleteId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingResultId, setEditingResultId] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -64,18 +66,17 @@ export default function AddResultPage() {
     fetchDropdownData();
   }, [fetchDropdownData]);
 
-  const fetchEventData = useCallback(async () => {
-    if (!eventId) {
-      setCompetingDepartments([]);
-      setDepartmentId('');
+  const fetchEventData = useCallback(async (currentEventId?: string) => {
+    const idToFetch = currentEventId || eventId;
+    if (!idToFetch) {
       setCurrentEventResults([]);
       return;
     }
 
     // Fetch both schedule for competing depts and existing results for this event
     const [scheduleRes, resultsRes] = await Promise.all([
-      supabase.from('schedules').select('departments').eq('event_id', eventId).single(),
-      supabase.from('results').select('id, department_id, medal_type, departments (id, name, image_url, abbreviation)').eq('event_id', eventId)
+      supabase.from('schedules').select('departments').eq('event_id', idToFetch).single(),
+      supabase.from('results').select('id, event_id, department_id, medal_type, departments (id, name, image_url, abbreviation)').eq('event_id', idToFetch)
     ]);
 
     const { data: schedule, error: scheduleError } = scheduleRes;
@@ -95,17 +96,15 @@ export default function AddResultPage() {
     const awardedDeptIds = new Set((existingResults || []).map(r => r.department_id));
 
     if (scheduleError || !schedule || !schedule.departments) {
-      console.warn(`No schedule found for event ID: ${eventId}. Showing all departments.`);
+      console.warn(`No schedule found for event ID: ${idToFetch}. Showing all departments.`);
       const availableDepts = departments.filter(dept => !awardedDeptIds.has(dept.id));
       setCompetingDepartments(availableDepts);
     } else {
       const competingDeptNames = schedule.departments as string[];
       const competingDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
       const availableDepts = competingDepts.filter(dept => !awardedDeptIds.has(dept.id));
-      setCompetingDepartments(availableDepts);
-    }
-    setDepartmentId(''); // Reset department selection when event changes
-  }, [eventId, departments, supabase]);
+      setCompetingDepartments(competingDepts); // Set all competing departments first
+    }}, [supabase, eventId, departments]);
 
   useEffect(() => {
     fetchEventData();
@@ -119,29 +118,52 @@ export default function AddResultPage() {
       return;
     }
 
-    if (awardedMedalTypes.includes(medalType)) {
-      toast.error(`A ${medalType} medal has already been awarded for this event.`);
-      return;
-    }
+    if (isEditing) {
+      // Update existing result
+      const { error } = await supabase
+        .from("results")
+        .update({ department_id: departmentId, medal_type: medalType })
+        .eq("id", editingResultId);
 
-    // Calculate points based on medal type
-    let calculatedPoints = 0;
-    if (medalType === "gold") calculatedPoints = 1;
-    else if (medalType === "silver") calculatedPoints = 0.20;
-    else if (medalType === "bronze") calculatedPoints = 0.04;
-    const { error } = await supabase.from("results").insert([
-      {
-        event_id: eventId,
-        department_id: departmentId,
-        medal_type: medalType,
-        points: calculatedPoints,
-      },
-    ]);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Result added successfully!");
-      // Re-fetch data to update the UI
-      await fetchEventData();
+      if (error) {
+        toast.error(`Error updating result: ${error.message}`);
+      } else {
+        toast.success("Result updated successfully!");
+        setIsEditing(false);
+        setEditingResultId(null);
+        // Reset form fields
+        setEventId("");
+        setDepartmentId("");
+        setMedalType("gold");
+        fetchEventData();
+      }
+    } else {
+      // Add new result
+      if (awardedMedalTypes.includes(medalType)) {
+        toast.error(`A ${medalType} medal has already been awarded for this event.`);
+        return;
+      }
+
+      let calculatedPoints = 0;
+      if (medalType === "gold") calculatedPoints = 1;
+      else if (medalType === "silver") calculatedPoints = 0.20;
+      else if (medalType === "bronze") calculatedPoints = 0.04;
+
+      const { error } = await supabase.from("results").insert([
+        {
+          event_id: eventId,
+          department_id: departmentId,
+          medal_type: medalType,
+          points: calculatedPoints,
+        },
+      ]);
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Result added successfully!");
+        fetchEventData();
+      }
     }
   }
 
@@ -197,82 +219,107 @@ export default function AddResultPage() {
     setShowConfirmModal(true);
   }
 
+  async function handleEdit(result: any) {
+    console.log("Editing result:", result);
+    setIsEditing(true);
+    setEditingResultId(result.id);
+    setEventId(result.event_id);
+    await fetchEventData(); // Ensure competingDepartments are updated
+    setDepartmentId(result.department_id);
+    setMedalType(result.medal_type);
+  }
+
 
   return (
     <div className="max-w-2xl mx-auto dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">➕ Add Result</h1>
-          <p className="text-gray-600 dark:text-gray-400">Record competition results and award medals to departments</p>
-        </div>
-
-      </div>
+            <div className="mb-8 flex justify-between items-center">
+              <div>
+                <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">{isEditing ? '✏️ Edit Result' : '➕ Add Result'}</h1>
+                <p className="text-gray-600 dark:text-gray-400">{isEditing ? 'Modify the details of this competition result' : 'Record competition results and award medals to departments'}</p>
+              </div>
+            </div>
+            
+            <div className="card dark:bg-gray-800 dark:border-gray-700">
+              <div className="card-header dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">{isEditing ? 'Edit Result Form' : 'Competition Result Form'}</h2>
+              </div>
+              
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Event</label>
+                                    <SingleSelectDropdown
+                                      options={groupedEvents}
+                                      selectedValue={eventId}
+                                      onChange={setEventId}
+                                      placeholder="Select Event"
+                                      disabled={isEditing}
+                                    />              </div>
       
-      <div className="card dark:bg-gray-800 dark:border-gray-700">
-        <div className="card-header dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Competition Result Form</h2>
-        </div>
-        
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Event</label>
-          <SingleSelectDropdown
-            options={groupedEvents}
-            selectedValue={eventId}
-            onChange={setEventId}
-            placeholder="Select Event"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
-          <SingleSelectDropdown
-            options={competingDepartments}
-            selectedValue={departmentId}
-            onChange={setDepartmentId}
-            placeholder="Select Department"
-            disabled={!eventId || competingDepartments.length === 0}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">Medal Type</label>
-          <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 rounded-lg dark:bg-gray-900">
-            <button
-              type="button"
-              onClick={() => setMedalType('gold')}
-              disabled={awardedMedalTypes.includes('gold')}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'gold' ? 'bg-yellow-400 text-yellow-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('gold') ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              🥇 Gold
-            </button>
-            <button
-              type="button"
-              onClick={() => setMedalType('silver')}
-              disabled={awardedMedalTypes.includes('silver')}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'silver' ? 'bg-gray-300 text-gray-800 shadow-sm font-bold dark:bg-gray-500 dark:text-gray-100' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('silver') ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              🥈 Silver
-            </button>
-            <button
-              type="button"
-              onClick={() => setMedalType('bronze')}
-              disabled={awardedMedalTypes.includes('bronze')}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'bronze' ? 'bg-orange-400 text-orange-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('bronze') ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              🥉 Bronze
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary w-full text-lg py-3 dark:bg-green-600 dark:hover:bg-green-700"
-        >
-          🏆 Submit Result
-        </button>
-      </form>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
+                                    <SingleSelectDropdown
+                                      options={competingDepartments}
+                                      selectedValue={departmentId}
+                                      onChange={setDepartmentId}
+                                      placeholder="Select Department"
+                                      disabled={!eventId || competingDepartments.length === 0}
+                                    />              </div>
+      
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3 dark:text-gray-300">Medal Type</label>
+                <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 rounded-lg dark:bg-gray-900">
+                  <button
+                    type="button"
+                    onClick={() => setMedalType('gold')}
+                    disabled={awardedMedalTypes.includes('gold')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'gold' ? 'bg-yellow-400 text-yellow-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('gold') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    🥇 Gold
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMedalType('silver')}
+                    disabled={awardedMedalTypes.includes('silver')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'silver' ? 'bg-gray-300 text-gray-800 shadow-sm font-bold dark:bg-gray-500 dark:text-gray-100' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('silver') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    🥈 Silver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMedalType('bronze')}
+                    disabled={awardedMedalTypes.includes('bronze')}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${medalType === 'bronze' ? 'bg-orange-400 text-orange-900 shadow-sm font-bold' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700/50'} ${awardedMedalTypes.includes('bronze') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    🥉 Bronze
+                  </button>
+                </div>
+              </div>
+      
+              <div className="flex gap-2">
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditingResultId(null);
+                      setEventId("");
+                      setDepartmentId("");
+                      setMedalType("gold");
+                    }}
+                    className="btn btn-secondary w-full text-lg py-3 dark:bg-gray-600 dark:hover:bg-gray-700"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="btn btn-primary w-full text-lg py-3 dark:bg-green-600 dark:hover:bg-green-700"
+                >
+                  {isEditing ? '💾 Update Result' : '🏆 Submit Result'}
+                </button>
+              </div>
+            </form>
 
 
       </div>
@@ -280,7 +327,7 @@ export default function AddResultPage() {
 
       {eventId && currentEventResults.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 text-center">
             Current Winners for {events.find(e => e.id === eventId)?.name}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -290,7 +337,7 @@ export default function AddResultPage() {
                           if (!department) return null;
             
                           return (
-                            <Card key={result.id} className={`animate-fadeIn overflow-hidden text-center border-2 ${color} ${shadow} transition-all hover:shadow-xl`}>
+                            <Card key={result.id} className={`animate-fadeIn overflow-hidden text-center border-2 ${color} ${shadow} transition-all hover:shadow-xl hover:scale-105 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900`}>
                               <CardHeader className="p-4 relative">
                                 <div className="relative w-24 h-24 mx-auto mb-3">
                                   {department.image_url ? (
@@ -314,10 +361,9 @@ export default function AddResultPage() {
                                                     </CardTitle>
                                                     <CardDescription className="text-sm text-gray-500 dark:text-gray-400 capitalize">{result.medal_type} Medal</CardDescription>
                                                     <div className="absolute top-2 right-2 flex flex-col gap-2">
-                                                      <Link href={`/admin/results/edit/${result.id}`} className="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-black rounded-full flex items-center justify-center transition-colors">
-                                                        <span className="text-lg">✏️</span>
-                                                      </Link>
-                                                      <button onClick={() => handleDelete(result.id)} className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors">
+                                                                            <button onClick={() => handleEdit(result)} className="w-8 h-8 bg-yellow-400 hover:bg-yellow-500 text-black rounded-full flex items-center justify-center transition-colors">
+                                                                              <span className="text-lg">✏️</span>
+                                                                            </button>                                                      <button onClick={() => handleDelete(result.id)} className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors">
                                                         <span className="text-lg">🗑️</span>
                                                       </button>
                                                     </div>                              </CardHeader>
