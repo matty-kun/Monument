@@ -249,6 +249,19 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
             </motion.div>
           )}
         </AnimatePresence>
+        <AnimatePresence>
+          {isFiltersOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              {/* ... filter content ... */}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
