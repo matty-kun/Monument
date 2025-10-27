@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, Fragment } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { FaTable, FaThLarge } from "react-icons/fa";
@@ -43,9 +41,9 @@ interface EventsClientPageProps {
 }
 
 export default function EventsClientPage({ initialResults, initialCategories }: EventsClientPageProps) {
-  const [results, setResults] = useState<ProcessedResult[]>(initialResults);
+  const [results] = useState<ProcessedResult[]>(initialResults);
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>(initialResults);
-  const [allCategories, setAllCategories] = useState(initialCategories);
+  const [allCategories] = useState(initialCategories);
   const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null }[]>([]);
 
   // Filter states

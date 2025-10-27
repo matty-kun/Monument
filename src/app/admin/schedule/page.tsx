@@ -189,6 +189,7 @@ export default function SchedulePage() {
     setEndTime("");
     setDate("");
     setEditingId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleDelete(id: string) {
@@ -471,6 +472,7 @@ export default function SchedulePage() {
                       setStartTime(schedule.start_time);
                       setEndTime(schedule.end_time);
                       setDate(schedule.date);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
                   >

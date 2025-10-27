@@ -17,7 +17,7 @@ import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import ConfirmModal from "@/components/ConfirmModal";
 import { FiShield, FiUser } from 'react-icons/fi';
 import { FaEye, FaEyeSlash, FaTable, FaThLarge } from 'react-icons/fa';
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -330,7 +330,7 @@ export default function ManageUsersPage() {
                 <div className="p-4">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md text-2xl">
-                      {user.role === "super_admin" ? <FiShield className="text-purple-500" /> : <FiUser className="text-blue-500" />}
+                      <FiShield className={user.role === "super_admin" ? "text-purple-500" : "text-blue-500"} />
                     </div>
                     <div className="truncate">
                       <h3 className="font-bold text-base text-gray-800 dark:text-gray-100 truncate" title={user.email}>{user.email}</h3>

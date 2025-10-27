@@ -128,6 +128,14 @@ export default function ScheduleClientPage({
     return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
   }, []);
 
+  const getCategoryName = useCallback((categoryId: string | { name: string } | null | undefined) => {
+    if (!categoryId) return null;
+    if (typeof categoryId === 'object' && categoryId !== null && 'name' in categoryId) {
+      return categoryId.name;
+    }
+    return allCategories.find(c => c.id === categoryId)?.name || categoryId.toString();
+  }, [allCategories]);
+
   // ✅ Re-filter
   useEffect(() => {
     let filtered: Schedule[] = [...schedules];
@@ -187,6 +195,7 @@ export default function ScheduleClientPage({
     timeFromFilter,
     timeToFilter,
     getDynamicStatus,
+    getCategoryName,
   ]);
 
   // ✅ Clear filters
@@ -211,14 +220,6 @@ export default function ScheduleClientPage({
     const year = date.getFullYear();
     return `${month}-${day}-${year}`;
   };
-
-  const getCategoryName = useCallback((categoryId: string | { name: string } | null | undefined) => {
-    if (!categoryId) return null;
-    if (typeof categoryId === 'object' && categoryId !== null && 'name' in categoryId) {
-      return categoryId.name;
-    }
-    return allCategories.find(c => c.id === categoryId)?.name || categoryId.toString();
-  }, [allCategories]);
 
   const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
   const totalCount = useMemo(() => schedules.length, [schedules]);
