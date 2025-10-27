@@ -78,6 +78,9 @@ export default function ScheduleClientPage({
   const [allCategories] = useState<Category[]>(initialCategories);
   // Filters
   const [statusFilter, setStatusFilter] = useState("all");
+  const [eventFilter, setEventFilter] = useState("all");
+  const [venueFilter, setVenueFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [timeFromFilter, setTimeFromFilter] = useState("");
@@ -158,6 +161,20 @@ export default function ScheduleClientPage({
       );
     }
 
+    if (eventFilter !== "all") {
+      filtered = filtered.filter(s => s.event_id === eventFilter);
+    }
+
+    if (venueFilter !== "all") {
+      filtered = filtered.filter(s => s.venue_id === venueFilter);
+    }
+
+    if (departmentFilter !== "all") {
+      filtered = filtered.filter(s => 
+        s.departments.some(d => typeof d === 'string' ? d === departmentFilter : d.name === departmentFilter)
+      );
+    }
+
     if (dateFromFilter) filtered = filtered.filter((s) => s.date >= dateFromFilter);
     if (dateToFilter) filtered = filtered.filter((s) => s.date <= dateToFilter);
     if (timeFromFilter) filtered = filtered.filter((s) => s.start_time >= timeFromFilter);
@@ -168,6 +185,15 @@ export default function ScheduleClientPage({
     schedules,
     searchQuery,
     statusFilter,
+    eventFilter,
+    venueFilter,
+    departmentFilter,
+    dateFromFilter,
+    dateToFilter,
+    timeFromFilter,
+    timeToFilter,
+    getDynamicStatus,
+    getCategoryName,
   ]);
 
   // ✅ Clear filters
@@ -279,6 +305,49 @@ export default function ScheduleClientPage({
                                 selectedValue={statusFilter}
                                 onChange={setStatusFilter}
                                 placeholder="Select Status"
+                              />
+                            </div>
+
+                            {/* Event */}
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Event</label>
+                              <SingleSelectDropdown
+                                options={[{ id: "all", name: "All Events" }, ...allEvents.map(e => ({ id: e.id, name: e.name, icon: e.icon || undefined }))]}
+                                selectedValue={eventFilter}
+                                onChange={setEventFilter}
+                                placeholder="Select Event"
+                              />
+                            </div>
+
+                            {/* Venue */}
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Venue</label>
+                              <SingleSelectDropdown
+                                options={[
+                                  { id: "all", name: "All Venues" },
+                                  ...allVenues.map((v) => ({ id: v.id!, name: v.name })),
+                                ]}
+                                selectedValue={venueFilter}
+                                onChange={setVenueFilter}
+                                placeholder="Select Venue"
+                              />
+                            </div>
+
+                            {/* Department */}
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Department</label>
+                              <SingleSelectDropdown
+                                options={[
+                                  { id: "all", name: "All Departments" },
+                                  ...allDepartments.map((d) => ({
+                                    id: d.name,
+                                    name: d.name,
+                                    image_url: d.image_url,
+                                  })),
+                                ]}
+                                selectedValue={departmentFilter}
+                                onChange={setDepartmentFilter}
+                                placeholder="Select Department"
                               />
                             </div>
               
