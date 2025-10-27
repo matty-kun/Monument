@@ -39,7 +39,7 @@ export default function Navbar() {
   ], []);
 
   const getLinkClass = (href: string, isMobile: boolean = false) => {
-    const isActive = pathname === href;
+    const isActive = mounted && pathname === href;
     const baseClasses = isMobile 
       ? "block px-3 py-2 rounded-md text-base font-medium" 
       : "px-4 py-2 rounded-lg text-sm font-medium transition-colors";
@@ -51,7 +51,7 @@ export default function Navbar() {
   };
 
   const getBottomNavLinkClass = (href: string) => {
-    const isActive = pathname === href || (href === "/admin/dashboard" && pathname.startsWith("/admin"));
+    const isActive = mounted && (pathname === href || (href === "/admin/dashboard" && pathname.startsWith("/admin")));
     const baseClasses = "flex flex-col items-center justify-center flex-1 text-center py-2 px-1 transition-colors";
 
     if (isActive) {
