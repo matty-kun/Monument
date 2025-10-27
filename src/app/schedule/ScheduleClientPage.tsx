@@ -78,9 +78,6 @@ export default function ScheduleClientPage({
   const [allCategories] = useState<Category[]>(initialCategories);
   // Filters
   const [statusFilter, setStatusFilter] = useState("all");
-  const [eventFilter, setEventFilter] = useState("all");
-  const [venueFilter, setVenueFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [dateFromFilter, setDateFromFilter] = useState("");
   const [dateToFilter, setDateToFilter] = useState("");
   const [timeFromFilter, setTimeFromFilter] = useState("");
@@ -161,22 +158,6 @@ export default function ScheduleClientPage({
       );
     }
 
-    if (eventFilter !== "all") {
-      filtered = filtered.filter((s) => s.event_id === eventFilter);
-    }
-
-    if (venueFilter !== "all") {
-      filtered = filtered.filter((s) => s.venue_id === venueFilter);
-    }
-
-    if (departmentFilter !== "all") {
-      filtered = filtered.filter((s) =>
-        s.departments.some((d) =>
-          typeof d === "string" ? d === departmentFilter : d.name === departmentFilter
-        )
-      );
-    }
-
     if (dateFromFilter) filtered = filtered.filter((s) => s.date >= dateFromFilter);
     if (dateToFilter) filtered = filtered.filter((s) => s.date <= dateToFilter);
     if (timeFromFilter) filtered = filtered.filter((s) => s.start_time >= timeFromFilter);
@@ -187,15 +168,6 @@ export default function ScheduleClientPage({
     schedules,
     searchQuery,
     statusFilter,
-    eventFilter,
-    venueFilter,
-    departmentFilter,
-    dateFromFilter,
-    dateToFilter,
-    timeFromFilter,
-    timeToFilter,
-    getDynamicStatus,
-    getCategoryName,
   ]);
 
   // ✅ Clear filters
@@ -208,6 +180,7 @@ export default function ScheduleClientPage({
     setDateToFilter("");
     setTimeFromFilter("");
     setTimeToFilter("");
+    setSearchQuery("");
   };
   const clearAll = () => { clearFilters(); setSearchQuery(""); };
 
@@ -224,31 +197,6 @@ export default function ScheduleClientPage({
   const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
   const totalCount = useMemo(() => schedules.length, [schedules]);
 
-  // Helper to format the full event name for display
-  const formatEventName = useCallback((event: Event) => {
-    if (!event) return 'N/A';
-    const parts = [event.name];
-    if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
-    if (event.gender && event.gender !== 'N/A') parts.push(`- ${event.gender}`);
-    return parts.join(' ');
-  }, []);
-
-  const groupedEvents = useMemo(() => {
-    if (!allEvents.length || !allCategories.length) return [];
-    const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
-      const categoryName = getCategoryName(event.category as string) || "Uncategorized";
-      if (!acc[categoryName]) acc[categoryName] = [];
-      acc[categoryName].push(event);
-      return acc;
-    }, {} as { [key: string]: Event[] });
-    
-    // Now, map the events within each group to have a formatted name for the dropdown
-    return Object.entries(groups).map(([category, events]) => ({
-      label: category,
-      options: events.map(event => ({ id: event.id, name: formatEventName(event), icon: event.icon ?? undefined }))
-    }));
-  }, [allEvents, allCategories, getCategoryName, formatEventName]);
-
   return (
     <>
       <div className="mb-4">
@@ -262,13 +210,13 @@ export default function ScheduleClientPage({
 
       {/* Search and View Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-        <div className="relative w-full sm:max-w-xs order-2 sm:order-1">
+        <div className="relative w-full sm:max-w-sm order-2 sm:order-1">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
           <input
             type="text"
-            placeholder="Search by event, department, category..."
+            placeholder="Search by event or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input pl-10 w-full"
@@ -317,119 +265,75 @@ export default function ScheduleClientPage({
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className="overflow-hidden"
             >
-              <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Status */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
-                  <SingleSelectDropdown
-                    options={[
-                      { id: "all", name: "All Statuses" },
-                      { id: "upcoming", name: "Upcoming", icon: "⏳" },
-                      { id: "ongoing", name: "Ongoing", icon: "🔴" },
-                      { id: "finished", name: "Finished", icon: "✅" },
-                    ]}
-                    selectedValue={statusFilter}
-                    onChange={setStatusFilter}
-                    placeholder="Select Status"
-                  />
-                </div>
-
-                {/* Event */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Event</label>
-                  <SingleSelectDropdown
-                    options={[{ id: "all", name: "All Events" }, ...groupedEvents]}
-                    selectedValue={eventFilter}
-                    onChange={setEventFilter}
-                    placeholder="Select Event"
-                  />
-                </div>
-
-                {/* Venue */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Venue</label>
-                  <SingleSelectDropdown
-                    options={[
-                      { id: "all", name: "All Venues" },
-                      ...allVenues.map((v) => ({ id: v.id!, name: v.name })),
-                    ]}
-                    selectedValue={venueFilter}
-                    onChange={setVenueFilter}
-                    placeholder="Select Venue"
-                  />
-                </div>
-
-                {/* Department */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Department</label>
-                  <SingleSelectDropdown
-                    options={[
-                      { id: "all", name: "All Departments" },
-                      ...allDepartments.map((d) => ({
-                        id: d.name,
-                        name: d.name,
-                        image_url: d.image_url,
-                      })),
-                    ]}
-                    selectedValue={departmentFilter}
-                    onChange={setDepartmentFilter}
-                    placeholder="Select Department"
-                  />
-                </div>
-
-                {/* Date Range */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Date Range</label>
-                  <div className="flex items-center gap-2 ">
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaCalendarAlt />
-                      </div>
-                      <input
-                        type="date"
-                        value={dateFromFilter}
-                        onChange={(e) => setDateFromFilter(e.target.value)}
-                        className="input pl-10"
-                        aria-label="Date From"
-                      />
-                    </div>
-                    <span className="text-gray-500 dark:text-gray-400">to</span>
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaCalendarAlt />
-                      </div>
-                      <input
-                        type="date"
-                        value={dateToFilter}
-                        onChange={(e) => setDateToFilter(e.target.value)}
-                        className="input pl-10"
-                        aria-label="Date To"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Time Range */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Time Range</label>
-                  <div className="flex items-center gap-2 ">
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaClock />
-                      </div>
-                      <input type="time" value={timeFromFilter} onChange={(e) => setTimeFromFilter(e.target.value)} className="input pl-10" />
-                    </div>
-                    <span className="text-gray-500 dark:text-gray-400">to</span>
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <FaClock />
-                      </div>
-                      <input type="time" value={timeToFilter} onChange={(e) => setTimeToFilter(e.target.value)} className="input pl-10" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* Status */}
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Status</label>
+                              <SingleSelectDropdown
+                                options={[
+                                  { id: "all", name: "All Statuses" },
+                                  { id: "upcoming", name: "Upcoming", icon: "⏳" },
+                                  { id: "ongoing", name: "Ongoing", icon: "🔴" },
+                                  { id: "finished", name: "Finished", icon: "✅" },
+                                ]}
+                                selectedValue={statusFilter}
+                                onChange={setStatusFilter}
+                                placeholder="Select Status"
+                              />
+                            </div>
+              
+                            {/* Date Range */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium mb-1">Date Range</label>
+                              <div className="flex items-center gap-2 ">
+                                <div className="relative flex-1">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <FaCalendarAlt />
+                                  </div>
+                                  <input
+                                    type="date"
+                                    value={dateFromFilter}
+                                    onChange={(e) => setDateFromFilter(e.target.value)}
+                                    className="input pl-10"
+                                    aria-label="Date From"
+                                  />
+                                </div>
+                                <span className="text-gray-500 dark:text-gray-400">to</span>
+                                <div className="relative flex-1">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <FaCalendarAlt />
+                                  </div>
+                                  <input
+                                    type="date"
+                                    value={dateToFilter}
+                                    onChange={(e) => setDateToFilter(e.target.value)}
+                                    className="input pl-10"
+                                    aria-label="Date To"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+              
+                            {/* Time Range */}
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium mb-1">Time Range</label>
+                              <div className="flex items-center gap-2 ">
+                                <div className="relative flex-1">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <FaClock />
+                                  </div>
+                                  <input type="time" value={timeFromFilter} onChange={(e) => setTimeFromFilter(e.target.value)} className="input pl-10" />
+                                </div>
+                                <span className="text-gray-500 dark:text-gray-400">to</span>
+                                <div className="relative flex-1">
+                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <FaClock />
+                                  </div>
+                                  <input type="time" value={timeToFilter} onChange={(e) => setTimeToFilter(e.target.value)} className="input pl-10" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>            </motion.div>
           )}
         </AnimatePresence>
       </div>
