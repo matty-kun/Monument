@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, Fragment, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from 'react-hot-toast';
@@ -9,6 +10,7 @@ import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { formatTime } from "@/lib/utils";
+import { FaTable, FaThLarge, FaClock, FaMapMarkerAlt } from "react-icons/fa";
 
 interface Department {
   id: string;
@@ -74,6 +76,8 @@ export default function SchedulePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [searchQuery, setSearchQuery] = useState("");
   const supabase = createClient();
 
   const fetchSchedules = useCallback(async () => {
@@ -81,14 +85,31 @@ export default function SchedulePage() {
       .from("schedules")
       .select(`
         *, start_time, end_time,
-        events ( name, icon ),
+        events ( name, icon, gender, division ),
         venues ( name )
       `).order("date");
     if (error) {
       console.error("Error fetching schedules:", error);
       toast.error("Could not fetch schedules.");
     } else if (data) {
-      setSchedules(data);
+      const statusOrder: Record<string, number> = {
+        ongoing: 1,
+        upcoming: 2,
+        finished: 3,
+      };
+
+      const sortedData = data.sort((a, b) => {
+        const statusA = getDynamicStatus(a).status;
+        const statusB = getDynamicStatus(b).status;
+        const orderA = statusOrder[statusA] || 4;
+        const orderB = statusOrder[statusB] || 4;
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return new Date(a.date + "T" + a.start_time).getTime() - new Date(b.date + "T" + b.start_time).getTime();
+      });
+      setSchedules(sortedData);
     }
   }, [supabase]);
 
@@ -201,7 +222,7 @@ export default function SchedulePage() {
   }, [allDepartments]);
 
   // Helper to format the full event name for display
-  const formatEventName = useCallback((event: Event | { name: string; gender: string | null; division: string | null; }) => {
+  const formatEventName = useCallback((event: Event | { name: string; gender: string | null; division: string | null; } | null) => {
     if (!event) return 'N/A';
     const parts = [event.name];
     if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
@@ -273,6 +294,23 @@ export default function SchedulePage() {
     return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
   }, []);
 
+  // ✅ Filtered Schedules for Search
+  const filteredSchedules = useMemo(() => {
+    if (!searchQuery) {
+      return schedules;
+    }
+    const lowercasedQuery = searchQuery.toLowerCase();
+    return schedules.filter((schedule) => {
+      const eventName = formatEventName(schedule.events).toLowerCase();
+      const venueName = schedule.venues?.name.toLowerCase() || '';
+      const departmentNames = schedule.departments.join(' ').toLowerCase();
+
+      return eventName.includes(lowercasedQuery) ||
+             venueName.includes(lowercasedQuery) ||
+             departmentNames.includes(lowercasedQuery);
+    });
+  }, [schedules, searchQuery, formatEventName]);
+
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
@@ -328,10 +366,36 @@ export default function SchedulePage() {
         </button>
       </form>
 
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-gray-800">
-            <thead className="table-header bg-gray-50 dark:bg-gray-700">
+      {/* Search and View Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+        <div className="relative w-full md:w-1/2">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by event, venue, or department..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-10 w-full"
+          />
+        </div>
+        <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
+          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+            <FaTable /> Table
+          </button>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+            <FaThLarge /> Cards
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {viewMode === 'table' ? (
+          <motion.div key="table" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="table-container">
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white dark:bg-gray-800">
+                <thead className="table-header bg-gray-50 dark:bg-gray-700">
             <tr>
                 <th className="table-cell text-left dark:text-gray-300">Event</th>
                 <th className="table-cell text-left dark:text-gray-300">Departments</th>
@@ -342,8 +406,8 @@ export default function SchedulePage() {
                 <th className="table-cell text-center dark:text-gray-300">Actions</th>
             </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
-            {schedules.map((schedule) => (
+                <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
+                  {filteredSchedules.map((schedule) => (
                 <tr key={schedule.id} className="table-row dark:hover:bg-gray-700/50">
                   <td className="table-cell flex items-center gap-2 dark:text-gray-100">
                   <span className="text-xl">{schedule.events?.icon || '❓'}</span>
@@ -371,8 +435,8 @@ export default function SchedulePage() {
                               </div>
                             )}
                           </div>
-                          {index < schedule.departments.length - 1 && <div className="h-8 flex items-center justify-center">
-                            <span className="font-bold text-gray-400 dark:text-gray-500">vs</span>
+                          {index < schedule.departments.length - 1 && <div className="h-8 flex items-center justify-center px-1">
+                            <span className="font-black text-monument-green dark:text-green-500 italic">vs</span>
                           </div>}
                         </Fragment>
                       );
@@ -418,18 +482,97 @@ export default function SchedulePage() {
                   </div>
                 </td>
               </tr>
-            ))}
-            {schedules.length === 0 && (
+                  ))}
+                  {filteredSchedules.length === 0 && (
               <tr>
                   <td colSpan={7} className="table-cell text-center py-4 text-gray-500">
-                  No schedules yet.
+                      {searchQuery ? "No schedules match your search." : "No schedules yet."}
                 </td>
               </tr>
-            )}
+                  )}
           </tbody>
           </table>
         </div>
-      </div>
+          </motion.div>
+        ) : (
+          <motion.div key="card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSchedules.map((schedule) => {
+              const { label, color, icon } = getDynamicStatus(schedule);
+              return (
+                <div key={schedule.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
+                  <div className={`${color} px-4 py-2 flex items-center justify-between`}>
+                    <span className="text-white font-semibold text-sm flex items-center gap-2">
+                      <span>{icon}</span>{label}
+                    </span>
+                    <span className="text-white text-xs opacity-90 font-bold">{formatDate(schedule.date)}</span>
+                  </div>
+                  <div className="p-4 space-y-3 flex-grow flex flex-col">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-2xl">{schedule.events?.icon || '🏅'}</span>
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{schedule.events?.name || 'N/A'}</h3>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+                      <div className="flex items-center justify-center gap-4 flex-wrap">
+                        {schedule.departments.map((deptName, i) => {
+                          const dept = departmentMap.get(deptName);
+                          return (
+                            <Fragment key={dept ? dept.id : deptName}>
+                              <div className="flex flex-col items-center gap-1" title={dept?.name}>
+                                {dept?.image_url ? (
+                                  <Image src={dept.image_url} alt={dept.name} width={48} height={48} className="rounded-full w-12 h-12 object-cover border-2 border-gray-200 dark:border-gray-600" />
+                                ) : (
+                                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-sm font-bold text-gray-500 dark:text-gray-300">
+                                    {dept?.name.slice(0, 3) || deptName.slice(0, 3)}
+                                  </div>
+                                )}
+                              </div>
+                              {i < schedule.departments.length - 1 && <span className="text-monument-green dark:text-green-500 text-lg font-black self-center italic">vs</span>}
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                          <FaClock />
+                          <span>Time</span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                          <FaMapMarkerAlt />
+                          <span>Venue</span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">{schedule.venues?.name || "TBA"}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-2 flex gap-2 justify-end rounded-b-lg mt-auto">
+                    <button onClick={() => { setEditingId(schedule.id); setEventId(schedule.event_id); setSelectedDepartments(schedule.departments); setVenueId(schedule.venue_id); setStartTime(schedule.start_time); setEndTime(schedule.end_time); setDate(schedule.date); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors" title="Edit">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                    </button>
+                    <button onClick={() => handleDelete(schedule.id)} className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors" title="Delete">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredSchedules.length === 0 && (
+              <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div className="text-6xl mb-4">🗓️</div>
+                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Yet"}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new schedule using the form above."}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
