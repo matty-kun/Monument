@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/utils//supabase/client";
-import Link from "next/link";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -95,16 +94,17 @@ export default function AddResultPage() {
 
     const awardedDeptIds = new Set((existingResults || []).map(r => r.department_id));
 
+    let availableDepts: Department[];
     if (scheduleError || !schedule || !schedule.departments) {
       console.warn(`No schedule found for event ID: ${idToFetch}. Showing all departments.`);
-      const availableDepts = departments.filter(dept => !awardedDeptIds.has(dept.id));
+      availableDepts = departments.filter(dept => !awardedDeptIds.has(dept.id));
       setCompetingDepartments(availableDepts);
     } else {
       const competingDeptNames = schedule.departments as string[];
       const competingDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
-      const availableDepts = competingDepts.filter(dept => !awardedDeptIds.has(dept.id));
-      setCompetingDepartments(competingDepts); // Set all competing departments first
-    }}, [supabase, eventId, departments]);
+      availableDepts = competingDepts.filter(dept => !awardedDeptIds.has(dept.id) || isEditing);
+      setCompetingDepartments(availableDepts);
+    }}, [supabase, eventId, departments, isEditing]);
 
   useEffect(() => {
     fetchEventData();

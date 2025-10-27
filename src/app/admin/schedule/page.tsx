@@ -112,7 +112,7 @@ export default function SchedulePage() {
       });
       setSchedules(sortedData);
     }
-  }, [supabase]);
+  }, [supabase, getDynamicStatus]);
 
   const fetchAllDepartments = useCallback(async () => {
     const { data, error } = await supabase.from("departments").select("id, name, image_url").order("name");
@@ -251,12 +251,6 @@ export default function SchedulePage() {
       options: events.map(event => ({ ...event, id: event.id, name: formatEventName(event) }))
     }));
   }, [allEvents, allCategories, formatEventName]);
-
-  const statusOptions = useMemo(() => [
-    { id: 'upcoming', name: '🟡 Upcoming' },
-    { id: 'ongoing', name: '🟢 Ongoing' },
-    { id: 'finished', name: '🔴 Finished' },
-  ], []);
 
   const getDynamicStatus = useCallback((schedule: Schedule) => {
     if (!schedule.date || !schedule.start_time || !schedule.end_time)

@@ -6,13 +6,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 
 interface LeaderboardRow {
   id: string;
   name: string;
   image_url?: string;
   total_points: number;
+  golds: number;
+  silvers: number;
+  bronzes: number;
+}
+
+interface LeaderboardRPCData {
+  id: string;
+  name: string;
+  image_url?: string;
   golds: number;
   silvers: number;
   bronzes: number;
@@ -29,7 +37,7 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
   const fetchLeaderboard = useCallback(async () => {
     const { data, error } = await supabase.rpc("get_leaderboard");
     if (!error && data) {
-      const calculated = data.map((row: any) => ({
+      const calculated = data.map((row: LeaderboardRPCData) => ({
         ...row,
         total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
       }));
