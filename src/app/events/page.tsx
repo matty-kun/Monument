@@ -3,11 +3,11 @@ import EventsClientPage from "./EventsClientPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Event Results | SIDLAK",
+  title: "Event Results | MONUMENT",
   description:
     "Check the latest results, medal standings, and winners for all SIDLAK intramural events. Filter by category, medal, and department.",
   openGraph: {
-    title: "Event Results | SIDLAK",
+    title: "Event Results | MONUMENT",
     description: "Latest results and medal standings for SIDLAK intramurals.",
   },
 };

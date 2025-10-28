@@ -3,7 +3,7 @@ import ScheduleClientPage from "./ScheduleClientPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Event Schedule | SIDLAK",
+  title: "Event Schedule | MONUMENT",
   description:
     "View the full schedule for all SIDLAK intramural events, including dates, times, and venues. Stay updated on upcoming, live, and finished competitions.",
   openGraph: {

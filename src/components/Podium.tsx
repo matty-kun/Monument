@@ -6,6 +6,8 @@ import { calculateTotalPoints } from "@/utils/scoring";
 interface LeaderboardRow {
   id: string;
   name: string;
+  // Add abbreviation from the database if available
+  abbreviation: string | null; 
   image_url?: string;
   total_points: number;
   golds: number;
@@ -14,8 +16,23 @@ interface LeaderboardRow {
 }
 
 interface PodiumProps {
-  leaderboard: LeaderboardRow[];
+  // Allow for null entries in case of missing data
+  leaderboard: (LeaderboardRow | null)[];
 }
+
+const getAbbreviation = (name: string, dbAbbreviation: string | null) => {
+  // 1. Prioritize the abbreviation from the database
+  if (dbAbbreviation) return dbAbbreviation;
+  // 2. Add a special exception for College of Education
+  if (name === "College of Education") return "CED";
+  // 3. Fallback to generating from the name
+  return name
+    .split(' ')
+    .filter(w => !['of', 'and', 'the'].includes(w.toLowerCase()))
+    .map(w => w[0])
+    .join('')
+    .toUpperCase();
+};
 
 export default function Podium({ leaderboard }: PodiumProps) {
   // Ensure we always have at least empty objects for podium positions
@@ -72,7 +89,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           </div>
           <div className="text-center mb-4">
             <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {topThree[0].name.split(' ').filter(w => !['of', 'and', 'the'].includes(w.toLowerCase())).map(w => w[0]).join('').toUpperCase()}
+              {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
             </div>
             <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[0].name}</div>
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
@@ -109,7 +126,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           </div>
           <div className="text-center mb-4">
             <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {topThree[1].name.split(' ').filter(w => !['of', 'and', 'the'].includes(w.toLowerCase())).map(w => w[0]).join('').toUpperCase()}
+              {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
             </div>
             <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[1].name}</div>
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
@@ -146,7 +163,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
           </div>
           <div className="text-center mb-4">
             <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {topThree[2].name.split(' ').filter(w => !['of', 'and', 'the'].includes(w.toLowerCase())).map(w => w[0]).join('').toUpperCase()}
+              {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
             </div>
             <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[2].name}</div>
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">

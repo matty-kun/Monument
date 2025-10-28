@@ -10,6 +10,7 @@ import { calculateTotalPoints } from "@/utils/scoring";
 interface LeaderboardRow {
   id: string;
   name: string;
+  abbreviation: string | null;
   image_url?: string;
   total_points: number;
   golds: number;
@@ -20,6 +21,7 @@ interface LeaderboardRow {
 interface LeaderboardRPCData {
   id: string;
   name: string;
+  abbreviation: string | null;
   image_url?: string;
   golds: number;
   silvers: number;

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://themonument.vercel.app'; // Replace with your actual domain if different
+  const baseUrl = 'https://themonument.vercel.app';
 
   return [
     {

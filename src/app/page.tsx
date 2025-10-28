@@ -4,10 +4,10 @@ import LeaderboardClientPage from "./LeaderboardClientPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Podium & Leaderboard | SIDLAK",
+  title: "Podium & Leaderboard | MONUMENT",
   description: "See the real-time department standings, medal counts, and total points for the SIDLAK intramurals. Who will take the podium?",
   openGraph: {
-    title: "Podium & Leaderboard | SIDLAK",
+    title: "Podium & Leaderboard | MONUMENT",
     description: "Real-time department standings for the SIDLAK intramurals.",
   },
 };
@@ -17,6 +17,7 @@ export const revalidate = 60; // Revalidate data every 60 seconds
 interface LeaderboardRow {
   id: string;
   name: string;
+  abbreviation: string | null;
   image_url?: string;
   total_points: number;
   golds: number;
