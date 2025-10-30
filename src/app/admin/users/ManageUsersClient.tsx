@@ -76,6 +76,18 @@ export default function ManageUsersClient() {
 
     if (result.success) {
       toast.success(result.message, { id: toastId });
+      // Re-sort the list to reflect the new role order
+      setUsers((currentUsers) =>
+        [...currentUsers].sort((a, b) => {
+          const roleOrder: Record<string, number> = {
+            super_admin: 0,
+            admin: 1,
+          };
+          const aRole = roleOrder[a.role] ?? 2;
+          const bRole = roleOrder[b.role] ?? 2;
+          return aRole - bRole;
+        })
+      );
     } else {
       toast.error(`Failed: ${result.message}`, { id: toastId });
       setUsers(originalUsers);
