@@ -93,9 +93,15 @@ export default function ManageUsersClient() {
       toast.success(result.message, { id: toastId });
       if (result.user) {
         setUsers((prevUsers) =>
-          [result.user!, ...prevUsers].sort((a, b) =>
-            a.email.localeCompare(b.email)
-          )
+          [result.user!, ...prevUsers].sort((a, b) => {
+            const roleOrder: Record<string, number> = {
+              super_admin: 0,
+              admin: 1,
+            };
+            const aRole = roleOrder[a.role] ?? 2;
+            const bRole = roleOrder[b.role] ?? 2;
+            return aRole - bRole;
+          })
         );
       }
       setNewEmail("");
