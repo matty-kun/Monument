@@ -2,12 +2,20 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
+ * Utility to safely get the cookies store.
+ * Works on both sync and async Next.js environments.
+ */
+async function getCookieStore() {
+  return await Promise.resolve(cookies());
+}
+
+/**
  * Creates a Supabase client that uses the user's cookies for authentication.
- * Works on both sync and async `cookies()` versions of Next.js.
+ * ✅ Safe for use inside Server Actions and Route Handlers.
+ * ❌ Not for use directly inside React Server Components (layouts/pages).
  */
 export async function createClient() {
-  // ✅ Handle both sync and async behavior
-  const cookieStore = await Promise.resolve(cookies());
+  const cookieStore = await getCookieStore();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,9 +26,17 @@ export async function createClient() {
           return cookieStore.getAll();
         },
         setAll(cookieList) {
-          cookieList.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options as CookieOptions);
-          });
+          try {
+            // ✅ Only allowed inside Server Actions or Route Handlers
+            cookieList.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options as CookieOptions);
+            });
+          } catch {
+            // ⚠️ Ignore cookie writes when used in Server Components
+            console.warn(
+              "Attempted to modify cookies outside a Server Action or Route Handler."
+            );
+          }
         },
       },
     }
@@ -28,10 +44,12 @@ export async function createClient() {
 }
 
 /**
- * Creates a read-only Supabase client (no cookie writes).
+ * Creates a read-only Supabase client.
+ * ✅ Safe for Server Components (layouts, pages).
+ * 🚫 Cannot refresh sessions or set cookies.
  */
 export async function createReadOnlyClient() {
-  const cookieStore = await Promise.resolve(cookies());
+  const cookieStore = await getCookieStore();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,7 +60,7 @@ export async function createReadOnlyClient() {
           return cookieStore.getAll();
         },
         setAll() {
-          // No cookie writes in read-only client
+          // ✅ Do nothing — prevents cookie write errors in Server Components
         },
       },
     }
@@ -51,7 +69,7 @@ export async function createReadOnlyClient() {
 
 /**
  * Creates a Supabase client with the Service Role key.
- * Use this only in server-side code — it bypasses RLS.
+ * ⚠️ Use ONLY on the server. Bypasses RLS (full admin privileges).
  */
 export function createServiceClient() {
   return createServerClient(
@@ -63,7 +81,7 @@ export function createServiceClient() {
           return [];
         },
         setAll() {
-          // No-op for service clients
+          // no-op — service clients don’t set cookies
         },
       },
     }
