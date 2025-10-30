@@ -134,16 +134,23 @@ export default function ManageEventsPage() {
   async function handleConfirmDelete() {
     if (!eventToDeleteId) return;
 
-    const { error } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", eventToDeleteId);
+    const toastId = toast.loading("Deleting event...");
 
-    if (error) {
-      toast.error("Error deleting event.");
-    } else {
-      toast.success("Event deleted successfully!");
-      fetchEvents();
+    try {
+      // Attempt to delete the event. If this fails due to a foreign key,
+      // the error message will tell us which table is dependent.
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", eventToDeleteId);
+
+      if (error) throw error;
+
+      toast.success("Event deleted successfully!", { id: toastId });
+      fetchEvents(); // Refresh the list
+    } catch (error: any) {
+      console.error("Error deleting event:", error);
+      toast.error(`Deletion failed: ${error.message}`, { id: toastId });
     }
 
     setShowConfirmModal(false);
