@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+
+interface Result {
+  id: string;
+  medal_type: "gold" | "silver" | "bronze";
+  events: {
+    name: string;
+    icon: string;
+  };
+}
 
 interface TeamHoverCardProps {
   teamId: string;
@@ -11,94 +21,119 @@ interface TeamHoverCardProps {
 }
 
 export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [history, setHistory] = useState<any[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [history, setHistory] = useState<Result[]>([]);
+  const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (isVisible && history.length === 0) {
+      const fetchHistory = async () => {
+        const { data, error } = await supabase
+          .from("results")
+          .select(`
+            id, 
+            medal_type, 
+            events (
+              name, 
+              icon
+            )
+          `)
+          .eq("department_id", teamId)
+          .order("medal_type", { ascending: true })
+          .limit(10);
+        
+        if (data) {
+          // Client-side sort to ensure Gold > Silver > Bronze
+          const medalPriority = { gold: 1, silver: 2, bronze: 3 };
+          const sorted = [...data].sort((a: any, b: any) => 
+            medalPriority[a.medal_type as keyof typeof medalPriority] - 
+            medalPriority[b.medal_type as keyof typeof medalPriority]
+          );
+          setHistory(sorted as any);
+        }
+      };
+      fetchHistory();
+    }
+  }, [isVisible, teamId, history.length, supabase]);
 
   const handleMouseEnter = () => {
-    timerRef.current = setTimeout(() => {
-      setIsOpen(true);
-      fetchHistory();
-    }, 400); // 400ms delay before showing tooltip to avoid flashes
+    // 400ms delay to prevent flickering while moving mouse fast
+    hoverTimeout.current = setTimeout(() => setIsVisible(true), 400);
   };
 
   const handleMouseLeave = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setIsOpen(false);
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    setIsVisible(false);
   };
 
-  const fetchHistory = async () => {
-    if (history || loading) return;
-    setLoading(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("results")
-      .select(`
-        medal_type,
-        events (
-          name,
-          icon
-        )
-      `)
-      .eq("department_id", teamId)
-      // Sort in JS, just get top 5 latest? Results don't have created_at usually, we just take top 5
-      .limit(5);
-      
-    // Order medals roughly: gold -> silver -> bronze
-    const sorted = (data || []).sort((a, b) => {
-      const val = { gold: 3, silver: 2, bronze: 1 };
-      return val[b.medal_type as keyof typeof val] - val[a.medal_type as keyof typeof val];
-    });
-
-    setHistory(sorted);
-    setLoading(false);
-  };
-
-  // For touch devices, we rely purely on the Link wrapping it, since hover doesn't activate.
   return (
     <div 
-      className="relative flex items-center justify-center w-full group cursor-pointer"
-      onMouseEnter={handleMouseEnter}
+      className="relative block" 
+      onMouseEnter={handleMouseEnter} 
       onMouseLeave={handleMouseLeave}
     >
-      <Link href={`/teams/${teamId}`} className="w-full flex justify-center items-center">
+      <Link href={`/teams/${teamId}`}>
         {children}
       </Link>
-      
+
       <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-[100] bottom-full mb-3 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 pointer-events-none"
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 p-5 pointer-events-none"
           >
-            <div className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-2 border-b border-gray-100 dark:border-gray-700 pb-1">
-              🏆 Recent Medals Glimpse
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🏆</span>
+              <h4 className="text-xs uppercase font-black text-gray-400 tracking-widest">Recent Medals</h4>
             </div>
-            {loading ? (
-              <div className="text-xs text-gray-500 py-2 flex justify-center">
-                <div className="w-4 h-4 border-2 border-monument-primary border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : history && history.length > 0 ? (
-              <ul className="space-y-1 mt-2">
-                {history.map((item, idx) => (
-                  <li key={idx} className="text-xs flex items-center gap-2">
-                    <span className="text-base">{item.medal_type === 'gold' ? '🥇' : item.medal_type === 'silver' ? '🥈' : '🥉'}</span>
-                    <span className="truncate text-gray-600 dark:text-gray-300 font-medium">{item.events?.icon} {item.events?.name}</span>
-                  </li>
+
+            {history.length > 0 ? (
+              <div className="space-y-3">
+                {history.slice(0, 3).map((res) => (
+                  <div key={res.id} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-2 max-w-[150px]">
+                      <span className="text-lg grayscale-0">{res.events?.icon || "🏅"}</span>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate">{res.events?.name}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className={`text-[10px] font-black uppercase tracking-tighter ${
+                        res.medal_type === 'gold' ? 'text-yellow-600' : 
+                        res.medal_type === 'silver' ? 'text-gray-400' : 
+                        'text-orange-600'
+                      }`}>
+                        {res.medal_type === 'gold' && "🥇 GOLD"}
+                        {res.medal_type === 'silver' && "🥈 SILVER"}
+                        {res.medal_type === 'bronze' && "🥉 BRONZE"}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+                
+                {history.length > 3 && (
+                  <div className="pt-2 text-center">
+                    <span className="text-[10px] font-medium text-gray-400">+ {history.length - 3} more achievements</span>
+                  </div>
+                )}
+                
+                <div className="mt-4 pt-3 border-t border-gray-50 dark:border-gray-800 flex justify-center">
+                   <div className="text-[10px] font-black text-monument-primary uppercase tracking-widest flex items-center gap-1">
+                      Click to view all history 
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                   </div>
+                </div>
+              </div>
             ) : (
-              <div className="text-xs text-gray-500 py-2 text-center italic">No medals won yet.</div>
+              <div className="flex flex-col items-center py-4 space-y-2">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[10px] font-bold text-gray-400 animate-pulse uppercase tracking-widest">Loading Records...</span>
+              </div>
             )}
-            <div className="mt-3 text-[10px] text-center text-monument-primary font-bold uppercase tracking-wider bg-gray-50 dark:bg-gray-700/50 py-1 rounded">
-              Click to view all history
-            </div>
-            {/* Arrow */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white dark:border-t-gray-800 drop-shadow-md" />
+            
+            {/* Tooltip Arrow */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-900 rotate-45 border-r border-b border-gray-100 dark:border-gray-800 -mt-2 shadow-sm"></div>
           </motion.div>
         )}
       </AnimatePresence>
