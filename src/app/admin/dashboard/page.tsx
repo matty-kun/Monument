@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import { Settings, LogOut, Medal, Flag, CalendarDays, Building2, Tags, MapPin, Users } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function AdminDashboardPage() {
   }
 
   // ✅ Helper for repeated dashboard cards
-  const renderCard = (href: string, icon: string, title: string, desc: string) => (
+  const renderCard = (href: string, icon: React.ReactNode, title: string, desc: string) => (
     <div
       onClick={() => handleCardClick(href)}
       className="card hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center group no-underline cursor-pointer dark:bg-gray-800 dark:hover:bg-gray-700"
@@ -75,7 +76,9 @@ export default function AdminDashboardPage() {
         </div>
       ) : (
         <>
-          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{icon}</div>
+          <div className="text-4xl mb-4 group-hover:scale-110 transition-transform flex justify-center">
+            {icon}
+          </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2 dark:text-white">{title}</h3>
           <p className="text-gray-600 text-sm dark:text-gray-300">{desc}</p>
         </>
@@ -88,15 +91,15 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-monument-green mb-2">
-            ⚙️ Admin Dashboard
+          <h1 className="flex items-center gap-3 text-4xl font-bold text-monument-green mb-2">
+            <Settings className="w-10 h-10" /> Admin Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             Manage your intramurals system
           </p>
         </div>
-        <button onClick={handleLogout} className="btn btn-danger">
-          🚪 Logout
+        <button onClick={handleLogout} className="btn btn-danger flex items-center gap-2">
+          <LogOut className="w-5 h-5"/> Logout
         </button>
       </div>
 
@@ -104,37 +107,37 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {renderCard(
           "/admin/results",
-          "➕",
+          <Medal className="w-12 h-12 text-yellow-500" />,
           "Add Results",
           "Record competition results and award medals"
         )}
         {renderCard(
           "/admin/events",
-          "🏟️",
+          <Flag className="w-12 h-12 text-blue-500" />,
           "Manage Events",
           "Create and organize competition events"
         )}
         {renderCard(
           "/admin/schedule",
-          "🗓️",
+          <CalendarDays className="w-12 h-12 text-green-500" />,
           "Manage Schedule",
           "Manage the schedule of events"
         )}
         {renderCard(
           "/admin/departments",
-          "🏫",
+          <Building2 className="w-12 h-12 text-purple-500" />,
           "Manage Departments",
           "Add and organize participating departments"
         )}
         {renderCard(
           "/admin/categories",
-          "🏷️",
+          <Tags className="w-12 h-12 text-pink-500" />,
           "Manage Categories",
           "Organize events into different categories"
         )}
         {renderCard(
           "/admin/venues",
-          "📍",
+          <MapPin className="w-12 h-12 text-red-500" />,
           "Manage Venues",
           "Add and organize event venues"
         )}
@@ -143,7 +146,7 @@ export default function AdminDashboardPage() {
         {role === "super_admin" &&
           renderCard(
             "/admin/users",
-            "👥",
+            <Users className="w-12 h-12 text-indigo-500" />,
             "Manage Users",
             "Promote users to admin roles (Super Admin Only)"
           )}
