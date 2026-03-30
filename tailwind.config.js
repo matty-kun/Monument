@@ -9,9 +9,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'monument-primary': '#7c3aed',
         'monument-green': '#269a7a',
         'monument-gold': '#d6b14e',
-        'monument-dark': '#33404e',
+        'monument-dark': '#4c1d95',
         'monument-dark-uniform': '#111827',
       },
       fontFamily: {

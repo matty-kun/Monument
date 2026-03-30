@@ -91,11 +91,11 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="flex items-center gap-3 text-4xl font-bold text-monument-green mb-2">
+          <h1 className="flex items-center gap-3 text-4xl font-bold text-monument-primary mb-2">
             <Settings className="w-10 h-10" /> Admin Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Manage your intramurals system
+            CITE SIDLAK Test Management
           </p>
         </div>
         <button onClick={handleLogout} className="btn btn-danger flex items-center gap-2">
@@ -126,8 +126,8 @@ export default function AdminDashboardPage() {
         {renderCard(
           "/admin/departments",
           <Building2 className="w-12 h-12 text-purple-500" />,
-          "Manage Departments",
-          "Add and organize participating departments"
+          "Manage Teams",
+          "Add and organize participating teams"
         )}
         {renderCard(
           "/admin/categories",

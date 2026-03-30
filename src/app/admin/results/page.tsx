@@ -236,8 +236,8 @@ export default function AddResultPage() {
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
             <div className="mb-8 flex justify-between items-center">
               <div>
-                <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">{isEditing ? '✏️ Edit Result' : '➕ Add Result'}</h1>
-                <p className="text-gray-600 dark:text-gray-400">{isEditing ? 'Modify the details of this competition result' : 'Record competition results and award medals to departments'}</p>
+                <h1 className="text-4xl font-bold text-monument-primary mb-2">{isEditing ? '✏️ Edit Result' : '➕ Add Result'}</h1>
+                <p className="text-gray-600 dark:text-gray-400">{isEditing ? 'Modify the details of this competition result' : 'Record competition results and award medals to teams'}</p>
               </div>
             </div>
             
@@ -258,12 +258,12 @@ export default function AddResultPage() {
                                     />              </div>
       
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Team</label>
                                     <SingleSelectDropdown
                                       options={competingDepartments}
                                       selectedValue={departmentId}
                                       onChange={setDepartmentId}
-                                      placeholder="Select Department"
+                                      placeholder="Select Team"
                                       disabled={!eventId || competingDepartments.length === 0}
                                     />              </div>
       

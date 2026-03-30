@@ -9,8 +9,8 @@
   }
 
   h1 {
-    @apply text-4xl font-bold text-monument-green mb-4;
-    @apply dark:text-green-400;
+    @apply text-4xl font-bold text-monument-primary mb-4;
+    @apply dark:text-violet-500;
   }
 
   h2 {
@@ -28,8 +28,8 @@
   }
 
   a {
-    @apply text-monument-green;
-    @apply dark:text-green-400;
+    @apply text-monument-primary;
+    @apply dark:text-violet-400;
   }
 }
 
@@ -39,8 +39,8 @@
   }
 
   .btn-primary {
-    @apply bg-monument-green text-white hover:bg-monument-dark focus:ring-monument-green;
-    @apply dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-500;
+    @apply bg-monument-primary text-white hover:bg-monument-dark focus:ring-monument-primary;
+    @apply dark:bg-violet-600 dark:hover:bg-violet-700 dark:focus:ring-violet-500;
   }
 
   .btn-secondary {
@@ -49,8 +49,8 @@
   }
   
   .btn-outline {
-    @apply bg-transparent border-2 border-monument-green text-monument-green hover:bg-monument-green hover:text-white focus:ring-monument-green;
-    @apply dark:border-green-500 dark:text-green-400 dark:hover:bg-green-500 dark:hover:text-white;
+    @apply bg-transparent border-2 border-monument-primary text-monument-primary hover:bg-monument-primary hover:text-white focus:ring-monument-primary;
+    @apply dark:border-violet-500 dark:text-violet-400 dark:hover:bg-violet-500 dark:hover:text-white;
   }
 
   .btn-danger {
@@ -72,8 +72,8 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-monument-green focus:border-transparent transition-colors;
-    @apply dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-green-500;
+    @apply w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-monument-primary focus:border-transparent transition-colors;
+    @apply dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-violet-500;
   }
 
   .input-error {
@@ -86,7 +86,7 @@
   }
 
   .table-header {
-    @apply bg-gradient-to-r from-monument-green to-monument-dark text-white;
+    @apply bg-gradient-to-r from-monument-primary to-monument-dark text-white;
     @apply dark:from-gray-700 dark:to-gray-800;
   }
 
@@ -118,7 +118,7 @@
 
 
   .gradient-primary {
-    @apply bg-gradient-to-r from-monument-green to-monument-dark;
+    @apply bg-gradient-to-r from-monument-primary to-monument-dark;
   }
 
   .gradient-secondary {

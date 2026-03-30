@@ -46,9 +46,9 @@ export default function Navbar() {
       : "px-4 py-2 rounded-lg text-sm font-medium transition-colors";
 
     if (isActive) {
-      return `${baseClasses} bg-monument-green/10 text-monument-green dark:bg-green-900/20 dark:text-green-400`;
+      return `${baseClasses} bg-monument-primary/10 text-monument-primary dark:bg-violet-900/20 dark:text-violet-400`;
     }
-    return `${baseClasses} text-gray-700 hover:bg-gray-100 hover:text-monument-green dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-green-400`;
+    return `${baseClasses} text-gray-700 hover:bg-gray-100 hover:text-monument-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-violet-400`;
   };
 
   const getBottomNavLinkClass = (href: string) => {
@@ -56,9 +56,9 @@ export default function Navbar() {
     const baseClasses = "flex flex-col items-center justify-center flex-1 text-center py-2 px-1 transition-colors";
 
     if (isActive) {
-      return `${baseClasses} text-monument-green dark:text-green-400`;
+      return `${baseClasses} text-monument-primary dark:text-violet-400`;
     }
-    return `${baseClasses} text-gray-500 hover:text-monument-green dark:text-gray-400 dark:hover:text-green-400`;
+    return `${baseClasses} text-gray-500 hover:text-monument-primary dark:text-gray-400 dark:hover:text-violet-400`;
   };
 
 
@@ -76,9 +76,8 @@ export default function Navbar() {
               className="mr-2"
               priority
             />
-            <div className="flex items-baseline space-x-2 text-monument-green dark:text-green-400">
-              <span className="text-xl font-bold">Monument</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 font-normal hidden lg:inline lg:ml-2">This is your moment</span>
+            <div className="flex items-baseline">
+              <span className="text-xl font-bold text-monument-primary dark:text-violet-400 uppercase tracking-wider">CITE FEST</span>
             </div>
           </Link>
         </div>
@@ -93,7 +92,7 @@ export default function Navbar() {
           </div>
           <div className="flex items-center space-x-2">
             {(role === "admin" || role === "super_admin") && (
-              <Link href="/admin/dashboard" className={`px-4 py-2 flex items-center gap-2 rounded-lg text-sm font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-green-500 dark:ring-offset-gray-800' : ''}`}>
+              <Link href="/admin/dashboard" className={`px-4 py-2 flex items-center gap-2 rounded-lg text-sm font-medium !text-white bg-monument-primary hover:bg-monument-dark dark:bg-violet-600 dark:hover:bg-violet-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-violet-500 dark:ring-offset-gray-800' : ''}`}>
                 <LayoutDashboard className="w-4 h-4" /> Dashboard
               </Link>
             )}
