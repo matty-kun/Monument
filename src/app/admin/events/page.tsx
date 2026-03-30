@@ -148,9 +148,10 @@ export default function ManageEventsPage() {
 
       toast.success("Event deleted successfully!", { id: toastId });
       fetchEvents(); // Refresh the list
-    } catch (error: any) {
-      console.error("Error deleting event:", error);
-      toast.error(`Deletion failed: ${error.message}`, { id: toastId });
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Error deleting event:", err);
+      toast.error(`Deletion failed: ${err.message}`, { id: toastId });
     }
 
     setShowConfirmModal(false);
