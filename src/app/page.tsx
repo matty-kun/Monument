@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60; // Revalidate data every 60 seconds
+export const dynamic = "force-dynamic";
 
 interface LeaderboardRow {
   id: string;

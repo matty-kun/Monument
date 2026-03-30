@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import ManageUsersClient from "./ManageUsersClient";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { getUsers, UserProfile } from "@/utils/actions";
