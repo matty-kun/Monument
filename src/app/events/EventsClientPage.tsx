@@ -140,7 +140,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
   return (
     <>
       <div className="mb-4">
-        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🏟️ Event Results</h1>
+        <h1 className="text-4xl font-bold text-monument-primary mb-2">🏟️ Event Results</h1>
         <p className="text-gray-600 dark:text-gray-400">Competition results and winners by event</p>
       </div>
 
@@ -160,11 +160,11 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
         </div>
 
         <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaThLarge />
             Cards
           </button>
-          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaTable />
             Table
           </button>
@@ -227,10 +227,10 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Department</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Team</label>
                     <SingleSelectDropdown
                       options={[
-                        { id: 'all', name: 'All Departments' },
+                        { id: 'all', name: 'All Teams' },
                         ...allDepartments.map(dept => ({ 
                           id: dept.name, 
                           name: dept.name, 
@@ -239,7 +239,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                       ]}
                       selectedValue={departmentFilter}
                       onChange={(value) => setDepartmentFilter(value)}
-                      placeholder="Select Department"
+                      placeholder="Select Team"
                     />
                   </div>
                 </div>

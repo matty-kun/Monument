@@ -4,11 +4,11 @@ import LeaderboardClientPage from "./LeaderboardClientPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Podium & Leaderboard | MONUMENT",
-  description: "See the real-time department standings, medal counts, and total points for the SIDLAK intramurals. Who will take the podium?",
+  title: "Podium & Leaderboard | CITE FEST",
+  description: "See the real-time team standings, medal counts, and total points for the CITE FEST test. Who will take the podium?",
   openGraph: {
-    title: "Podium & Leaderboard | MONUMENT",
-    description: "Real-time department standings for the SIDLAK intramurals.",
+    title: "Podium & Leaderboard | CITE FEST",
+    description: "Real-time team standings for the CITE FEST test.",
   },
 };
 

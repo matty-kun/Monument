@@ -176,21 +176,21 @@ export default function DepartmentsPage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
-      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Departments' }]} />
-      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🏫 Manage Departments</h1>
+      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Teams' }]} />
+      <h1 className="text-4xl font-bold text-monument-primary mb-4">🏫 Manage Teams</h1>
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-              Department Name
+              Team Name
             </label>
             <input
               type="text"
-              placeholder="Enter department name"
+              placeholder="Enter team name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600"
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 dark:bg-gray-700 dark:border-gray-600"
               required
             />
           </div>
@@ -203,19 +203,19 @@ export default function DepartmentsPage() {
               placeholder="e.g. Ccs"
               value={abbreviation}
               onChange={(e) => setAbbreviation(e.target.value)}
-              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600"
+              className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-            Department Image
+            Team Image
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageSelect}
-            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
           />
           {imagePreview && (
             <div className="mt-2">
@@ -236,7 +236,7 @@ export default function DepartmentsPage() {
             disabled={uploading}
             className="flex-1 btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading ? "Saving..." : editingId ? "Update Department" : "Add Department"}
+            {uploading ? "Saving..." : editingId ? "Update Team" : "Add Team"}
           </button>
           {editingId && (
             <button
@@ -265,10 +265,10 @@ export default function DepartmentsPage() {
           />
         </div>
         <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaTable /> Table
           </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaThLarge /> Cards
           </button>
         </div>
@@ -282,7 +282,7 @@ export default function DepartmentsPage() {
                 <thead className="table-header bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="table-cell text-left dark:text-gray-300">Image</th>
-                    <th className="table-cell text-left dark:text-gray-300">Department</th>
+                    <th className="table-cell text-left dark:text-gray-300">Team</th>
                     <th className="table-cell text-left dark:text-gray-300">Abbreviation</th>
                     <th className="table-cell text-center dark:text-gray-300">Actions</th>
                   </tr>
@@ -312,7 +312,7 @@ export default function DepartmentsPage() {
                   {filteredDepartments.length === 0 && (
                     <tr>
                       <td colSpan={4} className="table-cell text-center py-8 text-gray-500 dark:text-gray-400">
-                        {searchQuery ? "No departments match your search." : "No departments yet."}
+                        {searchQuery ? "No teams match your search." : "No teams yet."}
                       </td>
                     </tr>
                   )}
@@ -354,8 +354,8 @@ export default function DepartmentsPage() {
             {filteredDepartments.length === 0 && (
               <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div className="text-6xl mb-4">🏫</div>
-                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Departments Match Your Search" : "No Departments Yet"}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new department using the form above."}</p>
+                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Teams Match Your Search" : "No Teams Yet"}</h3>
+                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new team using the form above."}</p>
               </div>
             )}
           </motion.div>
@@ -367,7 +367,7 @@ export default function DepartmentsPage() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
-        message="Are you sure you want to delete this department entry? This action cannot be undone."
+        message="Are you sure you want to delete this team entry? This action cannot be undone."
       />
       <Toaster />
     </div>

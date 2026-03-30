@@ -69,8 +69,8 @@ export default function AdminLoginPage() {
           height={300}
           className="mb-4"
         />
-        <h1 className="text-5xl font-bold text-monument-green dark:text-green-400">MONUMENT</h1>
-        <p className="text-gray-600 mt-2 dark:text-gray-300">Notre Dame of Midsayap College Score Tracking System</p>
+        <h1 className="text-5xl font-bold text-monument-primary dark:text-violet-400">CITE FEST</h1>
+        <p className="text-gray-600 mt-2 dark:text-gray-300">Competition Score Tracking System</p>
       </div>
 
       <div className="md:w-1/2 max-w-md w-full">

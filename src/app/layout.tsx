@@ -4,13 +4,13 @@ import Footer from "../components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
-  title: "Monument",
-  description: "Real-time Intramural Score Tracking System",
+  title: "Podium & Leaderboard | CITE FEST",
+  description: "See the real-time team standings, medal counts, and total points for the CITE FEST test. Who will take the podium?",
   openGraph: {
-    title: "Monument",
-    description: "This Is Your Moment.",
-    url: "https://themonument.vercel.app",
-    siteName: "Monument",
+    title: "Podium & Leaderboard | CITE FEST",
+    description: "Real-time team standings for the CITE FEST test.",
+    url: "https://citefest.vercel.app",
+    siteName: "CITE FEST",
     images: [
       {
         url: "/og-image.png",
@@ -25,8 +25,8 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Monument",
-    description: "This Is Your Moment — Real-time Intramural Score Tracking System",
+    title: "CITE FEST",
+    description: "CITE FEST — Real-time Intramural Score Tracking System",
     images: ["/og-image.png"],
   },
 };

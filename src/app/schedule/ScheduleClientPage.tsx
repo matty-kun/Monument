@@ -226,7 +226,7 @@ export default function ScheduleClientPage({
   return (
     <>
       <div className="mb-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-monument-green dark:text-green-400 mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-monument-primary mb-2">
           🗓️ Schedule
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -250,11 +250,11 @@ export default function ScheduleClientPage({
         </div>
 
         <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaThLarge />
             Cards
           </button>
-          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaTable />
             Table
           </button>
@@ -335,10 +335,10 @@ export default function ScheduleClientPage({
 
                             {/* Department */}
                             <div>
-                              <label className="block text-sm font-medium mb-1">Department</label>
+                              <label className="block text-sm font-medium mb-1">Team</label>
                               <SingleSelectDropdown
                                 options={[
-                                  { id: "all", name: "All Departments" },
+                                  { id: "all", name: "All Teams" },
                                   ...allDepartments.map((d) => ({
                                     id: d.name,
                                     name: d.name,
@@ -347,7 +347,7 @@ export default function ScheduleClientPage({
                                 ]}
                                 selectedValue={departmentFilter}
                                 onChange={setDepartmentFilter}
-                                placeholder="Select Department"
+                                placeholder="Select Team"
                               />
                             </div>
               
@@ -484,7 +484,7 @@ export default function ScheduleClientPage({
                                     className="rounded-full w-16 h-16 object-cover border-4 border-gray-200 dark:border-gray-600"
                                   />
                                 ) : (
-                                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-monument-green/20 dark:bg-green-900/30 text-xl font-bold text-monument-green dark:text-green-400">
+                                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-monument-primary/20 dark:bg-violet-900/30 text-xl font-bold text-monument-primary dark:text-violet-400">
                                     {typeof d === "object"
                                       ? d.abbreviation || d.name.slice(0, 3)
                                       : d.slice(0, 3)}
@@ -495,7 +495,7 @@ export default function ScheduleClientPage({
                                 </span>
                               </div>
                               {i < s.departments.length - 1 && (
-                                <span className="text-monument-green dark:text-green-500 text-xl font-black self-center italic">
+                                <span className="text-monument-primary dark:text-violet-500 text-xl font-black self-center italic">
                                   vs
                                 </span>
                               )}
@@ -610,7 +610,7 @@ export default function ScheduleClientPage({
                                     </span>
                                   </div>
                                   {i < s.departments.length - 1 && (
-                                    <span className="text-monument-green dark:text-green-500 text-lg font-black self-center italic">
+                                    <span className="text-monument-primary dark:text-violet-500 text-lg font-black self-center italic">
                                       vs
                                     </span>
                                   )}
