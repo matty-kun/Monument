@@ -88,10 +88,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
             )}
           </div>
           <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
+            <div className="text-xl md:text-2xl font-bold dark:text-gray-100 leading-tight">
+              {topThree[0].name}
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[0].name}</div>
+            {topThree[0].abbreviation && (
+              <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium italic">
+                {topThree[0].abbreviation}
+              </div>
+            )}
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
               <span>🥇 {topThree[0].golds}</span>
               <span>🥈 {topThree[0].silvers}</span>
@@ -125,10 +129,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
             )}
           </div>
           <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
+            <div className="text-xl md:text-2xl font-bold dark:text-gray-100 leading-tight">
+              {topThree[1].name}
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[1].name}</div>
+            {topThree[1].abbreviation && (
+              <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium italic">
+                {topThree[1].abbreviation}
+              </div>
+            )}
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
               <span>🥇 {topThree[1].golds}</span>
               <span>🥈 {topThree[1].silvers}</span>
@@ -162,10 +170,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
             )}
           </div>
           <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
+            <div className="text-xl md:text-2xl font-bold dark:text-gray-100 leading-tight">
+              {topThree[2].name}
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[2].name}</div>
+            {topThree[2].abbreviation && (
+              <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium italic">
+                {topThree[2].abbreviation}
+              </div>
+            )}
             <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
               <span>🥇 {topThree[2].golds}</span>
               <span>🥈 {topThree[2].silvers}</span>

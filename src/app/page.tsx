@@ -31,21 +31,26 @@ export default async function ScoreboardPage() {
   const supabase = await createReadOnlyClient();
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {
-    // Specify the type for the RPC response
-    const { data, error } = await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
-    if (error || !data) {
-      console.error("Error fetching leaderboard:", error);
+    // 1. Fetch the stats from the RPC
+    const { data: stats, error: statsError } = await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
+    if (statsError || !stats) {
+      console.error("Error fetching leaderboard stats:", statsError);
       return [];
     }
     
-    // Type guard to ensure data is an array before using .map()
-    if (!Array.isArray(data)) {
-      console.error("Expected an array from get_leaderboard RPC, but got:", data);
-      return [];
+    // 2. Fetch all departments to get abbreviations (courses)
+    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation');
+    if (deptError) {
+      console.error("Error fetching department abbreviations:", deptError);
     }
+    
+    const abbrMap = new Map((departments as any[])?.map(d => [d.id, d.abbreviation]) || []);
 
-    const calculated = data.map((row) => ({
+    if (!Array.isArray(stats)) return [];
+
+    const calculated = stats.map((row: LeaderboardRpcResponse) => ({
       ...row,
+      abbreviation: abbrMap.get(row.id) || null,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
     }));
     return calculated;

@@ -310,7 +310,7 @@ export default function SchedulePage() {
   return (
     <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
-      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">🗓️ Manage Schedule</h1>
+      <h1 className="text-4xl font-bold text-monument-primary mb-4">🗓️ Manage Schedule</h1>
 
       <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -356,7 +356,7 @@ export default function SchedulePage() {
         </div>
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          className="w-full bg-monument-primary text-white py-2 rounded hover:bg-monument-dark"
         >
           {editingId ? "Update Schedule" : "Add Schedule"}
         </button>
@@ -377,10 +377,10 @@ export default function SchedulePage() {
           />
         </div>
         <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaTable /> Table
           </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-green shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
             <FaThLarge /> Cards
           </button>
         </div>
@@ -434,7 +434,7 @@ export default function SchedulePage() {
                             )}
                           </div>
                           {index < schedule.departments.length - 1 && <div className="h-8 flex items-center justify-center px-1">
-                            <span className="font-black text-monument-green dark:text-green-500 italic">vs</span>
+                            <span className="font-black text-monument-primary dark:text-violet-400 italic">vs</span>
                           </div>}
                         </Fragment>
                       );
@@ -527,7 +527,7 @@ export default function SchedulePage() {
                                   </div>
                                 )}
                               </div>
-                              {i < schedule.departments.length - 1 && <span className="text-monument-green dark:text-green-500 text-lg font-black self-center italic">vs</span>}
+                              {i < schedule.departments.length - 1 && <span className="text-monument-primary dark:text-violet-400 text-lg font-black self-center italic">vs</span>}
                             </Fragment>
                           );
                         })}

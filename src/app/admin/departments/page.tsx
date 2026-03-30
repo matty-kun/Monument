@@ -10,19 +10,19 @@ import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { FaTable, FaThLarge } from "react-icons/fa";
 
-type DepartmentInsert = { name: string; abbreviation: string; image_url?: string };
+type DepartmentInsert = { name: string; courses: string; image_url?: string };
 
 interface Department {
   id: string;
   name: string;
-  abbreviation?: string | null;
+  courses?: string | null;
   image_url?: string;
 }
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
-  const [abbreviation, setAbbreviation] = useState("");
+  const [courses, setCourses] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -35,7 +35,7 @@ export default function DepartmentsPage() {
   const supabase = createClient();
 
   const fetchDepartments = useCallback(async () => {
-    const { data, error } = await supabase.from("departments").select("id, name, abbreviation, image_url").order("name");
+    const { data, error } = await supabase.from("departments").select("id, name, courses:abbreviation, image_url").order("name");
     if (!error && data) setDepartments(data);
   }, [supabase]);
 
@@ -92,13 +92,13 @@ export default function DepartmentsPage() {
 
     try {
       if (editingId) {
-        const updateData: DepartmentInsert = { name, abbreviation };
+        const updateData: any = { name, abbreviation: courses };
         if (imageUrl) updateData.image_url = imageUrl;
         const { error } = await supabase.from("departments").update(updateData).eq("id", editingId);
         if (error) throw error;
         toast.success("Department updated successfully!");
       } else {
-        const insertData: DepartmentInsert = { name, abbreviation };
+        const insertData: any = { name, abbreviation: courses };
         if (imageUrl) insertData.image_url = imageUrl;
         const { error } = await supabase.from("departments").insert([insertData]);
         if (error) throw error;
@@ -117,7 +117,7 @@ export default function DepartmentsPage() {
 
   function resetForm() {
     setName("");
-    setAbbreviation("");
+    setCourses("");
     setEditingId(null);
     setSelectedImage(null);
     setImagePreview(null);
@@ -157,7 +157,7 @@ export default function DepartmentsPage() {
   function handleEdit(dept: Department) {
     setEditingId(dept.id);
     setName(dept.name);
-    setAbbreviation(dept.abbreviation || "");
+    setCourses(dept.courses || "");
     setImagePreview(dept.image_url || null);
     setSelectedImage(null);
   }
@@ -169,7 +169,7 @@ export default function DepartmentsPage() {
     const lowercasedQuery = searchQuery.toLowerCase();
     return departments.filter(dept =>
       dept.name.toLowerCase().includes(lowercasedQuery) ||
-      (dept.abbreviation && dept.abbreviation.toLowerCase().includes(lowercasedQuery))
+      (dept.courses && dept.courses.toLowerCase().includes(lowercasedQuery))
     );
   }, [departments, searchQuery]);
 
@@ -196,13 +196,13 @@ export default function DepartmentsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-              Abbreviation
+              Courses
             </label>
             <input
               type="text"
-              placeholder="e.g. Ccs"
-              value={abbreviation}
-              onChange={(e) => setAbbreviation(e.target.value)}
+              placeholder="e.g. Computer Science & Information Systems"
+              value={courses}
+              onChange={(e) => setCourses(e.target.value)}
               className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 dark:bg-gray-700 dark:border-gray-600"
             />
           </div>
@@ -283,7 +283,7 @@ export default function DepartmentsPage() {
                   <tr>
                     <th className="table-cell text-left dark:text-gray-300">Image</th>
                     <th className="table-cell text-left dark:text-gray-300">Team</th>
-                    <th className="table-cell text-left dark:text-gray-300">Abbreviation</th>
+                    <th className="table-cell text-left dark:text-gray-300">Courses</th>
                     <th className="table-cell text-center dark:text-gray-300">Actions</th>
                   </tr>
                 </thead>
@@ -300,7 +300,7 @@ export default function DepartmentsPage() {
                         )}
                       </td>
                       <td className="table-cell font-medium dark:text-gray-100">{dept.name}</td>
-                      <td className="table-cell font-mono text-sm text-gray-600 dark:text-gray-400">{dept.abbreviation}</td>
+                      <td className="table-cell text-sm text-gray-600 dark:text-gray-400">{dept.courses}</td>
                       <td className="table-cell text-center">
                         <div className="flex gap-2 justify-center">
                           <button onClick={() => handleEdit(dept)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">✏️ Edit</button>
@@ -337,9 +337,9 @@ export default function DepartmentsPage() {
                       <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate" title={dept.name}>
                         {dept.name}
                       </CardTitle>
-                      {dept.abbreviation && (
-                        <CardDescription className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                          {dept.abbreviation}
+                      {dept.courses && (
+                        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+                          {dept.courses}
                         </CardDescription>
                       )}
                     </div>

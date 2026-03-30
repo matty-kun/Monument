@@ -37,14 +37,29 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
   const supabase = createClient();
 
   const fetchLeaderboard = useCallback(async () => {
-    const { data, error } = await supabase.rpc("get_leaderboard");
-    if (!error && data) {
-      const calculated = data.map((row: LeaderboardRPCData) => ({
-        ...row,
-        total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
-      }));
-      setLeaderboard(calculated);
+    // 1. Fetch stats
+    const { data: stats, error: statsError } = await supabase.rpc("get_leaderboard");
+    if (statsError || !stats) {
+      console.error("Error fetching leaderboard stats:", statsError);
+      return;
     }
+
+    // 2. Fetch departments for abbreviations
+    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation');
+    if (deptError) {
+      console.error("Error fetching abbreviations:", deptError);
+    }
+
+    const abbrMap = new Map((departments as any[])?.map(d => [d.id, d.abbreviation]) || []);
+
+    if (!Array.isArray(stats)) return;
+
+    const calculated = stats.map((row: LeaderboardRPCData) => ({
+      ...row,
+      abbreviation: abbrMap.get(row.id) || null,
+      total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
+    }));
+    setLeaderboard(calculated);
   }, [supabase]);
 
   useEffect(() => {
@@ -119,9 +134,16 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
                             <span className="text-2xl text-gray-400">🏫</span>
                           </div>
                         )}
-                        <span className="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight" title={dept.name}>
-                          {dept.name}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight" title={dept.name}>
+                            {dept.name}
+                          </span>
+                          {dept.abbreviation && (
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
+                              {dept.abbreviation}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Medals and Points */}
