@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import BouncingBallsLoader from '@/components/BouncingBallsLoader';
 
 export default function AdminLoginPage() {
@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
                 className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-monument-green dark:text-green-400"
                 tabIndex={-1}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
 
@@ -139,7 +139,7 @@ export default function AdminLoginPage() {
               {loading ? (
                 <BouncingBallsLoader size="text-xl" />
               ) : (
-                '🚀 Sign In'
+                <span className="flex items-center justify-center gap-2"><LogIn className="w-5 h-5" /> Sign In</span>
               )}
             </button>
           </form>

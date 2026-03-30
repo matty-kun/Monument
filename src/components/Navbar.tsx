@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ThemeSwitcher } from "./ThemeSwitcher"; 
+import { Trophy, Flag, CalendarDays, LayoutDashboard } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname } from "next/navigation";
@@ -33,9 +34,9 @@ export default function Navbar() {
 
 
   const navLinks = useMemo(() => [
-    { href: "/", label: "🏆 Podium" },
-    { href: "/events", label: "🏟️ Events" },
-    { href: "/schedule", label: "🗓️ Schedule" },
+    { href: "/", label: "Podium", icon: Trophy },
+    { href: "/events", label: "Events", icon: Flag },
+    { href: "/schedule", label: "Schedule", icon: CalendarDays },
   ], []);
 
   const getLinkClass = (href: string, isMobile: boolean = false) => {
@@ -83,16 +84,17 @@ export default function Navbar() {
         </div>
         <div className="hidden md:flex items-center space-x-4">
           <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map(({ href, label }) => (
-              <Link key={href} href={href} className={getLinkClass(href)}>
+            {navLinks.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href} className={`${getLinkClass(href)} flex items-center gap-2`}>
+                <Icon className="w-4 h-4" />
                 {label}
               </Link>
             ))}
           </div>
           <div className="flex items-center space-x-2">
             {(role === "admin" || role === "super_admin") && (
-              <Link href="/admin/dashboard" className={`px-4 py-2 rounded-lg text-sm font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-green-500 dark:ring-offset-gray-800' : ''}`}>
-                📊 Dashboard
+              <Link href="/admin/dashboard" className={`px-4 py-2 flex items-center gap-2 rounded-lg text-sm font-medium !text-white bg-monument-green hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-green-500 dark:ring-offset-gray-800' : ''}`}>
+                <LayoutDashboard className="w-4 h-4" /> Dashboard
               </Link>
             )}
             <ThemeSwitcher mounted={mounted} />
@@ -108,16 +110,15 @@ export default function Navbar() {
       {/* Bottom Navigation for Mobile */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden">
         <div className="flex justify-around items-center h-16">
-          {navLinks.map(({ href, label }) => (
+          {navLinks.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className={getBottomNavLinkClass(href)}>
-              {/* Extract emoji from label for icon, keep full label for text */}
-              <span className="text-xl">{label.split(' ')[0]}</span>
-              <span className="text-xs">{label.split(' ').slice(1).join(' ')}</span>
+              <Icon className="w-5 h-5 mb-1" />
+              <span className="text-xs">{label}</span>
             </Link>
           ))}
           {(role === "admin" || role === "super_admin") && (
             <Link href="/admin/dashboard" className={getBottomNavLinkClass("/admin/dashboard")}>
-              <span className="text-xl">📊</span>
+              <LayoutDashboard className="w-5 h-5 mb-1" />
               <span className="text-xs">Dashboard</span>
             </Link>
           )}
