@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -13,8 +13,7 @@ import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import ConfirmModal from "@/components/ConfirmModal";
 import { FiShield, FiUser } from "react-icons/fi";
-import { FaEye, FaEyeSlash, FaTable, FaThLarge } from "react-icons/fa";
-import { Card } from "@/components/ui/Card";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 // ✅ Add props interface
 interface ManageUsersClientProps {
@@ -27,8 +26,8 @@ export default function ManageUsersClient({
   currentUserId,
 }: ManageUsersClientProps) {
   const [users, setUsers] = useState<UserProfile[]>(initialUsers || []);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
@@ -37,8 +36,8 @@ export default function ManageUsersClient({
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("admin");
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode] = useState<"table" | "card">("table");
+  const [searchQuery] = useState("");
 
   // Helper: Capitalize role names
   const capitalizeWords = (str: string): string =>
