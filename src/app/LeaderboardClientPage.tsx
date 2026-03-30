@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
+import TeamHoverCard from "@/components/TeamHoverCard";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
 
@@ -37,14 +38,29 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
   const supabase = createClient();
 
   const fetchLeaderboard = useCallback(async () => {
-    const { data, error } = await supabase.rpc("get_leaderboard");
-    if (!error && data) {
-      const calculated = data.map((row: LeaderboardRPCData) => ({
-        ...row,
-        total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
-      }));
-      setLeaderboard(calculated);
+    // 1. Fetch stats
+    const { data: stats, error: statsError } = await supabase.rpc("get_leaderboard");
+    if (statsError || !stats) {
+      console.error("Error fetching leaderboard stats:", statsError);
+      return;
     }
+
+    // 2. Fetch departments for abbreviations
+    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation');
+    if (deptError) {
+      console.error("Error fetching abbreviations:", deptError);
+    }
+
+    const abbrMap = new Map((departments as any[])?.map(d => [d.id, d.abbreviation]) || []);
+
+    if (!Array.isArray(stats)) return;
+
+    const calculated = stats.map((row: LeaderboardRPCData) => ({
+      ...row,
+      abbreviation: abbrMap.get(row.id) || null,
+      total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
+    }));
+    setLeaderboard(calculated);
   }, [supabase]);
 
   useEffect(() => {
@@ -98,44 +114,55 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-5 flex flex-col justify-between"
                   >
-                    {/* Rank number in the background */}
-                    <div className="absolute -top-10 -left-0 text-[150px] font-black text-gray-100 dark:text-gray-700/50 z-0 select-none">
-                      {index + 4}
-                    </div>
+                    <TeamHoverCard teamId={dept.id}>
+                      <div className="w-full text-left group-hover:scale-[1.02] transition-transform duration-300">
+                        {/* Rank number in the background */}
+                        <div className="absolute -top-10 -left-0 text-[150px] font-black text-gray-100 dark:text-gray-700/50 z-0 select-none pointer-events-none">
+                          {index + 4}
+                        </div>
 
-                    <div className="relative z-10 flex flex-col h-full">
-                      {/* Department Info */}
-                      <div className="flex items-center gap-4 mb-4">
-                        {dept.image_url ? (
-                          <Image 
-                            src={dept.image_url} 
-                            alt={dept.name}
-                            width={48}
-                            height={48}
-                            className="w-12 h-12 object-cover rounded-full shadow-md border-2 border-white dark:border-gray-700"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
-                            <span className="text-2xl text-gray-400">🏫</span>
+                        <div className="relative z-10 flex flex-col h-full">
+                          {/* Department Info */}
+                          <div className="flex items-center gap-4 mb-4">
+                            {dept.image_url ? (
+                              <Image 
+                                src={dept.image_url} 
+                                alt={dept.name}
+                                width={48}
+                                height={48}
+                                className="w-12 h-12 object-cover rounded-full shadow-md border-2 border-white dark:border-gray-700"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
+                                <span className="text-2xl text-gray-400">🏫</span>
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="text-base font-bold text-black group-hover:text-monument-primary transition-colors dark:text-gray-100 leading-tight" title={dept.name}>
+                                {dept.name}
+                              </span>
+                              {dept.abbreviation && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
+                                  {dept.abbreviation}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        <span className="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight" title={dept.name}>
-                          {dept.name}
-                        </span>
-                      </div>
 
-                      {/* Medals and Points */}
-                      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <div className="flex gap-4 text-lg">
-                          <span>🥇 {dept.golds}</span>
-                          <span>🥈 {dept.silvers}</span>
-                          <span>🥉 {dept.bronzes}</span>
-                        </div>
-                        <div className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-lg font-bold px-3 py-1 rounded-full">
-                          {dept.total_points}
+                          {/* Medals and Points */}
+                          <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                            <div className="flex gap-4 text-lg">
+                              <span>🥇 {dept.golds}</span>
+                              <span>🥈 {dept.silvers}</span>
+                              <span>🥉 {dept.bronzes}</span>
+                            </div>
+                            <div className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-lg font-bold px-3 py-1 rounded-full group-hover:bg-monument-primary group-hover:text-white transition-colors">
+                              {dept.total_points}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </TeamHoverCard>
                   </motion.div>
                 ))}
               </motion.div>

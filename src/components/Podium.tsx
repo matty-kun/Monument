@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import { motion } from "framer-motion";
 import { calculateTotalPoints } from "@/utils/scoring";
+import TeamHoverCard from "./TeamHoverCard";
 
 interface LeaderboardRow {
   id: string;
@@ -78,27 +79,35 @@ export default function Podium({ leaderboard }: PodiumProps) {
           className="flex flex-col items-center"
         >
           <div className="text-3xl md:text-4xl mb-4">🥈</div>
-          <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-500 mb-4 md:mb-6">
-            {topThree[0].image_url ? (
-              <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gray-500 flex items-center justify-center">
-                <span className="text-4xl md:text-5xl">🏫</span>
+          <TeamHoverCard teamId={topThree[0].id}>
+            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
+              <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-500 mb-4 md:mb-6 shadow-md">
+                {topThree[0].image_url ? (
+                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gray-500 flex items-center justify-center">
+                    <span className="text-4xl md:text-5xl">🏫</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
+              <div className="text-center mb-4">
+                <div className="text-xl md:text-2xl font-bold text-black dark:text-gray-100 leading-tight group-hover:text-monument-primary transition-colors duration-300">
+                  {topThree[0].name}
+                </div>
+                {topThree[0].abbreviation && (
+                  <div className="text-[10px] md:text-xs text-black dark:text-gray-400 mb-2 font-medium italic">
+                    {topThree[0].abbreviation}
+                  </div>
+                )}
+                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
+                  <span>🥇 {topThree[0].golds}</span>
+                  <span>🥈 {topThree[0].silvers}</span>
+                  <span>🥉 {topThree[0].bronzes}</span>
+                </div>
+                <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[0].golds, topThree[0].silvers, topThree[0].bronzes)} pts</div>
+              </div>
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[0].name}</div>
-            <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
-              <span>🥇 {topThree[0].golds}</span>
-              <span>🥈 {topThree[0].silvers}</span>
-              <span>🥉 {topThree[0].bronzes}</span>
-            </div>
-            <div className="text-base md:text-lg font-bold mt-1 dark:text-gray-200">{calculateTotalPoints(topThree[0].golds, topThree[0].silvers, topThree[0].bronzes)} pts</div>
-          </div>
+          </TeamHoverCard>
           <div className="w-24 md:w-40 rounded-t-lg bg-gradient-to-br from-gray-400 via-gray-600 to-gray-800 shadow-xl h-24 md:h-32 flex items-center justify-center text-4xl md:text-6xl font-bold text-white">2</div>
         </motion.div>
       ) : (
@@ -115,27 +124,35 @@ export default function Podium({ leaderboard }: PodiumProps) {
           className="flex flex-col items-center"
         >
           <div className="text-3xl md:text-4xl mb-4">🥇</div>
-          <div className="relative w-32 h-32 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-yellow-500 mb-4 md:mb-6">
-            {topThree[1].image_url ? (
-              <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full bg-yellow-500 flex items-center justify-center">
-                <span className="text-4xl md:text-5xl">🏫</span>
+          <TeamHoverCard teamId={topThree[1].id}>
+            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
+              <div className="relative w-32 h-32 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-yellow-500 mb-4 md:mb-6 shadow-xl">
+                {topThree[1].image_url ? (
+                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-yellow-500 flex items-center justify-center">
+                    <span className="text-4xl md:text-5xl">🏫</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
+              <div className="text-center mb-4">
+                <div className="text-xl md:text-2xl font-bold text-black dark:text-gray-100 leading-tight group-hover:text-monument-primary transition-colors duration-300">
+                  {topThree[1].name}
+                </div>
+                {topThree[1].abbreviation && (
+                  <div className="text-[10px] md:text-xs text-black dark:text-gray-400 mb-2 font-medium italic">
+                    {topThree[1].abbreviation}
+                  </div>
+                )}
+                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
+                  <span>🥇 {topThree[1].golds}</span>
+                  <span>🥈 {topThree[1].silvers}</span>
+                  <span>🥉 {topThree[1].bronzes}</span>
+                </div>
+                <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[1].golds, topThree[1].silvers, topThree[1].bronzes)} pts</div>
+              </div>
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[1].name}</div>
-            <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
-              <span>🥇 {topThree[1].golds}</span>
-              <span>🥈 {topThree[1].silvers}</span>
-              <span>🥉 {topThree[1].bronzes}</span>
-            </div>
-            <div className="text-base md:text-lg font-bold mt-1 dark:text-gray-200">{calculateTotalPoints(topThree[1].golds, topThree[1].silvers, topThree[1].bronzes)} pts</div>
-          </div>
+          </TeamHoverCard>
           <div className="w-32 md:w-52 rounded-t-lg bg-gradient-to-br from-yellow-400 via-yellow-600 to-yellow-800 shadow-xl h-40 md:h-64 flex items-center justify-center text-6xl md:text-8xl font-bold text-white">1</div>
         </motion.div>
       ) : (
@@ -152,27 +169,35 @@ export default function Podium({ leaderboard }: PodiumProps) {
           className="flex flex-col items-center"
         >
           <div className="text-3xl md:text-4xl mb-4">🥉</div>
-          <div className="relative w-20 h-20 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-orange-500 mb-4 md:mb-6">
-            {topThree[2].image_url ? (
-              <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full bg-orange-500 flex items-center justify-center">
-                <span className="text-4xl md:text-5xl">🏫</span>
+          <TeamHoverCard teamId={topThree[2].id}>
+            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
+              <div className="relative w-20 h-20 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-orange-500 mb-4 md:mb-6 shadow-md">
+                {topThree[2].image_url ? (
+                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-orange-500 flex items-center justify-center">
+                    <span className="text-4xl md:text-5xl">🏫</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="text-center mb-4">
-            <div className="text-2xl md:text-3xl font-bold dark:text-gray-100">
-              {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
+              <div className="text-center mb-4">
+                <div className="text-xl md:text-2xl font-bold text-black dark:text-gray-100 leading-tight group-hover:text-monument-primary transition-colors duration-300">
+                  {topThree[2].name}
+                </div>
+                {topThree[2].abbreviation && (
+                  <div className="text-[10px] md:text-xs text-black dark:text-gray-400 mb-2 font-medium italic">
+                    {topThree[2].abbreviation}
+                  </div>
+                )}
+                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
+                  <span>🥇 {topThree[2].golds}</span>
+                  <span>🥈 {topThree[2].silvers}</span>
+                  <span>🥉 {topThree[2].bronzes}</span>
+                </div>
+                <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[2].golds, topThree[2].silvers, topThree[2].bronzes)} pts</div>
+              </div>
             </div>
-            <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2">{topThree[2].name}</div>
-            <div className="text-sm md:text-base flex justify-center items-center gap-2 dark:text-gray-300">
-              <span>🥇 {topThree[2].golds}</span>
-              <span>🥈 {topThree[2].silvers}</span>
-              <span>🥉 {topThree[2].bronzes}</span>
-            </div>
-            <div className="text-base md:text-lg font-bold mt-1 dark:text-gray-200">{calculateTotalPoints(topThree[2].golds, topThree[2].silvers, topThree[2].bronzes)} pts</div>
-          </div>
+          </TeamHoverCard>
           <div className="w-20 md:w-36 rounded-t-lg bg-gradient-to-br from-orange-400 via-orange-600 to-orange-800 shadow-xl h-20 md:h-28 flex items-center justify-center text-3xl md:text-5xl font-bold text-white">3</div>
         </motion.div>
       ) : (

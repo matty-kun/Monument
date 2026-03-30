@@ -41,10 +41,21 @@ interface EventsClientPageProps {
 }
 
 export default function EventsClientPage({ initialResults, initialCategories }: EventsClientPageProps) {
+  // Helper to generate initials from team name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .filter(w => !['of', 'and', 'the'].includes(w.toLowerCase()))
+      .map(w => w[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 3);
+  };
+
   const [results] = useState<ProcessedResult[]>(initialResults);
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>(initialResults);
   const [allCategories] = useState(initialCategories);
-  const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null }[]>([]);
+  const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null; abbreviation?: string }[]>([]);
 
   // Filter states
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -315,12 +326,12 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                           </div>
                           {winner ? (
                             <div className="flex items-center gap-2" title={winner.department_name}>
-                              <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 text-right truncate max-w-[100px]">{winner.department_abbreviation || winner.department_name}</span>
+                               <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 text-right truncate max-w-[150px]">{winner.department_name}</span>
                               {winner.image_url ? (
-                                <Image src={winner.image_url} alt={winner.department_name} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor}`} />
+                                <Image src={winner.image_url} alt={getInitials(winner.department_name)} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor}`} />
                               ) : (
                                 <div className={`w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-300 border-2 ${medalColor}`}>
-                                  {winner.department_abbreviation || winner.department_name.substring(0, 2)}
+                                  {getInitials(winner.department_name)}
                                 </div>
                               )}
                             </div>
@@ -395,14 +406,14 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                             {winner ? (
                               <div className="flex items-center justify-center gap-2" title={winner.department_name}>
                                 {winner.image_url ? (
-                                  <Image src={winner.image_url} alt={winner.department_name} width={40} height={40} className={`w-10 h-10 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
+                                  <Image src={winner.image_url} alt={getInitials(winner.department_name)} width={40} height={40} className={`w-10 h-10 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
                                 ) : (
                                   <div className={`w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm dark:text-gray-300 border-2 ${medalColor}`}>
-                                    {winner.department_abbreviation || winner.department_name.substring(0, 3).toUpperCase()}
+                                    {getInitials(winner.department_name)}
                                   </div>
                                 )}
-                                <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">
-                                  {winner.department_abbreviation}
+                                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                                  {winner.department_name}
                                 </span>
                               </div>
                             ) : (
