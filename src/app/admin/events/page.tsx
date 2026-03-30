@@ -215,7 +215,7 @@ export default function ManageEventsPage() {
         ]}
       />
 
-      <h1 className="text-4xl font-bold text-monument-green mb-4 dark:text-green-400">
+      <h1 className="text-4xl font-bold text-monument-primary mb-4">
         🏆 Manage Events
       </h1>
 
@@ -240,7 +240,7 @@ export default function ManageEventsPage() {
                 value={icon || ""}
                 onChange={(e) => setIcon(e.target.value)}
                 className="block w-24 border border-gray-300 rounded-md shadow-sm py-2 px-3 
-                           focus:outline-none focus:ring-green-500 focus:border-green-500 
+                           focus:outline-none focus:ring-violet-500 focus:border-violet-500 
                            dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 placeholder="e.g., 🏀"
               />
@@ -273,7 +273,7 @@ export default function ManageEventsPage() {
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 
-                         focus:outline-none focus:ring-green-500 focus:border-green-500 
+                         focus:outline-none focus:ring-violet-500 focus:border-violet-500 
                          dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
               placeholder="e.g., Basketball, Vocal Solo"
               required
@@ -324,7 +324,7 @@ export default function ManageEventsPage() {
         {/* Buttons */}
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors"
+          className="w-full bg-monument-primary text-white py-2 rounded hover:bg-monument-dark transition-colors"
         >
           {editingId ? "Update Event" : "Add Event"}
         </button>
@@ -360,11 +360,11 @@ export default function ManageEventsPage() {
           />
         </div>
         <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaTable />
             Table
           </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaThLarge />
             Cards
           </button>

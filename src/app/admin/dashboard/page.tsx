@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
             <Settings className="w-10 h-10" /> Admin Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            CITE SIDLAK Test Management
+            CITE FEST Management
           </p>
         </div>
         <button onClick={handleLogout} className="btn btn-danger flex items-center gap-2">

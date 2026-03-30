@@ -120,7 +120,7 @@ export default function CategoriesPage() {
       <Toaster position="top-center" />
       <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Categories' }]} />
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-green mb-2 dark:text-green-400">🏷️ Manage Categories</h1>
+        <h1 className="text-4xl font-bold text-monument-primary mb-2">🏷️ Manage Categories</h1>
         <p className="text-gray-600 dark:text-gray-400">Add, edit, or delete event categories.</p>
       </div>
 
@@ -172,10 +172,10 @@ export default function CategoriesPage() {
           />
         </div>
         <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaTable /> Table
           </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-green text-white dark:bg-green-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             <FaThLarge /> Cards
           </button>
         </div>

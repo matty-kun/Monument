@@ -141,7 +141,7 @@ export default function ManageUsersClient({
     <>
       {/* New User Form */}
       <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-semibold text-monument-green mb-4">
+        <h2 className="text-2xl font-semibold text-monument-primary mb-4">
           ➕ Add New User
         </h2>
         <form
@@ -175,7 +175,7 @@ export default function ManageUsersClient({
             <button
               type="button"
               onClick={() => setShowNewPassword(!showNewPassword)}
-              className="absolute inset-y-0 right-0 top-6 flex items-center pr-3 text-gray-500 hover:text-monument-green"
+              className="absolute inset-y-0 right-0 top-6 flex items-center pr-3 text-gray-500 hover:text-monument-primary"
             >
               {showNewPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
             </button>
@@ -214,7 +214,7 @@ export default function ManageUsersClient({
           >
             <div className="overflow-x-auto">
               <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-monument-green to-green-600">
+                <thead className="bg-gradient-to-r from-monument-primary to-violet-600">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                       Email
@@ -236,7 +236,7 @@ export default function ManageUsersClient({
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user.email}{" "}
                         {user.id === currentUserId && (
-                          <span className="ml-2 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full">
+                          <span className="ml-2 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50 px-2 py-1 rounded-full">
                             You
                           </span>
                         )}
