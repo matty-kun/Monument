@@ -141,7 +141,7 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
             ) : (
               <div className="flex flex-col items-center py-6 space-y-2 opacity-60">
                  <span className="text-3xl">🏅</span>
-                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Awaiting achievements</span>
+                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">No medals won yet</span>
               </div>
             )}
             
