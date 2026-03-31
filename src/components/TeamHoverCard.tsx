@@ -22,40 +22,48 @@ interface TeamHoverCardProps {
 
 export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<Result[]>([]);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    if (isVisible && history.length === 0) {
+    if (isVisible && history.length === 0 && !isLoading) {
       const fetchHistory = async () => {
-        const { data, error } = await supabase
-          .from("results")
-          .select(`
-            id, 
-            medal_type, 
-            events (
-              name, 
-              icon
-            )
-          `)
-          .eq("department_id", teamId)
-          .order("medal_type", { ascending: true })
-          .limit(10);
-        
-        if (data) {
-          // Client-side sort to ensure Gold > Silver > Bronze
-          const medalPriority = { gold: 1, silver: 2, bronze: 3 };
-          const sorted = [...data].sort((a: any, b: any) => 
-            medalPriority[a.medal_type as keyof typeof medalPriority] - 
-            medalPriority[b.medal_type as keyof typeof medalPriority]
-          );
-          setHistory(sorted as any);
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from("results")
+            .select(`
+              id, 
+              medal_type, 
+              events (
+                name, 
+                icon
+              )
+            `)
+            .eq("department_id", teamId)
+            .order("medal_type", { ascending: true })
+            .limit(10);
+          
+          if (data) {
+            // Client-side sort to ensure Gold > Silver > Bronze
+            const medalPriority = { gold: 1, silver: 2, bronze: 3 };
+            const sorted = [...data].sort((a: any, b: any) => 
+              medalPriority[a.medal_type as keyof typeof medalPriority] - 
+              medalPriority[b.medal_type as keyof typeof medalPriority]
+            );
+            setHistory(sorted as any);
+          }
+        } catch (err) {
+          console.error("Error fetching history:", err);
+        } finally {
+          setIsLoading(false);
         }
       };
       fetchHistory();
     }
-  }, [isVisible, teamId, history.length, supabase]);
+  }, [isVisible, teamId, history.length, isLoading, supabase]);
 
   const handleMouseEnter = () => {
     // 400ms delay to prevent flickering while moving mouse fast
@@ -125,10 +133,15 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
                    </div>
                 </div>
               </div>
-            ) : (
+            ) : isLoading ? (
               <div className="flex flex-col items-center py-4 space-y-2">
                 <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-[10px] font-bold text-gray-400 animate-pulse uppercase tracking-widest">Loading Records...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center py-6 space-y-2 opacity-60">
+                 <span className="text-3xl">🏅</span>
+                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Awaiting achievements</span>
               </div>
             )}
             
