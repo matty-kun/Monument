@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
           className="mb-4"
         />
         <h1 className="text-5xl font-bold text-monument-primary dark:text-violet-400">CITE FEST</h1>
-        <p className="text-gray-600 mt-2 dark:text-gray-300">Competition Score Tracking System</p>
+        <p className="text-gray-600 mt-1 dark:text-gray-300">Competition Score Tracking System</p>
       </div>
 
       <div className="md:w-1/2 max-w-md w-full">
