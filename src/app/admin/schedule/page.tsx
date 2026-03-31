@@ -50,18 +50,30 @@ interface Schedule {
   start_time: string;
   end_time: string;
   date: string;
+  end_date?: string;
   status: "upcoming" | "ongoing" | "finished";
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return "TBA";
-  // Adding T00:00:00 ensures the date isn't affected by timezone shifts
-  const date = new Date(dateString + 'T00:00:00');
-  if (isNaN(date.getTime())) return "TBA";
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}-${day}-${year}`;
+const formatDate = (startDateStr: string, endDateStr?: string) => {
+  if (!startDateStr) return "TBA";
+  
+  const formatDatePart = (dateString: string) => {
+    // Adding T00:00:00 ensures the date isn't affected by timezone shifts
+    const d = new Date(dateString + 'T00:00:00');
+    if (isNaN(d.getTime())) return "TBA";
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}-${day}-${year}`;
+  };
+
+  const startFormatted = formatDatePart(startDateStr);
+  const endFormatted = endDateStr ? formatDatePart(endDateStr) : null;
+
+  if (endFormatted && startFormatted !== endFormatted) {
+    return `${startFormatted} to ${endFormatted}`;
+  }
+  return startFormatted;
 };
 
 export default function SchedulePage() {
@@ -76,6 +88,7 @@ export default function SchedulePage() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isWholeDay, setIsWholeDay] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -95,8 +108,9 @@ export default function SchedulePage() {
       };
 
     const now = new Date();
+    const finalEndDate = schedule.end_date || schedule.date;
     const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.date}T${schedule.end_time}`);
+    const end = new Date(`${finalEndDate}T${schedule.end_time}`);
 
     if (isNaN(start.getTime()))
       return {
@@ -230,12 +244,28 @@ export default function SchedulePage() {
       if (editingId) {
         const { error } = await supabase
           .from("schedules")
-          .update({ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: finalStartTime, end_time: finalEndTime, date })
+          .update({ 
+            event_id: eventId, 
+            departments: selectedDepartments, 
+            venue_id: venueId, 
+            start_time: finalStartTime, 
+            end_time: finalEndTime, 
+            date,
+            end_date: endDate || date
+          })
           .eq("id", editingId);
         if (error) throw error;
         toast.success("Schedule updated successfully!");
       } else {
-        const { error } = await supabase.from("schedules").insert([{ event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: finalStartTime, end_time: finalEndTime, date }]);
+        const { error } = await supabase.from("schedules").insert([{ 
+          event_id: eventId, 
+          departments: selectedDepartments, 
+          venue_id: venueId, 
+          start_time: finalStartTime, 
+          end_time: finalEndTime, 
+          date,
+          end_date: endDate || date
+        }]);
         if (error) throw error;
         toast.success("Schedule added successfully!");
       }
@@ -254,6 +284,7 @@ export default function SchedulePage() {
     setStartTime("");
     setEndTime("");
     setDate("");
+    setEndDate("");
     setIsWholeDay(false);
     setEditingId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -366,30 +397,18 @@ export default function SchedulePage() {
             />
           </div>
 
-          {/* Row 3: Date & Whole Day */}
+          {/* Row 3: Dates */}
           <div className="flex flex-col">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
             <DatePickerDropdown value={date} onChange={setDate} />
           </div>
 
-          <div className="flex items-center h-full pt-6">
-             <label className="flex items-center gap-3 cursor-pointer group">
-               <div className="relative">
-                 <input 
-                   type="checkbox" 
-                   checked={isWholeDay} 
-                   onChange={(e) => setIsWholeDay(e.target.checked)} 
-                   className="peer sr-only" 
-                 />
-                 <div className="w-6 h-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg group-hover:border-monument-primary peer-checked:bg-monument-primary peer-checked:border-monument-primary transition-all flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-sm scale-0 peer-checked:scale-100 transition-transform"></div>
-                 </div>
-               </div>
-               <span className="text-sm font-bold text-gray-700 dark:text-gray-300">All day event</span>
-             </label>
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date (Optional)</label>
+            <DatePickerDropdown value={endDate} onChange={setEndDate} />
           </div>
 
-          {/* Row 4: Start Time & End Time */}
+          {/* Row 4: Times */}
           <div className="flex flex-col relative">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
             <TimePickerDropdown value={startTime} onChange={setStartTime} disabled={isWholeDay} />
@@ -398,6 +417,24 @@ export default function SchedulePage() {
           <div className="flex flex-col relative">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
             <TimePickerDropdown value={endTime} onChange={setEndTime} disabled={isWholeDay} />
+          </div>
+
+          {/* Row 5: Whole Day Toggle */}
+          <div className="md:col-span-2 pt-2">
+             <label className="flex items-center gap-3 cursor-pointer group">
+               <div className="relative">
+                 <input 
+                   type="checkbox" 
+                   checked={isWholeDay} 
+                   onChange={(e) => setIsWholeDay(e.target.checked)} 
+                   className="peer sr-only" 
+                 />
+                 <div className="w-5 h-5 border-2 border-gray-200 dark:border-gray-700 rounded-md group-hover:border-monument-primary peer-checked:bg-monument-primary peer-checked:border-monument-primary transition-all flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-white rounded-sm scale-0 peer-checked:scale-100 transition-transform"></div>
+                 </div>
+               </div>
+               <span className="text-sm font-bold text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">This event occurs all day</span>
+             </label>
           </div>
         </div>
         <button
@@ -489,7 +526,7 @@ export default function SchedulePage() {
                 </td>
                   <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
                   <td className="table-cell">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</td>
-                  <td className="table-cell">{formatDate(schedule.date)}</td>
+                  <td className="table-cell">{formatDate(schedule.date, schedule.end_date)}</td>
                   <td className="table-cell">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -513,6 +550,7 @@ export default function SchedulePage() {
                       setEndTime(schedule.end_time.substring(0, 5));
                       setIsWholeDay(schedule.start_time.startsWith("00:00") && schedule.end_time.startsWith("23:59"));
                       setDate(schedule.date);
+                      setEndDate(schedule.end_date || "");
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
@@ -550,7 +588,7 @@ export default function SchedulePage() {
                     <span className="text-white font-semibold text-sm flex items-center gap-2">
                       <span>{icon}</span>{label}
                     </span>
-                    <span className="text-white text-xs opacity-90 font-bold">{formatDate(schedule.date)}</span>
+                    <span className="text-white text-xs opacity-90 font-bold">{formatDate(schedule.date, schedule.end_date)}</span>
                   </div>
                   <div className="p-4 space-y-3 flex-grow flex flex-col">
                     <div className="text-center">
@@ -598,7 +636,7 @@ export default function SchedulePage() {
                     </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 p-2 flex gap-2 justify-end rounded-b-lg mt-auto">
-                    <button onClick={() => { setEditingId(schedule.id); setEventId(schedule.event_id); setSelectedDepartments(schedule.departments); setVenueId(schedule.venue_id); setStartTime(schedule.start_time.substring(0, 5)); setEndTime(schedule.end_time.substring(0, 5)); setIsWholeDay(schedule.start_time.startsWith("00:00") && schedule.end_time.startsWith("23:59")); setDate(schedule.date); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors" title="Edit">
+                    <button onClick={() => { setEditingId(schedule.id); setEventId(schedule.event_id); setSelectedDepartments(schedule.departments); setVenueId(schedule.venue_id); setStartTime(schedule.start_time.substring(0, 5)); setEndTime(schedule.end_time.substring(0, 5)); setIsWholeDay(schedule.start_time.startsWith("00:00") && schedule.end_time.startsWith("23:59")); setDate(schedule.date); setEndDate(schedule.end_date || ""); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors" title="Edit">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
                     </button>
                     <button onClick={() => handleDelete(schedule.id)} className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors" title="Delete">
