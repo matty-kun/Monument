@@ -80,7 +80,27 @@ export default function ManageEventsPage() {
   useEffect(() => {
     fetchEvents();
     fetchCategories();
-  }, [fetchEvents, fetchCategories]);
+
+    // ✅ Set up Realtime Subscription
+    const channel = supabase
+      .channel('events-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events',
+        },
+        () => {
+          fetchEvents(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchEvents, fetchCategories, supabase]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -212,7 +212,27 @@ export default function SchedulePage() {
     fetchAllEvents();
     fetchAllVenues();
     fetchAllCategories();
-  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues, fetchAllCategories]);
+
+    // ✅ Set up Realtime Subscription
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, and DELETE
+          schema: 'public',
+          table: 'schedules',
+        },
+        () => {
+          fetchSchedules(); // Re-fetch whenever a change occurs
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues, fetchAllCategories, supabase]);
 
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();

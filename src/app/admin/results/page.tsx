@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { createClient } from "@/utils//supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -109,7 +109,27 @@ export default function AddResultPage() {
 
   useEffect(() => {
     fetchEventData();
-  }, [fetchEventData]);
+
+    // ✅ Set up Realtime Subscription
+    const channel = supabase
+      .channel('results-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'results',
+        },
+        () => {
+          fetchEventData(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchEventData, supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -221,11 +241,10 @@ export default function AddResultPage() {
   }
 
   async function handleEdit(result: ResultWithDepartment) {
-    console.log("Editing result:", result);
     setIsEditing(true);
     setEditingResultId(result.id);
     setEventId(result.event_id);
-    await fetchEventData(); // Ensure competingDepartments are updated
+    await fetchEventData(result.event_id);
     setDepartmentId(result.department_id);
     setMedalType(result.medal_type);
   }
