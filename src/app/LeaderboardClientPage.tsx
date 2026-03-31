@@ -64,7 +64,8 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
   }, [supabase]);
 
   useEffect(() => {
-    const channel = supabase
+    // ✅ Handle Results changes
+    const resultsChannel = supabase
       .channel("results-changes")
       .on(
         "postgres_changes",
@@ -73,8 +74,19 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
       )
       .subscribe();
 
+    // ✅ Handle Department changes (Logo/Name/Abbreviation updates)
+    const departmentsChannel = supabase
+      .channel("departments-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "departments" },
+        fetchLeaderboard
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(resultsChannel);
+      supabase.removeChannel(departmentsChannel);
     };
   }, [fetchLeaderboard, supabase]);
 

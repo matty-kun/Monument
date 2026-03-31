@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
+import { useTheme } from "next-themes";
 import { createClient } from "@/utils/supabase/client";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
@@ -20,7 +21,7 @@ interface Event {
   id: string;
   name: string;
   icon?: string | null;
-  category: string; // 👈 updated from category_id → category
+  category: string;
   gender?: string | null;
   division?: string | null;
 }
@@ -39,6 +40,11 @@ export default function ManageEventsPage() {
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [searchQuery, setSearchQuery] = useState("");
+  const [visualType, setVisualType] = useState<'emoji' | 'photo'>('emoji');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const { resolvedTheme } = useTheme();
   const supabase = createClient();
 
   // ✅ Fetch Events
@@ -74,7 +80,62 @@ export default function ManageEventsPage() {
   useEffect(() => {
     fetchEvents();
     fetchCategories();
-  }, [fetchEvents, fetchCategories]);
+
+    // ✅ Set up Realtime Subscription
+    const channel = supabase
+      .channel('events-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events',
+        },
+        () => {
+          fetchEvents(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchEvents, fetchCategories, supabase]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Clear any old preview first
+      setImagePreview(null);
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImagePreview(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36)}.${fileExt}`;
+    const filePath = `events/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('event-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      // Bucket might not exist, try creating/reporting error
+      console.error('Upload error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('event-images').getPublicUrl(filePath);
+    return data.publicUrl;
+  };
 
   // ✅ Add or Update Event
   async function handleAddOrUpdate(e: React.FormEvent) {
@@ -86,12 +147,34 @@ export default function ManageEventsPage() {
     }
 
     try {
+      setUploading(true);
+      let finalIcon = visualType === 'emoji' ? (icon || null) : (imagePreview || null);
+
+      if (visualType === 'photo' && selectedImage) {
+        const uploadedUrl = await uploadImage(selectedImage);
+        if (uploadedUrl) {
+          finalIcon = uploadedUrl;
+        } else {
+          // If upload failed, don't proceed to save base64
+          toast.error("Failed to upload image. Please check your storage bucket.");
+          setUploading(false);
+          return;
+        }
+      }
+
+      // Final check: if we are in photo mode but have a long base64 string, don't save
+      if (visualType === 'photo' && finalIcon?.startsWith('data:image')) {
+        toast.error("Image upload didn't complete. Please try again.");
+        setUploading(false);
+        return;
+      }
+
       const eventData = {
         name: eventName,
-        category: selectedCategory, // 👈 updated
+        category: selectedCategory,
         gender: gender === "N/A" ? null : gender,
         division: division === "N/A" ? null : division,
-        icon: icon || null,
+        icon: finalIcon,
       };
 
       if (editingId) {
@@ -112,6 +195,8 @@ export default function ManageEventsPage() {
     } catch (error: unknown) {
       const err = error as Error;
       toast.error(`Error saving event: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -121,7 +206,10 @@ export default function ManageEventsPage() {
     setGender(null);
     setDivision(null);
     setIcon("");
-    setShowEmojiPicker(false); // Reset picker visibility
+    setVisualType('emoji');
+    setShowEmojiPicker(false);
+    setImagePreview(null);
+    setSelectedImage(null);
     setEditingId(null);
   }
 
@@ -193,6 +281,32 @@ export default function ManageEventsPage() {
     [categories]
   );
 
+  // ✅ Helper for Rendering Photo or Emoji with Fallback
+  const PhotoOrEmoji = ({ icon, className, emojiSize = "text-2xl" }: { icon?: string | null, className: string, emojiSize?: string }) => {
+    const [isError, setIsError] = useState(false);
+    
+    if (!icon || isError) {
+      return <div className={`flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg ${className}`}>
+        <span className={emojiSize}>{(!icon || isError) ? '🏆' : icon}</span>
+      </div>;
+    }
+
+    const isImage = icon.startsWith('http') || icon.startsWith('data:image');
+    
+    if (isImage) {
+      return <img 
+        src={icon} 
+        className={className} 
+        alt="" 
+        onError={() => setIsError(true)} 
+      />;
+    }
+
+    return <div className={`flex items-center justify-center ${className}`}>
+      <span className={emojiSize}>{icon}</span>
+    </div>;
+  };
+
   // ✅ Filtered Events
   const filteredEvents = useMemo(() => {
     if (!searchQuery) {
@@ -224,109 +338,133 @@ export default function ManageEventsPage() {
         onSubmit={handleAddOrUpdate}
         className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800"
       >
-        {/* Event Name + Icon */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="relative"> {/* Icon field */}
-            <label
-              htmlFor="icon"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Icon
-            </label>
-            <div className="flex items-center gap-2 mt-1">
+        {/* Event Visual Choice + Name */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          <div className="md:col-span-4 space-y-4">
+             {/* Mode Selector Tabs */}
+             <div className="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-xl">
+               <button 
+                 type="button" 
+                 onClick={() => setVisualType('emoji')}
+                 className={`flex-1 py-2 text-[0.65rem] font-black uppercase tracking-widest rounded-lg transition-all ${visualType === 'emoji' ? 'bg-white dark:bg-gray-600 shadow-sm text-monument-primary' : 'text-gray-400'}`}
+               >
+                 Emoji
+               </button>
+               <button 
+                 type="button" 
+                 onClick={() => setVisualType('photo')}
+                 className={`flex-1 py-2 text-[0.65rem] font-black uppercase tracking-widest rounded-lg transition-all ${visualType === 'photo' ? 'bg-white dark:bg-gray-600 shadow-sm text-monument-primary' : 'text-gray-400'}`}
+               >
+                 Photo
+               </button>
+             </div>
+
+             <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+                <div className="relative group w-24 h-24 mb-4">
+                  {(imagePreview || icon) && (
+                    <button
+                      type="button"
+                      onClick={() => { setIcon(""); setImagePreview(null); setSelectedImage(null); }}
+                      className="absolute -top-2 -right-2 z-10 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                      title="Remove"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  {visualType === 'photo' ? (
+                    imagePreview ? (
+                      <img 
+                        src={imagePreview} 
+                        className="w-full h-full object-cover rounded-2xl shadow-md border-2 border-white dark:border-gray-600" 
+                        alt="Preview" 
+                        onError={() => setImagePreview(null)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400">
+                        <span className="text-3xl text-gray-300">🖼️</span>
+                      </div>
+                    )
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-5xl bg-white dark:bg-gray-700 rounded-2xl shadow-inner border border-gray-100 dark:border-gray-600">
+                      {icon || '🏆'}
+                    </div>
+                  )}
+                </div>
+
+                {visualType === 'photo' ? (
+                  <label className="w-full cursor-pointer bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-[0.65rem] font-black uppercase tracking-widest text-center py-2.5 rounded-lg hover:border-monument-primary transition-colors text-gray-500">
+                    Choose Photo
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
+                  </label>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(prev => !prev)}
+                    className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg py-2.5 hover:bg-gray-100 text-[0.65rem] font-black uppercase text-gray-500 tracking-widest transition-all"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Pick Emoji
+                  </button>
+                )}
+
+                {showEmojiPicker && visualType === 'emoji' && (
+                  <div className="absolute z-[80] mt-48 shadow-2xl">
+                    <EmojiPicker 
+                      theme={resolvedTheme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                      onEmojiClick={(emojiData: EmojiClickData) => { setIcon(emojiData.emoji); setShowEmojiPicker(false); }} 
+                    />
+                  </div>
+                )}
+             </div>
+          </div>
+
+          <div className="md:col-span-8 space-y-4">
+            <div>
+              <label className="block text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">
+                Event Name <span className="text-red-500 font-bold">*</span>
+              </label>
               <input
                 type="text"
-                id="icon"
-                value={icon || ""}
-                onChange={(e) => setIcon(e.target.value)}
-                className="block w-24 border border-gray-300 rounded-md shadow-sm py-2 px-3 
-                           focus:outline-none focus:ring-violet-500 focus:border-violet-500 
-                           dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-                placeholder="e.g., 🏀"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                className="input w-full"
+                placeholder="e.g. Basketball, Creative Dance"
+                required
               />
-              <button
-                type="button"
-                onClick={() => setShowEmojiPicker(prev => !prev)}
-                className="p-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-2xl"
-                title="Pick an emoji"
-              >
-                😀
-              </button>
             </div>
-            {showEmojiPicker && (
-              <div className="absolute z-10 mt-2 left-0"> {/* Position the picker */}
-                <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => { setIcon(emojiData.emoji); setShowEmojiPicker(false); }} />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">Gender</label>
+                <SingleSelectDropdown options={genderOptions} selectedValue={gender || "N/A"} onChange={setGender} />
               </div>
-            )}
-          </div>
+              <div>
+                <label className="block text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">Division</label>
+                <SingleSelectDropdown options={divisionOptions} selectedValue={division || "N/A"} onChange={setDivision} />
+              </div>
+            </div>
 
-          <div className="flex-grow w-full">
-            <label
-              htmlFor="eventName"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Event Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="eventName"
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 
-                         focus:outline-none focus:ring-violet-500 focus:border-violet-500 
-                         dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
-              placeholder="e.g., Basketball, Vocal Solo"
-              required
-            />
+            <div>
+              <label className="block text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">
+                Category <span className="text-red-500 font-bold">*</span>
+              </label>
+              <SingleSelectDropdown options={categories.map(c => ({ id: c.id, name: c.name }))} selectedValue={selectedCategory} onChange={setSelectedCategory} />
+            </div>
           </div>
-        </div>
-
-        {/* Gender + Division */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Gender
-            </label>
-            <SingleSelectDropdown
-              options={genderOptions}
-              selectedValue={gender || "N/A"}
-              onChange={setGender}
-              placeholder="Select Gender"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Division
-            </label>
-            <SingleSelectDropdown
-              options={divisionOptions}
-              selectedValue={division || "N/A"}
-              onChange={setDivision}
-              placeholder="Select Division"
-            />
-          </div>
-        </div>
-
-        {/* Category */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Category <span className="text-red-500">*</span>
-          </label>
-          <SingleSelectDropdown
-            options={categories.map((cat) => ({ id: cat.id, name: cat.name }))}
-            selectedValue={selectedCategory}
-            onChange={setSelectedCategory}
-            placeholder="Select Category"
-          />
         </div>
 
         {/* Buttons */}
         <button
           type="submit"
-          className="w-full bg-monument-primary text-white py-2 rounded hover:bg-monument-dark transition-colors"
+          disabled={uploading}
+          className="w-full bg-monument-primary text-white py-3 rounded-xl font-bold hover:bg-monument-dark transition-all disabled:opacity-50"
         >
-          {editingId ? "Update Event" : "Add Event"}
+          {uploading ? "Saving..." : editingId ? "Update Event" : "Add Event"}
         </button>
 
         {editingId && (
@@ -394,12 +532,27 @@ export default function ManageEventsPage() {
               <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
                 {filteredEvents.map((event) => (
                     <tr key={event.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-4 py-3 whitespace-nowrap text-xl">{event.icon || "❓"}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <PhotoOrEmoji icon={event.icon} className="w-10 h-10 object-cover rounded-lg border dark:border-gray-600" emojiSize="text-2xl" />
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">{formatEventName(event)}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">{getCategoryName(event.category)}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         <div className="flex gap-2 justify-center">
-                          <button onClick={() => { setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A"); setShowEmojiPicker(false); setIcon(event.icon || ""); }} className="p-2 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors text-lg" title="Edit">
+                          <button onClick={() => { 
+                            setEditingId(event.id); 
+                            setEventName(event.name); 
+                            setSelectedCategory(event.category); 
+                            setGender(event.gender || "N/A"); 
+                            setDivision(event.division || "N/A"); 
+                            setShowEmojiPicker(false); 
+                            const isPhoto = event.icon?.startsWith('http');
+                            setVisualType(isPhoto ? 'photo' : 'emoji');
+                            setIcon(isPhoto ? "" : (event.icon || "")); 
+                            setImagePreview(isPhoto ? (event.icon || null) : null); 
+                            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                          }} 
+                          className="p-2 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors text-lg" title="Edit">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
                           </button>
                           <button onClick={() => handleDelete(event.id)} className="p-2 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors text-lg" title="Delete">
@@ -430,8 +583,8 @@ export default function ManageEventsPage() {
             {filteredEvents.map((event) => (
               <Card key={event.id} className="flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-fadeIn">
                 <CardHeader className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{event.icon || '🏆'}</span>
+                  <div className="flex items-center gap-4">
+                    <PhotoOrEmoji icon={event.icon} className="w-14 h-14 object-cover rounded-2xl shadow-md border-2 border-white dark:border-gray-700" emojiSize="text-4xl" />
                     <div className="flex-1">
                       <CardTitle className="text-base font-semibold leading-tight">{formatEventName(event)}</CardTitle>
                       <CardDescription className="text-xs">{getCategoryName(event.category)}</CardDescription>
@@ -447,7 +600,10 @@ export default function ManageEventsPage() {
                       setGender(event.gender || "N/A");
                       setDivision(event.division || "N/A");
                       setShowEmojiPicker(false);
-                      setIcon(event.icon || "");
+                      const isPhoto = event.icon?.startsWith('http');
+                      setVisualType(isPhoto ? 'photo' : 'emoji');
+                      setIcon(isPhoto ? "" : (event.icon || ""));
+                      setImagePreview(isPhoto ? (event.icon || null) : null);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors text-lg" title="Edit"
