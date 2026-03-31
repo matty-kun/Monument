@@ -77,7 +77,7 @@ export default function Navbar() {
               priority
             />
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-monument-primary dark:text-violet-400 uppercase tracking-wider leading-none mt-4">CITE FEST 2026</span>
+              <span className="text-xl font-bold text-monument-primary dark:text-violet-400 uppercase tracking-wider leading-none mt-1 md:mt-4">CITE FEST 2026</span>
               <span className="hidden md:block text-[0.6rem] font-medium text-gray-500 dark:text-gray-400 mt-[-1px] uppercase tracking-wide whitespace-nowrap transition-all duration-300">
                 Empowering Digital Innovators for a Smarter and Sustainable Future
               </span>

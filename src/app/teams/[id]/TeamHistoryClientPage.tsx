@@ -91,7 +91,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">
       {/* Header section with back button as a rounded card */}
       <div className="max-w-5xl mx-auto px-4 pt-8">
-        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-3xl p-8 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-3xl p-5 md:p-8 border border-gray-100 dark:border-gray-700">
           <div className="mb-6">
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-monument-primary transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -127,23 +127,23 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
 
             {/* Right Box: Points & Medals */}
             <div className="flex flex-col items-center md:items-stretch w-full md:w-auto shrink-0 mt-4 md:mt-0 max-w-sm">
-              <div className="bg-slate-600 dark:bg-[#1e1b4b]/60 border-2 border-slate-500 dark:border-indigo-900/50 rounded-3xl px-10 py-5 flex flex-col items-center mb-4 w-full text-center shadow-md">
+              <div className="bg-slate-600 dark:bg-[#1e1b4b]/60 border-2 border-slate-500 dark:border-indigo-900/50 rounded-3xl px-6 md:px-10 py-5 flex flex-col items-center mb-4 w-full text-center shadow-md">
                 <span className="text-xs font-semibold text-indigo-200 dark:text-indigo-300 mb-1 uppercase tracking-widest">Total Points</span>
                 <span className="text-6xl font-black text-monument-primary drop-shadow-sm">{stats.total_points}</span>
               </div>
               
-              <div className="flex gap-3 w-full justify-between">
-                <div className="flex flex-col items-center py-3 px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 min-w-[80px] flex-1">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
+                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
                   <span className="text-2xl mb-1">🥇</span>
                   <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Gold</span>
                   <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.golds || 0}</span>
                 </div>
-                <div className="flex flex-col items-center py-3 px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 min-w-[80px] flex-1">
+                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
                   <span className="text-2xl mb-1">🥈</span>
                   <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Silver</span>
                   <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.silvers || 0}</span>
                 </div>
-                <div className="flex flex-col items-center py-3 px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 min-w-[80px] flex-1">
+                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
                   <span className="text-2xl mb-1">🥉</span>
                   <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Bronze</span>
                   <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.bronzes || 0}</span>
