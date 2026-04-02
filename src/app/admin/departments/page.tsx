@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
+import { uploadImageAction, deleteImageAction } from "../actions";
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
@@ -27,6 +28,7 @@ export default function DepartmentsPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
@@ -56,24 +58,17 @@ export default function DepartmentsPage() {
   }
 
   async function uploadImage(file: File): Promise<string | null> {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36)}.${fileExt}`;
-    const filePath = `departments/${fileName}`;
+    const formData = new FormData();
+    formData.append("file", file);
 
-    const { error: uploadError } = await supabase.storage
-      .from('department-images')
-      .upload(filePath, file);
+    const result = await uploadImageAction(formData, 'department-images', 'departments');
 
-    if (uploadError) {
-      toast.error(`Error uploading image: ${uploadError.message}`);
+    if (!result.success) {
+      toast.error(`Error uploading image: ${result.error}`);
       return null;
     }
 
-    const { data } = supabase.storage
-      .from('department-images')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
+    return result.publicUrl || null;
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
@@ -93,7 +88,11 @@ export default function DepartmentsPage() {
     try {
       if (editingId) {
         const updateData: any = { name, abbreviation: courses };
-        if (imageUrl) updateData.image_url = imageUrl;
+        if (imageUrl) {
+          updateData.image_url = imageUrl;
+        } else if (photoRemoved) {
+          updateData.image_url = null;
+        }
         const { error } = await supabase.from("departments").update(updateData).eq("id", editingId);
         if (error) throw error;
         toast.success("Department updated successfully!");
@@ -121,6 +120,7 @@ export default function DepartmentsPage() {
     setEditingId(null);
     setSelectedImage(null);
     setImagePreview(null);
+    setPhotoRemoved(false);
   }
 
   async function handleDelete(id: string) {
@@ -137,8 +137,8 @@ export default function DepartmentsPage() {
       if (dept?.image_url) {
         const urlParts = dept.image_url.split('/');
         const filePath = `departments/${urlParts[urlParts.length - 1]}`;
-        const { error: storageError } = await supabase.storage.from('department-images').remove([filePath]);
-        if (storageError) throw storageError;
+        const deleteResult = await deleteImageAction('department-images', filePath);
+        if (!deleteResult.success) throw new Error(deleteResult.error);
       }
 
       const { error } = await supabase.from("departments").delete().eq("id", departmentToDeleteId);
@@ -155,11 +155,13 @@ export default function DepartmentsPage() {
   }
 
   function handleEdit(dept: Department) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setEditingId(dept.id);
     setName(dept.name);
     setCourses(dept.courses || "");
     setImagePreview(dept.image_url || null);
     setSelectedImage(null);
+    setPhotoRemoved(false);
   }
 
   const filteredDepartments = useMemo(() => {
@@ -218,7 +220,7 @@ export default function DepartmentsPage() {
             className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
           />
           {imagePreview && (
-            <div className="mt-2">
+            <div className="mt-2 relative inline-block">
               <Image 
                 src={imagePreview} 
                 alt="Preview" 
@@ -226,6 +228,20 @@ export default function DepartmentsPage() {
                 height={80}
                 className="object-cover rounded border"
               />
+              <button
+                type="button"
+                onClick={() => {
+                  setImagePreview(null);
+                  setSelectedImage(null);
+                  setPhotoRemoved(true);
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                title="Remove Photo"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
@@ -346,7 +362,7 @@ export default function DepartmentsPage() {
                   </div>
                 </CardHeader>
                 <div className="bg-gray-50 dark:bg-gray-700/50 p-3 flex gap-2 justify-end rounded-b-lg mt-auto">
-                  <button onClick={() => { handleEdit(dept); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">✏️ Edit</button>
+                  <button onClick={() => handleEdit(dept)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">✏️ Edit</button>
                   <button onClick={() => handleDelete(dept.id)} className="btn-danger py-1 px-3 text-sm rounded">🗑️ Delete</button>
                 </div>
               </Card>
