@@ -7,6 +7,7 @@ import Podium from "@/components/Podium";
 import TeamHoverCard from "@/components/TeamHoverCard";
 import Image from "next/image";
 import { calculateTotalPoints } from "@/utils/scoring";
+import { Trophy } from "lucide-react";
 
 interface LeaderboardRow {
   id: string;
@@ -179,10 +180,10 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
         </>
       ) : (
         <div className="min-h-[calc(100vh-200px)] flex flex-col justify-center items-center text-center p-4">
-          <div className="text-6xl mb-4">📊</div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">No Results Yet</h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            The leaderboard is empty. Check back soon for the latest standings!
+          <Trophy className="w-20 h-20 text-yellow-500 mb-4 opacity-80" />
+          <h2 className="text-3xl md:text-4xl font-black text-monument-primary mb-2">Welcome to CITE FEST 2026</h2>
+          <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
+            Stay tuned for the results!
           </p>
         </div>
       )}
