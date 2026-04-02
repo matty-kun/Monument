@@ -68,7 +68,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
 
   // Podium layout: grid for clarity, vertical alignment, and spacing
   return (
-    <div className="grid grid-cols-3 gap-12 justify-items-center items-end w-full max-w-5xl mx-auto py-8">
+    <div className="grid grid-cols-3 gap-4 md:gap-12 justify-items-center items-end w-full max-w-5xl mx-auto pt-24 pb-12">
       {/* 2nd place - left */}
       {topThree[0] ? (
         <motion.div
