@@ -132,23 +132,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                 <span className="text-6xl font-black text-monument-primary drop-shadow-sm">{stats.total_points}</span>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
-                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
-                  <span className="text-2xl mb-1">🥇</span>
-                  <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Gold</span>
-                  <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.golds || 0}</span>
-                </div>
-                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
-                  <span className="text-2xl mb-1">🥈</span>
-                  <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Silver</span>
-                  <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.silvers || 0}</span>
-                </div>
-                <div className="flex flex-col items-center py-3 px-2 md:px-4 bg-transparent rounded-2xl border border-gray-200 dark:border-gray-800 flex-1">
-                  <span className="text-2xl mb-1">🥉</span>
-                  <span className="text-[10px] text-gray-500 font-medium tracking-widest uppercase mb-1">Bronze</span>
-                  <span className="text-xl font-bold text-gray-800 dark:text-gray-200">{stats.bronzes || 0}</span>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>

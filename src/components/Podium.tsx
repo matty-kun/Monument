@@ -58,7 +58,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
       <div className="text-center mb-4">
         <div className="text-lg md:text-xl font-semibold text-gray-400 dark:text-gray-500">Awaiting Champion</div>
         <div className="text-sm md:text-base text-gray-400 dark:text-gray-500">
-          <span>🥇 - 🥈 - 🥉 -</span>
+          —
         </div>
         <div className="text-base md:text-lg font-bold mt-1 text-gray-400 dark:text-gray-500">- pts</div>
       </div>
@@ -99,11 +99,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[0].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[0].golds}</span>
-                  <span>🥈 {topThree[0].silvers}</span>
-                  <span>🥉 {topThree[0].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[0].golds, topThree[0].silvers, topThree[0].bronzes)} pts</div>
               </div>
             </div>
@@ -144,11 +140,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[1].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[1].golds}</span>
-                  <span>🥈 {topThree[1].silvers}</span>
-                  <span>🥉 {topThree[1].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[1].golds, topThree[1].silvers, topThree[1].bronzes)} pts</div>
               </div>
             </div>
@@ -189,11 +181,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[2].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[2].golds}</span>
-                  <span>🥈 {topThree[2].silvers}</span>
-                  <span>🥉 {topThree[2].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[2].golds, topThree[2].silvers, topThree[2].bronzes)} pts</div>
               </div>
             </div>

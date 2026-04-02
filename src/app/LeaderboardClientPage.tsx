@@ -163,11 +163,7 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
 
                           {/* Medals and Points */}
                           <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                            <div className="flex gap-4 text-lg">
-                              <span>🥇 {dept.golds}</span>
-                              <span>🥈 {dept.silvers}</span>
-                              <span>🥉 {dept.bronzes}</span>
-                            </div>
+
                             <div className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-lg font-bold px-3 py-1 rounded-full group-hover:bg-monument-primary group-hover:text-white transition-colors">
                               {dept.total_points}
                             </div>
