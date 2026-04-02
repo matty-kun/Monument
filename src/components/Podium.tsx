@@ -52,13 +52,13 @@ export default function Podium({ leaderboard }: PodiumProps) {
       className="flex flex-col items-center"
     >
       <div className="text-3xl md:text-4xl mb-4">{medal}</div>
-      <div className={`relative ${position === "1st" ? "w-32 h-32 md:w-52 md:h-52" : position === "2nd" ? "w-24 h-24 md:w-40 md:h-40" : "w-20 h-20 md:w-36 md:h-36"} rounded-full overflow-hidden border-4 ${position === "1st" ? "border-yellow-500" : position === "2nd" ? "border-gray-500" : "border-orange-500"} mb-4 md:mb-6 bg-gray-200 dark:bg-gray-700 flex items-center justify-center`}>
-        <span className="text-4xl md:text-6xl opacity-30">👥</span>
+      <div className={`relative ${position === "1st" ? "w-32 h-32 md:w-52 md:h-52" : position === "2nd" ? "w-24 h-24 md:w-40 md:h-40" : "w-20 h-20 md:w-36 md:h-36"} mb-4 md:mb-6 flex items-center justify-center`}>
+        <span className="text-4xl md:text-6xl opacity-20">🏆</span>
       </div>
       <div className="text-center mb-4">
         <div className="text-lg md:text-xl font-semibold text-gray-400 dark:text-gray-500">Awaiting Champion</div>
         <div className="text-sm md:text-base text-gray-400 dark:text-gray-500">
-          <span>🥇 - 🥈 - 🥉 -</span>
+          —
         </div>
         <div className="text-base md:text-lg font-bold mt-1 text-gray-400 dark:text-gray-500">- pts</div>
       </div>
@@ -81,12 +81,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="text-3xl md:text-4xl mb-4">🥈</div>
           <TeamHoverCard teamId={topThree[0].id}>
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-24 h-24 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-500 mb-4 md:mb-6 shadow-md">
+              <div className="relative w-24 h-24 md:w-40 md:h-40 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[0].image_url ? (
-                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-cover" />
+                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full bg-gray-500 flex items-center justify-center">
-                    <span className="text-4xl md:text-5xl">🏫</span>
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
+                    <span className="text-4xl md:text-5xl font-black text-gray-500">
+                      {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -99,11 +101,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[0].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[0].golds}</span>
-                  <span>🥈 {topThree[0].silvers}</span>
-                  <span>🥉 {topThree[0].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[0].golds, topThree[0].silvers, topThree[0].bronzes)} pts</div>
               </div>
             </div>
@@ -126,12 +124,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="text-3xl md:text-4xl mb-4">🥇</div>
           <TeamHoverCard teamId={topThree[1].id}>
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-32 h-32 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-yellow-500 mb-4 md:mb-6 shadow-xl">
+              <div className="relative w-32 h-32 md:w-52 md:h-52 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[1].image_url ? (
-                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-cover" />
+                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full bg-yellow-500 flex items-center justify-center">
-                    <span className="text-4xl md:text-5xl">🏫</span>
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
+                    <span className="text-4xl md:text-5xl font-black text-gray-400">
+                      {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -144,11 +144,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[1].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[1].golds}</span>
-                  <span>🥈 {topThree[1].silvers}</span>
-                  <span>🥉 {topThree[1].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[1].golds, topThree[1].silvers, topThree[1].bronzes)} pts</div>
               </div>
             </div>
@@ -171,12 +167,14 @@ export default function Podium({ leaderboard }: PodiumProps) {
           <div className="text-3xl md:text-4xl mb-4">🥉</div>
           <TeamHoverCard teamId={topThree[2].id}>
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-20 h-20 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-orange-500 mb-4 md:mb-6 shadow-md">
+              <div className="relative w-20 h-20 md:w-36 md:h-36 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[2].image_url ? (
-                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-cover" />
+                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full bg-orange-500 flex items-center justify-center">
-                    <span className="text-4xl md:text-5xl">🏫</span>
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
+                    <span className="text-4xl md:text-5xl font-black text-gray-600">
+                      {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -189,11 +187,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
                     {topThree[2].abbreviation}
                   </div>
                 )}
-                <div className="text-sm md:text-base flex justify-center items-center gap-2 text-black dark:text-gray-300">
-                  <span>🥇 {topThree[2].golds}</span>
-                  <span>🥈 {topThree[2].silvers}</span>
-                  <span>🥉 {topThree[2].bronzes}</span>
-                </div>
+
                 <div className="text-base md:text-lg font-bold mt-1 text-black dark:text-gray-200">{calculateTotalPoints(topThree[2].golds, topThree[2].silvers, topThree[2].bronzes)} pts</div>
               </div>
             </div>

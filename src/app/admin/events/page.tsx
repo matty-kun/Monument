@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/utils/supabase/client";
+import { uploadImageAction, deleteImageAction } from "../actions";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
@@ -119,22 +120,17 @@ export default function ManageEventsPage() {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36)}.${fileExt}`;
-    const filePath = `events/${fileName}`;
+    const formData = new FormData();
+    formData.append("file", file);
 
-    const { error: uploadError } = await supabase.storage
-      .from('event-images')
-      .upload(filePath, file);
+    const result = await uploadImageAction(formData, 'event-images', 'events');
 
-    if (uploadError) {
-      // Bucket might not exist, try creating/reporting error
-      console.error('Upload error:', uploadError);
+    if (!result.success) {
+      console.error('Upload error:', result.error);
       return null;
     }
 
-    const { data } = supabase.storage.from('event-images').getPublicUrl(filePath);
-    return data.publicUrl;
+    return result.publicUrl || null;
   };
 
   // ✅ Add or Update Event
@@ -225,6 +221,14 @@ export default function ManageEventsPage() {
     const toastId = toast.loading("Deleting event...");
 
     try {
+      const eventToDel = events.find(e => e.id === eventToDeleteId);
+      if (eventToDel?.icon?.startsWith('http')) {
+        const urlParts = eventToDel.icon.split('/');
+        const filePath = `events/${urlParts[urlParts.length - 1]}`;
+        const deleteRes = await deleteImageAction('event-images', filePath);
+        if (!deleteRes.success) console.warn("Could not delete image from storage:", deleteRes.error);
+      }
+
       // Attempt to delete the event. If this fails due to a foreign key,
       // the error message will tell us which table is dependent.
       const { error } = await supabase

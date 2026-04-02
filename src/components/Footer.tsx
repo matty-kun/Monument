@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="container mx-auto px-6 max-w-7xl">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-0">
-            © {new Date().getFullYear()} CITE SIDLAK – All Rights Reserved
+            © CITE FEST 2026
           </div>
         </div>
       </div>
