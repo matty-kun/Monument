@@ -89,17 +89,17 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4">
         <div>
-          <h1 className="flex items-center gap-3 text-4xl font-bold text-monument-primary mb-2">
-            <Settings className="w-10 h-10" /> Admin Dashboard
+          <h1 className="flex items-center gap-3 text-2xl sm:text-4xl font-bold text-monument-primary mb-1">
+            Admin Dashboard <Settings className="w-8 h-8 sm:w-10 sm:h-10" />
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            CITE FEST Management
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 font-medium">
+            CITE FEST 2026 Management
           </p>
         </div>
-        <button onClick={handleLogout} className="btn btn-danger flex items-center gap-2">
-          <LogOut className="w-5 h-5"/> Logout
+        <button onClick={handleLogout} className="btn btn-danger p-2 hover:scale-105 transition-transform shadow-md" title="Logout">
+          <LogOut className="w-6 h-6"/>
         </button>
       </div>
 

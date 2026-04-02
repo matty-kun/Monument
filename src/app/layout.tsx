@@ -1,6 +1,5 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
@@ -44,7 +43,6 @@ export default function RootLayout({
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
             {children}
           </main>
-          <Footer />
         </ThemeProvider>
       </body>
     </html>

@@ -50,6 +50,7 @@ export default function AddResultPage() {
   const [resultToDeleteId, setResultToDeleteId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingResultId, setEditingResultId] = useState<string | null>(null);
+  const [recentResults, setRecentResults] = useState<ResultWithDepartment[]>([]);
 
   const supabase = createClient();
 
@@ -60,6 +61,15 @@ export default function AddResultPage() {
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
     if (categoriesData) setAllCategories(categoriesData);
+
+    // Fetch recent results
+    const { data: recentData } = await supabase
+      .from('results')
+      .select('id, event_id, department_id, medal_type, departments (id, name, image_url, abbreviation)')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (recentData) setRecentResults(recentData as ResultWithDepartment[]);
   }, [supabase]);
 
   useEffect(() => {
@@ -241,6 +251,7 @@ export default function AddResultPage() {
   }
 
   async function handleEdit(result: ResultWithDepartment) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsEditing(true);
     setEditingResultId(result.id);
     setEventId(result.event_id);
@@ -393,12 +404,65 @@ export default function AddResultPage() {
           </div>
         </div>
       )}
-      {eventId && currentEventResults.length === 0 && (
-        <div className="mt-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400">No winners recorded for this event yet.</p>
+      {/* Recent Results Section */}
+      <div className="mt-12 mb-10">
+        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+          <span>🕒</span> Recent Records
+        </h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Event</th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Team</th>
+                  <th className="px-4 py-3 text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Medal</th>
+                  <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
+                {recentResults.map((result) => {
+                  const event = events.find(e => e.id === result.event_id);
+                  const department = Array.isArray(result.departments) ? result.departments[0] : result.departments;
+                  const { icon } = getMedalStyles(result.medal_type);
+                  
+                  return (
+                    <tr key={result.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[150px]">
+                        {event?.name || 'Unknown Event'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        {department?.abbreviation || department?.name || 'Unknown Team'}
+                      </td>
+                      <td className="px-4 py-3 text-center text-xl">
+                        {icon}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                           <button onClick={() => handleEdit(result)} className="p-1.5 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors">
+                            ✏️
+                           </button>
+                           <button onClick={() => handleDelete(result.id)} className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                            🗑️
+                           </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {recentResults.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-10 text-center text-gray-400 italic">
+                      No results recorded yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
-      <Toaster />
+      </div>
+
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
@@ -406,6 +470,7 @@ export default function AddResultPage() {
         title="Confirm Deletion"
         message="Are you sure you want to delete this result entry? This action cannot be undone."
       />
+      <Toaster />
     </div>
   );
 }
