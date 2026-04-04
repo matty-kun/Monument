@@ -9,9 +9,10 @@ import React, {
 } from "react";
 import Image from "next/image";
 import { CardContent } from "@/components/ui/Card";
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge, FaTrophy } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTrophy } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
+import { CalendarDays, Trophy, Clock, PlayCircle, LayoutGrid } from "lucide-react";
 
 interface Department {
   id: string;
@@ -82,7 +83,7 @@ export default function ScheduleClientPage({
   const [allDepartments] = useState<Department[]>(initialDepartments);
   const [allCategories] = useState<Category[]>(initialCategories);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); 
+  const [statusTab, setStatusTab] = useState<'all' | 'ongoing' | 'upcoming' | 'finished'>('all');
 
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
     if (schedule.status === "finished") {
@@ -108,6 +109,16 @@ export default function ScheduleClientPage({
 
   useEffect(() => {
     let filtered: Schedule[] = [...schedules];
+
+    if (statusTab !== 'all') {
+      filtered = filtered.filter(s => {
+        const status = getDynamicStatus(s).status;
+        if (statusTab === 'ongoing') return status === 'live';
+        if (statusTab === 'upcoming') return status === 'scheduled';
+        return status === 'finished';
+      });
+    }
+
     if (searchQuery) {
       const lowercasedQuery = searchQuery.toLowerCase();
       filtered = filtered.filter((s) => {
@@ -117,8 +128,32 @@ export default function ScheduleClientPage({
         return eventName.includes(lowercasedQuery) || departmentNames.some(dn => dn.includes(lowercasedQuery)) || categoryName.includes(lowercasedQuery);
       });
     }
+
+    filtered.sort((a, b) => {
+      const statA = getDynamicStatus(a).status;
+      const statB = getDynamicStatus(b).status;
+
+      const prioA = statA === 'live' ? 0 : statA === 'scheduled' ? 1 : 2;
+      const prioB = statB === 'live' ? 0 : statB === 'scheduled' ? 1 : 2;
+
+      if (prioA !== prioB) return prioA - prioB;
+
+      const timeA = new Date(`${a.date}T${a.start_time}`).getTime();
+      const timeB = new Date(`${b.date}T${b.start_time}`).getTime();
+      const valA = isNaN(timeA) ? Infinity : timeA;
+      const valB = isNaN(timeB) ? Infinity : timeB;
+
+      if (prioA === 2) {
+        // Both finished, sort by most recently finished (descending)
+        return valB - valA;
+      }
+      
+      // Both live or upcoming, sort by closest first (ascending)
+      return valA - valB;
+    });
+
     setFilteredSchedules(filtered);
-  }, [schedules, searchQuery, getCategoryName]);
+  }, [schedules, searchQuery, statusTab, getCategoryName, getDynamicStatus]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "TBA";
@@ -136,26 +171,44 @@ export default function ScheduleClientPage({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-4">
-        <h1 className="text-3xl md:text-4xl font-black text-monument-primary uppercase tracking-tight mb-2">🗓️ Schedule</h1>
-        <p className="text-gray-500 dark:text-gray-400 font-medium italic">View upcoming, live, and recorded victories across the tournament</p>
+      <div className="mb-6 flex items-center gap-3">
+        <CalendarDays className="w-8 h-8 md:w-10 md:h-10 text-monument-primary shrink-0" strokeWidth={3} />
+        <h1 className="text-3xl md:text-4xl font-black text-monument-primary uppercase tracking-tight leading-none pt-1">Schedule</h1>
       </div>
 
-      <div className="flex flex-row justify-between items-center mb-6 gap-4">
-        <div className="relative w-full sm:max-w-md">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 font-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <div className="flex flex-row justify-between items-center mb-6 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full">
+        <div className="relative w-full max-w-sm shrink">
+          <svg className="absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 font-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
-          <input type="text" placeholder="Search events, teams, or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input pl-12 py-3 w-full bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm" />
+          <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input pl-10 md:pl-12 py-2.5 md:py-3 w-full bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm text-sm" />
         </div>
-        <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner self-center shrink-0">
-          <button onClick={() => setViewMode('card')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}><FaThLarge /> Cards</button>
-          <button onClick={() => setViewMode('table')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}><FaTable /> Table</button>
+        <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner shrink-0 overflow-x-auto custom-scrollbar">
+          {(['all', 'ongoing', 'upcoming', 'finished'] as const).map(tab => {
+            const isActive = statusTab === tab;
+            let Icon = LayoutGrid;
+            let label = "All";
+            let colorClass = "text-gray-400";
+            if (tab === 'ongoing') { Icon = PlayCircle; label = "Ongoing"; colorClass = "text-emerald-500"; }
+            if (tab === 'upcoming') { Icon = Clock; label = "Upcoming"; colorClass = "text-amber-500"; }
+            if (tab === 'finished') { Icon = Trophy; label = "Finished"; colorClass = "text-rose-500"; }
+            
+            return (
+              <button 
+                key={tab}
+                onClick={() => setStatusTab(tab)} 
+                className={`px-3 md:px-4 py-2 md:py-2 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5 md:gap-2 ${isActive ? `bg-white shadow-md dark:bg-gray-700 ${colorClass}` : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
+                title={label}
+              >
+                <Icon className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" strokeWidth={isActive ? 3 : 2} />
+                <span className="hidden md:inline">{label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <AnimatePresence mode="wait">
-        {viewMode === 'card' ? (
           <motion.div key="card-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSchedules.length > 0 ? (
               filteredSchedules.map((s) => {
@@ -201,17 +254,17 @@ export default function ScheduleClientPage({
                                         <FaTrophy className="text-yellow-400" />
                                     </motion.div>
                                   )}
-                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-yellow-500/20' : 'bg-white dark:bg-gray-700 text-gray-400 border-white dark:border-gray-800'}`}>
+                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-yellow-500/20' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-200 border-white dark:border-gray-500'}`}>
                                     {dInfo.image_url ? <Image src={dInfo.image_url} alt={dInfo.name} width={56} height={56} className="rounded-full object-cover w-full h-full" /> : (dInfo.abbreviation || dInfo.name.slice(0, 2).toUpperCase())}
                                   </div>
                                   <div className="flex flex-col mt-0.5">
-                                     {isWinner && isH2H && (
+                                     {isWinner && (
                                         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[7px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Winner</motion.span>
                                      )}
-                                     <span className={`text-[9px] font-bold uppercase tracking-tight mt-0.5 leading-tight max-w-[80px] break-words line-clamp-2 transition-colors ${isWinner ? 'text-gray-900 dark:text-white font-black' : 'text-gray-500/80'}`}>{dInfo.nickname || dInfo.name}</span>
+                                     <span className={`text-[9px] uppercase tracking-tight mt-0.5 leading-tight max-w-[80px] break-words line-clamp-2 transition-colors ${isWinner ? 'text-gray-900 dark:text-white font-black' : 'text-gray-600 dark:text-gray-300 font-bold'}`}>{dInfo.nickname || dInfo.name}</span>
                                   </div>
                                 </div>
-                                {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-200 dark:text-gray-700 italic opacity-20 self-center">vs</span>}
+                                {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 italic opacity-60 self-center">vs</span>}
                               </Fragment>
                             );
                           })}
@@ -219,21 +272,21 @@ export default function ScheduleClientPage({
                         
                         {status === "finished" && s.departments.length === 2 && (Number(s.score_a) > 0 || Number(s.score_b) > 0) && (
                           <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700/50 font-black text-2xl italic text-gray-900 dark:text-gray-100">
-                             <span className={s.winner_id === (typeof s.departments[0] === 'object' ? s.departments[0].id : null) ? 'text-emerald-500' : 'opacity-40'}>{s.score_a || 0}</span>
-                             <span className="text-gray-200">—</span>
-                             <span className={s.winner_id === (typeof s.departments[1] === 'object' ? s.departments[1].id : null) ? 'text-emerald-500' : 'opacity-40'}>{s.score_b || 0}</span>
+                             <span className={s.winner_id === (typeof s.departments[0] === 'object' ? s.departments[0].id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_a || 0}</span>
+                             <span className="text-gray-300 dark:text-gray-600">—</span>
+                             <span className={s.winner_id === (typeof s.departments[1] === 'object' ? s.departments[1].id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_b || 0}</span>
                           </div>
                         )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 pt-2">
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Schedule</span>
+                          <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Schedule</span>
                           <p className="text-[10px] font-black text-gray-800 dark:text-gray-100 uppercase">{s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}</p>
                         </div>
                         <div className="flex flex-col items-center gap-1">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Venue</span>
-                          <p className="text-[10px] font-black text-monument-primary uppercase italic truncate w-full px-2">{s.venues?.name || "TBA"}</p>
+                          <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Venue</span>
+                          <p className="text-[10px] font-black text-monument-primary dark:text-violet-400 uppercase italic truncate w-full px-2">{s.venues?.name || "TBA"}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -243,75 +296,18 @@ export default function ScheduleClientPage({
             ) : (
               <div className="col-span-full text-center py-20 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
                 <span className="text-6xl mb-4 opacity-30">🗓️</span>
-                <h3 className="text-xl font-black text-gray-400 uppercase tracking-tight">No matching schedules</h3>
+                <h3 className="text-xl font-black text-gray-400 uppercase tracking-tight">
+                  {statusTab === 'all' 
+                    ? (searchQuery ? "No matching schedules" : "No schedules yet")
+                    : (searchQuery 
+                      ? `No matching ${statusTab} events` 
+                      : `No ${statusTab} events yet`
+                    )
+                  }
+                </h3>
               </div>
             )}
           </motion.div>
-        ) : (
-          <motion.div key="table-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="min-w-full bg-white dark:bg-gray-800">
-                <thead className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-                  <tr>
-                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Competition</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue</th>
-                    <th className="px-8 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Matchup</th>
-                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {filteredSchedules.map((s) => {
-                    const { label, color } = getDynamicStatus(s);
-                    return (
-                      <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
-                        <td className="px-8 py-5">
-                           <div className="flex items-center gap-4">
-                              <span className="text-2xl drop-shadow-sm group-hover:scale-110 transition-transform">{s.events?.icon || '🏅'}</span>
-                              <div className="flex flex-col">
-                                 <span className="font-black text-sm text-gray-900 dark:text-gray-100 uppercase tracking-tight">{s.events?.name}</span>
-                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.events?.category ? (typeof s.events.category === 'object' ? s.events.category.name : getCategoryName(s.events.category)) || '' : ''}</span>
-                              </div>
-                           </div>
-                        </td>
-                        <td className="px-8 py-5 whitespace-nowrap">
-                           <div className="flex flex-col">
-                              <span className="text-xs font-black text-gray-800 dark:text-gray-100">{s.end_date && s.end_date !== s.date ? `${formatDate(s.date)} — ${formatDate(s.end_date)}` : formatDate(s.date)}</span>
-                              <span className="text-[10px] font-bold text-monument-primary uppercase italic mt-1">{s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)} - ${formatTime(s.end_time)}`}</span>
-                           </div>
-                        </td>
-                        <td className="px-8 py-5 text-xs font-black text-gray-500 uppercase italic tracking-tight">{s.venues?.name || 'TBA'}</td>
-                        <td className="px-8 py-5">
-                           <div className="flex items-center justify-center gap-6">
-                              {s.departments.map((dep, i) => {
-                                 const dInfo = getDepartmentInfo(dep);
-                                 const isWinner = s.winner_id === dInfo.id && s.winner_id !== null;
-                                 return (
-                                    <Fragment key={i}>
-                                       <div className="flex items-center gap-2 relative">
-                                          {isWinner && <span className="absolute -top-3 -right-1 text-[10px]">🏆</span>}
-                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-black border-2 transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-md' : 'bg-gray-50 text-gray-400 border-white dark:border-gray-700/50'}`}>
-                                             {dInfo.image_url ? <img src={dInfo.image_url} className="w-full h-full rounded-full object-cover" /> : (dInfo.abbreviation || dInfo.name.slice(0, 2).toUpperCase())}
-                                          </div>
-                                          <span className={`text-[10px] font-black uppercase ${isWinner ? 'text-yellow-600 font-black' : 'text-gray-400'}`}>{dInfo.nickname || dInfo.abbreviation || dInfo.name}</span>
-                                       </div>
-                                       {i < s.departments.length - 1 && <span className="text-[10px] opacity-20 italic font-black">vs</span>}
-                                    </Fragment>
-                                 );
-                              })}
-                           </div>
-                        </td>
-                        <td className="px-8 py-5">
-                           <span className={`${color} px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-md`}>{label}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
     </div>
   );

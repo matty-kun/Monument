@@ -3,9 +3,9 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaTable, FaThLarge } from "react-icons/fa";
 import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
+import { Trophy } from "lucide-react";
 
 // Types
 interface ProcessedResult {
@@ -19,6 +19,7 @@ interface ProcessedResult {
   department_abbreviation: string | null;
   department_image_url?: string;
   medal_type: "gold" | "silver" | "bronze";
+  created_at?: string;
 }
 
 interface WinnerInfo {
@@ -59,7 +60,6 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
   const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null; abbreviation?: string }[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [showRefresh, setShowRefresh] = useState(false);
 
   const supabase = createClient();
@@ -142,9 +142,9 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-4">
-        <h1 className="text-4xl font-black text-monument-primary mb-2 uppercase tracking-tight">🏟️ Event Results</h1>
-        <p className="text-gray-500 dark:text-gray-400 font-medium tracking-tight">The ultimate Hall of Fame of winners and standings</p>
+      <div className="mb-6 flex items-center gap-3">
+        <Trophy className="w-10 h-10 text-monument-primary shrink-0" strokeWidth={3} />
+        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight leading-none pt-1">Event Results</h1>
       </div>
 
       <AnimatePresence>
@@ -189,22 +189,9 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
             className="input pl-12 py-3 w-full bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm"
           />
         </div>
-
-        <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner self-center shrink-0">
-          <button onClick={() => setViewMode('card')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}>
-            <FaThLarge />
-            Cards
-          </button>
-          <button onClick={() => setViewMode('table')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}>
-            <FaTable />
-            Table
-          </button>
-        </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {viewMode === 'card' ? (
-          <motion.div
+      <motion.div
             key="card-view"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -251,9 +238,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                           <div key={medal} className="flex items-center justify-between group">
                             <div className="flex items-center gap-3">
                               <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{medalIcon}</span>
-                              <div className="flex flex-col">
+                              <div className="flex items-center">
                                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight leading-tight">{medalLabel}</span>
-                                 <span className="text-[9px] font-medium text-gray-400 uppercase tracking-widest">{medal}</span>
                               </div>
                             </div>
                             {winner && winner.department_id ? (
@@ -272,8 +258,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                                 <span>✖️</span> No Team
                               </span>
                             ) : (
-                              <span className="text-[10px] font-black italic text-violet-300 dark:text-violet-900 uppercase tracking-widest flex items-center gap-1.5 opacity-60">
-                                 <div className="w-1 h-1 bg-violet-300 rounded-full animate-pulse" />
+                              <span className="text-[10px] font-black italic text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                                 <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse" />
                                  Awaiting...
                               </span>
                             )}
@@ -286,77 +272,13 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
               );
             })}
             {Object.keys(grouped).length === 0 && (
-              <div className="col-span-full text-center py-24 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="text-7xl mb-6">🏟️</div>
+              <div className="col-span-full text-center py-24 bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+                <Trophy className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-6" strokeWidth={1.5} />
                 <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">No Events Recorded</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Check back soon for the core competition events!</p>
               </div>
             )}
           </motion.div>
-        ) : (
-          <motion.div
-            key="table-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="overflow-hidden rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm"
-          >
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="min-w-full bg-white dark:bg-gray-800">
-                <thead className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Event</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">🥇 Gold</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">🥈 Silver</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">🥉 Bronze</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                  {Object.entries(grouped).map(([eventName, data]) => {
-                    return (
-                      <tr key={eventName} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{data.icon || '🏅'}</span>
-                            <div className="flex flex-col">
-                              <span className="font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">{eventName}</span>
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{data.category || 'N/A'}</span>
-                            </div>
-                          </div>
-                        </td>
-                        {(["gold", "silver", "bronze"] as const).map((medal) => {
-                          const winner = data.winners[medal];
-                          const medalColor = medal === 'gold' ? 'border-yellow-400' : medal === 'silver' ? 'border-gray-200' : 'border-orange-400';
-                          return (
-                            <td key={medal} className="px-6 py-4 whitespace-nowrap text-center">
-                              {winner && winner.department_id ? (
-                                <div className="flex items-center justify-center gap-2" title={winner.department_name || ''}>
-                                  {winner.image_url ? (
-                                    <Image src={winner.image_url} alt={winner.department_name || ''} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
-                                  ) : (
-                                    <div className={`w-8 h-8 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center text-[9px] font-black text-gray-400 border-2 ${medalColor}`}>
-                                      {winner.department_abbreviation?.slice(0, 2)}
-                                    </div>
-                                  )}
-                                  <span className="font-black text-[10px] text-gray-900 dark:text-gray-100 uppercase tracking-tight">
-                                    {winner.department_abbreviation}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-[9px] font-black italic text-violet-200 dark:text-violet-900 uppercase tracking-widest opacity-40">Awaiting...</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <Toaster />
     </div>
   );

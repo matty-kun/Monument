@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 // Types
 interface Result {
   id: string;
+  created_at: string;
   department_id: string;
   medal_type: "gold" | "silver" | "bronze";
   events: {
@@ -44,6 +45,7 @@ interface ProcessedResult {
   department_abbreviation: string | null;
   department_image_url?: string;
   medal_type: "gold" | "silver" | "bronze";
+  created_at: string;
 }
 
 const getCategoryIcon = (categoryName: string | null): string => {
@@ -72,11 +74,13 @@ export default async function EventResultsPage() {
       .from("results")
       .select(`
         id,
+        created_at,
         department_id,
         medal_type,
         events ( name, category, icon, division, gender ),
         departments ( name, abbreviation, image_url )
-      `);
+      `)
+      .order('created_at', { ascending: false });
 
     if (resultsError) {
       console.error("Error fetching event results:", resultsError);
@@ -95,6 +99,7 @@ export default async function EventResultsPage() {
       department_abbreviation: r.departments?.abbreviation || null,
       department_image_url: r.departments?.image_url || undefined,
       medal_type: r.medal_type,
+      created_at: r.created_at,
     }));
 
     const { data: categoriesData, error: categoriesError } = await supabase
