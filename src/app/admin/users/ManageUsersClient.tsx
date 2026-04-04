@@ -13,9 +13,8 @@ import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import ConfirmModal from "@/components/ConfirmModal";
 import { FiShield, FiUser } from "react-icons/fi";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaSearch, FaUserPlus, FaTrash, FaShieldAlt } from "react-icons/fa";
 
-// ✅ Add props interface
 interface ManageUsersClientProps {
   initialUsers: UserProfile[];
   currentUserId?: string | null;
@@ -27,73 +26,45 @@ export default function ManageUsersClient({
 }: ManageUsersClientProps) {
   const [users, setUsers] = useState<UserProfile[]>(initialUsers || []);
   const [isLoading] = useState(false);
-  const [error] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
-  // New user form state
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("admin");
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [viewMode] = useState<"table" | "card">("table");
-  const [searchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Helper: Capitalize role names
   const capitalizeWords = (str: string): string =>
-    str
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+    str.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-  // Filter users
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
     const q = searchQuery.toLowerCase();
-    return users.filter(
-      (u) =>
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
-    );
+    return users.filter(u => u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
   }, [users, searchQuery]);
 
-  // 🔹 Role update
   const handleRoleChange = async (userId: string, newRole: string) => {
     const original = [...users];
-    setUsers((u) =>
-      u.map((user) => (user.id === userId ? { ...user, role: newRole } : user))
-    );
-
+    setUsers(u => u.map(user => (user.id === userId ? { ...user, role: newRole } : user)));
     const toastId = toast.loading("Updating role...");
     const result = await updateUserRole(userId, newRole);
-
-    if (result.success) {
-      toast.success(result.message, { id: toastId });
-    } else {
-      toast.error(`Failed: ${result.message}`, { id: toastId });
-      setUsers(original); // revert
-    }
+    if (result.success) toast.success(result.message, { id: toastId });
+    else { toast.error(`Failed: ${result.message}`, { id: toastId }); setUsers(original); }
   };
 
-  // 🔹 Create new user
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail || !newPassword) return;
-
-    const toastId = toast.loading("Creating user...");
+    const toastId = toast.loading("Creating user account...");
     const result = await createUser(newEmail, newPassword, newRole);
-
     if (result.success && result.user) {
       toast.success(result.message, { id: toastId });
-      setUsers((prev) => [result.user!, ...prev]);
-      setNewEmail("");
-      setNewPassword("");
-    } else {
-      toast.error(`Failed: ${result.message}`, { id: toastId });
-    }
+      setUsers(prev => [result.user!, ...prev]);
+      setNewEmail(""); setNewPassword("");
+    } else toast.error(`Failed: ${result.message}`, { id: toastId });
   };
 
-  // 🔹 Delete user
   const handleDeleteClick = (user: UserProfile) => {
     setUserToDelete(user);
     setShowConfirmModal(true);
@@ -101,205 +72,125 @@ export default function ManageUsersClient({
 
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
-
-    const toastId = toast.loading(`Deleting ${userToDelete.email}...`);
+    const toastId = toast.loading(`Deleting account...`);
     const result = await deleteUser(userToDelete.id);
-
     if (result.success) {
       toast.success(result.message, { id: toastId });
-      setUsers((u) => u.filter((user) => user.id !== userToDelete.id));
-    } else {
-      toast.error(`Failed: ${result.message}`, { id: toastId });
-    }
-
-    setShowConfirmModal(false);
-    setUserToDelete(null);
+      setUsers(u => u.filter(user => user.id !== userToDelete.id));
+    } else toast.error(`Failed: ${result.message}`, { id: toastId });
+    setShowConfirmModal(false); setUserToDelete(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center h-64">
-        <BouncingBallsLoader />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto mt-10">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h2 className="text-2xl font-bold text-red-700 mb-2 items-center">
-            ⛔ Access Denied
-          </h2>
-          <p className="text-red-700">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex justify-center items-center h-64"><BouncingBallsLoader /></div>;
 
   return (
-    <>
-      {/* New User Form */}
-      <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-semibold text-monument-primary mb-4">
-          ➕ Add New User
-        </h2>
-        <form
-          onSubmit={handleCreateUser}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">
-              Email
-            </label>
-            <input
-              type="email"
-              className="input w-full"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              required
-            />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full h-full min-h-0">
+      {/* LEFT COLUMN: Create User */}
+      <div className="lg:col-span-4 space-y-8 h-full md:overflow-y-auto pr-1 custom-scrollbar pb-10 md:pb-0">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md">
+          <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+            <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">Create New Account</h2>
           </div>
+          
+          <div className="p-6">
+            <form onSubmit={handleCreateUser} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Email Address</label>
+                <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl px-4 py-4 text-sm font-bold placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all" placeholder="name@example.com" required />
+              </div>
 
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">
-              Password
-            </label>
-            <input
-              type={showNewPassword ? "text" : "password"}
-              className="input w-full pr-10"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-              className="absolute inset-y-0 right-0 top-6 flex items-center pr-3 text-gray-500 hover:text-monument-primary"
-            >
-              {showNewPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-            </button>
+              <div className="relative">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Access Password</label>
+                <input type={showNewPassword ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl pl-4 pr-12 py-4 text-sm font-bold placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all" placeholder="••••••••" required />
+                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-[38px] text-gray-400 hover:text-monument-primary transition-colors">
+                  {showNewPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">System Role</label>
+                <SingleSelectDropdown 
+                   selectedValue={newRole} 
+                   onChange={setNewRole} 
+                   options={[
+                     { id: "admin", name: "Admin", icon: "🛡️" },
+                     { id: "super_admin", name: "Super Admin", icon: "👑" },
+                   ]} 
+                />
+              </div>
+
+              <button type="submit" className="w-full bg-monument-primary hover:bg-monument-dark text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/20 active:scale-95">
+                CREATE ACCOUNT
+              </button>
+            </form>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">
-              Role
-            </label>
-            <SingleSelectDropdown
-              selectedValue={newRole}
-              onChange={(role) => setNewRole(role)}
-              options={[
-                { id: "admin", name: "Admin", icon: "🛡️" },
-                { id: "super_admin", name: "Super Admin", icon: "👑" },
-              ]}
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary w-full md:w-auto h-12">
-            🚀 Create
-          </button>
-        </form>
+        </div>
       </div>
 
-      {/* Table or Card View */}
-      <AnimatePresence mode="wait">
-        {viewMode === "table" ? (
-          <motion.div
-            key="table"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-monument-primary to-violet-600">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                      Current Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                      Change Role
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                      Actions
-                    </th>
+      {/* RIGHT COLUMN: User List */}
+      <div className="lg:col-span-8 flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 mb-6">
+           <div className="relative flex-1 w-full">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" placeholder="Search users by email or role..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl pl-12 pr-4 py-3 text-sm font-medium" />
+           </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex-1 flex flex-col min-h-0">
+          <div className="overflow-x-auto flex-1 overflow-y-auto custom-scrollbar">
+            <table className="min-w-full divide-y divide-gray-50 dark:divide-gray-700">
+              <thead className="bg-gray-50/80 dark:bg-gray-900/40 sticky top-0 z-10 backdrop-blur-sm">
+                <tr>
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">User Identity</th>
+                  <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Permissions</th>
+                  <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                {filteredUsers.length === 0 ? (
+                  <tr><td colSpan={3} className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No users found</td></tr>
+                ) : filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight">{user.email}</span>
+                        {user.id === currentUserId && <span className="inline-flex w-fit mt-1 px-2 py-0.5 rounded-md text-[8px] font-black bg-monument-primary text-white uppercase tracking-tighter">Current Session</span>}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <SingleSelectDropdown
+                        selectedValue={user.role}
+                        onChange={(newRole) => handleRoleChange(user.id, newRole)}
+                        options={[
+                          { id: "admin", name: "Admin", icon: "🛡️" },
+                          { id: "super_admin", name: "Super Admin", icon: "👑" },
+                        ]}
+                        disabled={user.id === currentUserId}
+                      />
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      {user.id !== currentUserId && (
+                        <button onClick={() => handleDeleteClick(user)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {user.email}{" "}
-                        {user.id === currentUserId && (
-                          <span className="ml-2 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50 px-2 py-1 rounded-full">
-                            You
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                            user.role === "super_admin"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          }`}
-                        >
-                          {user.role === "super_admin" ? <FiShield /> : <FiUser />}
-                          {capitalizeWords(user.role.replace("_", " "))}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <SingleSelectDropdown
-                          selectedValue={user.role}
-                          onChange={(newRole) => handleRoleChange(user.id, newRole)}
-                          options={[
-                            { id: "admin", name: "Admin", icon: "🛡️" },
-                            { id: "super_admin", name: "Super Admin", icon: "👑" },
-                          ]}
-                          disabled={user.id === currentUserId}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => handleDeleteClick(user)}
-                          className="btn-danger py-1 px-3 text-sm rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={user.id === currentUserId}
-                        >
-                          🗑️ Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        ) : (
-          <p>Card View (coming soon)</p>
-        )}
-      </AnimatePresence>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       {userToDelete && (
         <ConfirmModal
           isOpen={showConfirmModal}
           onClose={() => setShowConfirmModal(false)}
           onConfirm={handleConfirmDelete}
-          title="Confirm Delete"
-          message={
-            <span>
-              Are you sure you want to delete{" "}
-              <strong>{userToDelete.email}</strong>?
-            </span>
-          }
+          title="Delete Account"
+          message={<span>Are you sure you want to permanently delete <strong>{userToDelete.email}</strong>?</span>}
         />
       )}
-
       <Toaster />
-    </>
+    </div>
   );
 }

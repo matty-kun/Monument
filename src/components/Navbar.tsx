@@ -35,7 +35,7 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: "/", label: "Podium", icon: Trophy },
-    { href: "/events", label: "Events", icon: Flag },
+    { href: "/results", label: "Results", icon: Flag },
     { href: "/schedule", label: "Schedule", icon: CalendarDays },
   ], []);
 
@@ -60,19 +60,20 @@ export default function Navbar() {
     }
     return `${baseClasses} text-gray-500 hover:text-monument-primary dark:text-gray-400 dark:hover:text-violet-400`;
   };
+  const isMainAdminPath = pathname?.startsWith('/admin');
 
-
+  if (isMainAdminPath) return null;
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50">
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
+      <div className="container mx-auto px-6 py-2.5 flex justify-between items-center max-w-7xl">
         <div className="flex items-center">
           <Link href="/" className="flex items-center text-2xl font-bold text-monument-green hover:text-green-700 dark:hover:text-green-500 transition-colors no-underline">
             <Image
               src="/monument-logo.png"
               alt="Monument Logo"
-              width={50}
-              height={50}
+              width={42}
+              height={42}
               className="mr-2"
               priority
             />

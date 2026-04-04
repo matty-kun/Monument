@@ -1,37 +1,42 @@
 "use client";
 
-import { useState, useEffect, useMemo, Fragment, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useMemo, useCallback, Fragment } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
-import toast, { Toaster } from 'react-hot-toast';
-import ConfirmModal from '../../../components/ConfirmModal';
-import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
-import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import TimePickerDropdown from '../../../components/TimePickerDropdown';
-import DatePickerDropdown from "../../../components/DatePickerDropdown";
+import { 
+  Plus, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  Trash2, 
+  CheckCircle2, 
+  Clock, 
+  MapPin, 
+  Calendar,
+  Settings2,
+  X,
+  AlertCircle
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
 import { formatTime } from "@/lib/utils";
-import { FaTable, FaThLarge, FaClock, FaMapMarkerAlt } from "react-icons/fa";
+import SingleSelectDropdown from "@/components/SingleSelectDropdown";
+import DatePickerDropdown from "@/components/DatePickerDropdown";
+import TimePickerDropdown from "@/components/TimePickerDropdown";
 
+// --- Types ---
 interface Department {
   id: string;
   name: string;
-  image_url?: string;
+  abbreviation: string;
+  image_url: string | null;
 }
 
 interface Event {
   id: string;
   name: string;
-  icon?: string;
-  category?: string | null;
-  gender?: string | null;
-  division?: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
+  icon: string | null;
+  category: { id: string; name: string } | string | null;
 }
 
 interface Venue {
@@ -41,633 +46,750 @@ interface Venue {
 
 interface Schedule {
   id: string;
-  event_id: string; // Foreign key to events table
-  venue_id: string; // Foreign key to venues table
-  // The following is from the related tables
-  events: { name: string; icon: string | null; gender: string | null; division: string | null; } | null;
-  venues: { name: string } | null;
+  event_id: string;
+  venue_id: string;
   departments: string[];
   start_time: string;
   end_time: string;
   date: string;
-  status: "upcoming" | "ongoing" | "finished";
+  status: "scheduled" | "live" | "finished";
+  winner_id: string | null;
+  score_a: number | null;
+  score_b: number | null;
+  events: Event | null;
+  venues: Venue | null;
+  end_date: string | null;
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return "TBA";
-  
-  // Adding T00:00:00 ensures the date isn't affected by timezone shifts
-  const d = new Date(dateString + 'T00:00:00');
-  if (isNaN(d.getTime())) return "TBA";
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${month}-${day}-${year}`;
-};
+// --- Icons / Components ---
+const FaClock = ({ size }: { size?: number }) => <Clock size={size || 14} />;
+const FaMapMarkerAlt = ({ size }: { size?: number }) => <MapPin size={size || 14} />;
+const FaCalendarAlt = ({ size }: { size?: number }) => <Calendar size={size || 14} />;
+const FaTrash = () => <Trash2 size={14} />;
+const FaEdit = () => <Settings2 size={14} />;
+const FaCheck = ({ size }: { size?: number }) => <CheckCircle2 size={size || 14} />;
 
-export default function SchedulePage() {
+export default function AdminSchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [allVenues, setAllVenues] = useState<Venue[]>([]);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [eventId, setEventId] = useState("");
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [venueId, setVenueId] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [date, setDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Form states
+  const [eventId, setEventId] = useState("");
+  const [venueId, setVenueId] = useState("");
+  const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("09:00");
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isWholeDay, setIsWholeDay] = useState(false);
+
+  // Result Modal states
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultMatch, setResultMatch] = useState<Schedule | null>(null);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [scoreA, setScoreA] = useState<number>(0);
+  const [scoreB, setScoreB] = useState<number>(0);
+  const [isSubmittingResult, setIsSubmittingResult] = useState(false);
+
+  // 3-team medal assignment states
+  const [medalGoldId, setMedalGoldId] = useState<string | null>(null);
+  const [medalSilverId, setMedalSilverId] = useState<string | null>(null);
+  const [medalBronzeId, setMedalBronzeId] = useState<string | null>(null);
+
+  // Deletion Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
-  const [searchQuery, setSearchQuery] = useState("");
-  // cspell:ignore supabase
+
   const supabase = createClient();
 
-  const getDynamicStatus = useCallback((schedule: Schedule) => {
-    if (!schedule.date || !schedule.start_time || !schedule.end_time)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
-    const now = new Date();
-    const finalEndDate = schedule.date;
-    const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${finalEndDate}T${schedule.end_time}`);
-
-    if (isNaN(start.getTime()))
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
-    if (now < start)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-    if (now >= start && now <= end)
-      return {
-        status: "ongoing",
-        label: "Live Now",
-        color: "bg-green-500 animate-pulse",
-        icon: "🔴",
-      };
-    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
-  }, []);
-
   const fetchSchedules = useCallback(async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("schedules")
       .select(`
-        *, start_time, end_time,
-        events ( name, icon, gender, division ),
-        venues ( name )
-      `).order("date");
-    if (error) {
-      console.error("Error fetching schedules:", error);
-      toast.error("Could not fetch schedules.");
-    } else if (data) {
-      const statusOrder: Record<string, number> = {
-        ongoing: 1,
-        upcoming: 2,
-        finished: 3,
-      };
-
-      const sortedData = data.sort((a, b) => {
-        const statusA = getDynamicStatus(a).status;
-        const statusB = getDynamicStatus(b).status;
-        const orderA = statusOrder[statusA] || 4;
-        const orderB = statusOrder[statusB] || 4;
-
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-        return new Date(a.date + "T" + a.start_time).getTime() - new Date(b.date + "T" + b.start_time).getTime();
-      });
-      setSchedules(sortedData);
-    }
-  }, [supabase, getDynamicStatus]);
-
-  const fetchAllDepartments = useCallback(async () => {
-    const { data, error } = await supabase.from("departments").select("id, name, image_url").order("name");
-    if (error) {
-      toast.error("Could not fetch departments.");
-    } else if (data) {
-      setAllDepartments(data);
-    }
+        *,
+        events (*),
+        venues (*)
+      `)
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+    
+    if (error) toast.error("Failed to fetch schedules");
+    else setSchedules(data || []);
+    setLoading(false);
   }, [supabase]);
 
-  const fetchAllEvents = useCallback(async () => {
-    const { data, error } = await supabase.from("events").select("id, name, icon, category, gender, division").order("category,name");
-    if (error) {
-      toast.error("Could not fetch events.");
-    } else if (data) {
-      setAllEvents(data);
-    }
-  }, [supabase]);
+  const fetchData = useCallback(async () => {
+    const [eventsRes, venuesRes, deptsRes, catRes] = await Promise.all([
+      supabase.from("events").select("*").order("name"),
+      supabase.from("venues").select("*").order("name"),
+      supabase.from("departments").select("*").order("name"),
+      supabase.from("categories").select("id, name")
+    ]);
 
-  const fetchAllVenues = useCallback(async () => {
-    const { data, error } = await supabase.from("venues").select("id, name").order("name");
-    if (error) {
-      toast.error("Could not fetch venues.");
-    } else if (data) {
-      setAllVenues(data);
-    }
-  }, [supabase]);
-
-  const fetchAllCategories = useCallback(async () => {
-    const { data, error } = await supabase.from("categories").select("id, name").order("name");
-    if (error) {
-      toast.error("Could not fetch categories.");
-    } else if (data) {
-      setAllCategories(data);
-    }
+    if (eventsRes.data) setEvents(eventsRes.data);
+    if (venuesRes.data) setVenues(venuesRes.data);
+    if (deptsRes.data) setDepartments(deptsRes.data);
+    if (catRes.data) setCategories(catRes.data);
   }, [supabase]);
 
   useEffect(() => {
     fetchSchedules();
-    fetchAllDepartments();
-    fetchAllEvents();
-    fetchAllVenues();
-    fetchAllCategories();
+    fetchData();
+  }, [fetchSchedules, fetchData]);
 
-    // ✅ Set up Realtime Subscription
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to INSERT, UPDATE, and DELETE
-          schema: 'public',
-          table: 'schedules',
-        },
-        () => {
-          fetchSchedules(); // Re-fetch whenever a change occurs
-        }
-      )
-      .subscribe();
+  const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d])), [departments]);
+  const departmentIdMap = useMemo(() => new Map(departments.map(d => [d.id, d])), [departments]);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchSchedules, fetchAllDepartments, fetchAllEvents, fetchAllVenues, fetchAllCategories, supabase]);
-
-  async function handleAddOrUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      if (!eventId || !allEvents.find(e => e.id === eventId)) {
-        toast.error("Please select a valid event.");
-        return;
-      }
-      if (!venueId || !allVenues.find(v => v.id === venueId)) {
-        toast.error("Please select a valid venue.");
-        return;
-      }
-      if (!date) {
-        toast.error("Please select a date.");
-        return;
-      }
-      if (!isWholeDay && (!startTime || !endTime)) {
-        toast.error("Please select start and end times.");
-        return;
-      }
-
-      const finalStartTime = isWholeDay ? "00:00" : startTime;
-      const finalEndTime = isWholeDay ? "23:59" : endTime;
-
-      if (!isWholeDay && finalStartTime >= finalEndTime) {
-        toast.error("End time must be after start time.");
-        return;
-      }
-      if (editingId) {
-        const { error } = await supabase
-          .from("schedules")
-          .update({ 
-            event_id: eventId, 
-            departments: selectedDepartments, 
-            venue_id: venueId, 
-            start_time: finalStartTime, 
-            end_time: finalEndTime, 
-            date
-          })
-          .eq("id", editingId);
-        if (error) throw error;
-        toast.success("Schedule updated successfully!");
-      } else {
-        const { error } = await supabase.from("schedules").insert([{ 
-          event_id: eventId, 
-          departments: selectedDepartments, 
-          venue_id: venueId, 
-          start_time: finalStartTime, 
-          end_time: finalEndTime, 
-          date
-        }]);
-        if (error) throw error;
-        toast.success("Schedule added successfully!");
-      }
-      resetForm();
-      fetchSchedules();
-    } catch (error: unknown) {
-      const err = error as Error;
-      toast.error(`Error saving schedule: ${err.message.replace('venue', 'venue_id')}`);
-    }
-  }
-
-  function resetForm() {
-    setEventId("");
-    setSelectedDepartments([]);
-    setVenueId("");
-    setStartTime("");
-    setEndTime("");
-    setDate("");
-    setEndDate("");
-    setIsWholeDay(false);
-    setEditingId(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  async function handleDelete(id: string) {
-    setScheduleToDeleteId(id);
-    setShowConfirmModal(true);
-  }
-
-  async function handleConfirmDelete() {
-    if (!scheduleToDeleteId) return;
-
-    const { error } = await supabase.from("schedules").delete().eq("id", scheduleToDeleteId);
-    if (error) {
-      toast.error("Error deleting schedule.");
-    } else {
-      toast.success("Schedule deleted successfully!");
-      fetchSchedules();
-    }
-    setShowConfirmModal(false);
-    setScheduleToDeleteId(null);
-  }
-
-  const handleDeptSelection = (deptName: string) => {
-    setSelectedDepartments(prev =>
-      prev.includes(deptName)
-        ? prev.filter(d => d !== deptName)
-        : [...prev, deptName]
-    );
-  };
-
-  const departmentMap = useMemo(() => {
-    return new Map(allDepartments.map(dept => [dept.name, dept]));
-  }, [allDepartments]);
-
-  // Helper to format the full event name for display
-  const formatEventName = useCallback((event: Event | { name: string; gender: string | null; division: string | null; } | null) => {
-    if (!event) return 'N/A';
-    const parts = [event.name];
-    if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
-    if (event.gender) parts.push(`- ${event.gender}`);
-    return parts.join(' ');
-  }, []);
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter(s => {
+      const eventName = s.events?.name?.toLowerCase() || '';
+      const venueName = s.venues?.name?.toLowerCase() || '';
+      const depts = s.departments.join(' ').toLowerCase();
+      const q = searchQuery.toLowerCase();
+      return eventName.includes(q) || venueName.includes(q) || depts.includes(q);
+    });
+  }, [schedules, searchQuery]);
 
   const groupedEvents = useMemo(() => {
-    if (!allEvents.length || !allCategories.length) return [];
-    const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
-
-    const groups: { [key: string]: Event[] } = allEvents.reduce((acc, event) => {
-      const categoryName = event.category ? categoryMap.get(event.category) || "Uncategorized" : "Uncategorized";
-      if (!acc[categoryName]) {
-        acc[categoryName] = [];
+    return events.reduce((acc, ev) => {
+      let categoryName = 'Uncategorized';
+      if (typeof ev.category === 'object' && ev.category) {
+        categoryName = ev.category.name;
+      } else if (typeof ev.category === 'string') {
+        categoryName = categories.find(c => c.id === ev.category)?.name || 'Uncategorized';
       }
-      acc[categoryName].push(event);
+      
+      const cat = categoryName;
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push({ ...ev, icon: ev.icon });
       return acc;
-    }, {} as { [key: string]: Event[] });
-    
-    // Now, map the events within each group to have a formatted name for the dropdown
-    return Object.entries(groups).map(([category, events]) => ({
-      label: category,
-      options: events.map(event => ({ ...event, id: event.id, name: formatEventName(event) }))
+    }, {} as Record<string, any[]>);
+  }, [events, categories]);
+
+  const eventOptions = useMemo(() => {
+    return Object.entries(groupedEvents).map(([cat, evs]) => ({
+      label: cat,
+      options: evs.map(ev => ({
+        id: ev.id,
+        name: ev.name,
+        icon: ev.icon
+      }))
     }));
-  }, [allEvents, allCategories, formatEventName]);
+  }, [groupedEvents]);
 
-  // ✅ Filtered Schedules for Search
-  const filteredSchedules = useMemo(() => {
-    if (!searchQuery) {
-      return schedules;
+  const venueOptions = useMemo(() => {
+    return venues.map(v => ({
+      id: v.id,
+      name: v.name,
+      icon: "📍"
+    }));
+  }, [venues]);
+
+  async function handleSaveSchedule() {
+    if (!eventId || !venueId || !date || selectedDepartments.length < 1) {
+      toast.error("Please fill all required fields");
+      return;
     }
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return schedules.filter((schedule) => {
-      const eventName = formatEventName(schedule.events).toLowerCase();
-      const venueName = schedule.venues?.name.toLowerCase() || '';
-      const departmentNames = schedule.departments.join(' ').toLowerCase();
+    
+    setIsSubmitting(true);
+    const payload = {
+      event_id: eventId,
+      venue_id: venueId,
+      date,
+      end_date: endDate || date,
+      start_time: isWholeDay ? "00:00:00" : `${startTime}:00`,
+      end_time: isWholeDay ? "23:59:59" : `${endTime}:00`,
+      departments: selectedDepartments,
+      status: 'scheduled' as const
+    };
 
-      return eventName.includes(lowercasedQuery) ||
-             venueName.includes(lowercasedQuery) ||
-             departmentNames.includes(lowercasedQuery);
-    });
-  }, [schedules, searchQuery, formatEventName]);
+    try {
+      if (editingId) {
+        const { error } = await supabase.from("schedules").update(payload).eq("id", editingId);
+        if (error) throw error;
+        toast.success("Schedule updated!");
+      } else {
+        const { error } = await supabase.from("schedules").insert([payload]);
+        if (error) throw error;
+        toast.success("Schedule created!");
+      }
+      closeModal();
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDeleteSchedule() {
+    if (!scheduleToDeleteId) return;
+    try {
+      const { error } = await supabase.from("schedules").delete().eq("id", scheduleToDeleteId);
+      if (error) throw error;
+      toast.success("Schedule deleted");
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setShowConfirmModal(false);
+      setScheduleToDeleteId(null);
+    }
+  }
+
+  async function handleResetMatch(id: string) {
+    const toastId = toast.loading("Resetting match match...");
+    try {
+      const { error } = await supabase.from("schedules").update({ 
+        status: 'scheduled',
+        winner_id: null,
+        score_a: null,
+        score_b: null
+      }).eq("id", id);
+      if (error) throw error;
+      toast.success("Match has been reset to upcoming!", { id: toastId });
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(`Reset failed: ${error.message}`, { id: toastId });
+    }
+  }
+
+  async function handleSaveResult() {
+    if (!resultMatch) return;
+    const is3Team = resultMatch.departments.length >= 3;
+
+    setIsSubmittingResult(true);
+    const toastId = toast.loading(is3Team ? "Recording medals & finishing match..." : "Saving match result...");
+    try {
+      if (is3Team) {
+        // 3-team: update schedule status to finished
+        const { error: schedError } = await supabase
+          .from("schedules")
+          .update({ status: 'finished', winner_id: medalGoldId })
+          .eq("id", resultMatch.id);
+        if (schedError) throw schedError;
+
+        // Auto-link: delete existing results for this event, then insert medals
+        await supabase.from('results').delete().eq('event_id', resultMatch.event_id);
+
+        const resultsBatch: { event_id: string; department_id: string | null; medal_type: string; points: number }[] = [];
+        if (medalGoldId !== null && medalGoldId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalGoldId === '' ? null : medalGoldId, medal_type: 'gold', points: medalGoldId === '' ? 0 : 200 });
+        if (medalSilverId !== null && medalSilverId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalSilverId === '' ? null : medalSilverId, medal_type: 'silver', points: medalSilverId === '' ? 0 : 150 });
+        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalBronzeId === '' ? null : medalBronzeId, medal_type: 'bronze', points: medalBronzeId === '' ? 0 : 100 });
+
+        if (resultsBatch.length > 0) {
+          const { error: resError } = await supabase.from('results').insert(resultsBatch);
+          if (resError) throw resError;
+        }
+
+        toast.success("Match finished & medals recorded!", { id: toastId });
+      } else {
+        // 2-team: existing behavior (schedule-only)
+        const { error } = await supabase
+          .from("schedules")
+          .update({
+            winner_id: winnerId,
+            score_a: scoreA,
+            score_b: scoreB,
+            status: 'finished'
+          })
+          .eq("id", resultMatch.id);
+        if (error) throw error;
+        toast.success("Match result recorded!", { id: toastId });
+      }
+
+      setShowResultModal(false);
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(`Save failed: ${error.message}`, { id: toastId });
+    } finally {
+      setIsSubmittingResult(false);
+    }
+  }
+
+  function openResultModal(schedule: Schedule) {
+    setResultMatch(schedule);
+    setWinnerId(schedule.winner_id);
+    setScoreA(schedule.score_a || 0);
+    setScoreB(schedule.score_b || 0);
+    // Reset 3-team medal state
+    setMedalGoldId(null);
+    setMedalSilverId(null);
+    setMedalBronzeId(null);
+    setShowResultModal(true);
+  }
+
+  const getDynamicStatus = (schedule: Schedule) => {
+    if (schedule.status === 'finished') return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
+    const now = new Date();
+    const start = new Date(`${schedule.date}T${schedule.start_time}`);
+    const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
+    if (now >= start && now <= end) return { label: 'Live Now', color: 'bg-emerald-500 animate-pulse', status: 'live' };
+    if (now > end) return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
+    return { label: 'Upcoming', color: 'bg-amber-500', status: 'scheduled' };
+  };
+
+  const closeModal = () => {
+    setShowFormModal(false);
+    setEditingId(null);
+    setEventId("");
+    setVenueId("");
+    setSelectedDepartments([]);
+    setDate("");
+    setEndDate(null);
+    setStartTime("08:00");
+    setEndTime("09:00");
+    setIsWholeDay(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+  };
+
+  const formatEventName = (ev: Event | null) => {
+    if (!ev) return "N/A";
+    return ev.name.length > 25 ? ev.name.substring(0, 25) + '...' : ev.name;
+  };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 dark:text-gray-200">
-      <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
-      <h1 className="text-4xl font-bold text-monument-primary mb-4">🗓️ Manage Schedule</h1>
-
-      <form onSubmit={handleAddOrUpdate} className="space-y-4 mb-6 bg-white p-6 rounded-lg shadow dark:bg-gray-800">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <SingleSelectDropdown
-            options={groupedEvents}
-            selectedValue={eventId}
-            onChange={setEventId}
-            placeholder="Select Event"
-          />
-          <SingleSelectDropdown
-            options={allVenues.map(venue => ({ id: venue.id, name: venue.name }))}
-            selectedValue={venueId}
-            onChange={setVenueId}
-            placeholder="Select Venue"
-          />
-
-          {/* Row 2: Departments (Full Width) */}
-          <div className="md:col-span-2">
-            <MultiSelectDropdown
-              options={allDepartments}
-              selectedValues={selectedDepartments}
-              onChange={handleDeptSelection}
-              placeholder="Select Departments"
-            />
+    <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden">
+      <Toaster position="top-right" />
+      
+      {/* Header / Search Area */}
+      <div className="flex-none p-4 md:p-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-monument-primary uppercase tracking-tight">Admin Control Center</h1>
+            <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Schedules & Competition Management</p>
           </div>
-
-          {/* Row 3: Dates */}
-          <div className="flex flex-col">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
-            <DatePickerDropdown value={date} onChange={setDate} />
-          </div>
-
-
-
-          {/* Row 4: Times */}
-          <div className="flex flex-col relative">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
-            <TimePickerDropdown value={startTime} onChange={setStartTime} disabled={isWholeDay} />
-          </div>
-
-          <div className="flex flex-col relative">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
-            <TimePickerDropdown value={endTime} onChange={setEndTime} disabled={isWholeDay} />
-          </div>
-
-          {/* Row 5: Whole Day Toggle */}
-          <div className="md:col-span-2 pt-2">
-             <label className="flex items-center gap-3 cursor-pointer group">
-               <div className="relative">
-                 <input 
-                   type="checkbox" 
-                   checked={isWholeDay} 
-                   onChange={(e) => setIsWholeDay(e.target.checked)} 
-                   className="peer sr-only" 
-                 />
-                 <div className="w-5 h-5 border-2 border-gray-200 dark:border-gray-700 rounded-md group-hover:border-monument-primary peer-checked:bg-monument-primary peer-checked:border-monument-primary transition-all flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-white rounded-sm scale-0 peer-checked:scale-100 transition-transform"></div>
-                 </div>
-               </div>
-               <span className="text-sm font-bold text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">This event occurs all day</span>
-             </label>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { closeModal(); setShowFormModal(true); }}
+              className="flex items-center gap-2 px-6 py-3 bg-monument-primary hover:bg-monument-primary/95 text-white rounded-[1.2rem] shadow-xl shadow-monument-primary/20 transition-all text-xs font-black uppercase tracking-widest"
+            >
+              <Plus size={16} strokeWidth={3} />
+              <span>Create Schedule</span>
+            </button>
           </div>
         </div>
-        <button
-          type="submit"
-          className="w-full bg-monument-primary text-white py-2 rounded hover:bg-monument-dark"
-        >
-          {editingId ? "Update Schedule" : "Add Schedule"}
-        </button>
-      </form>
 
-      {/* Search and View Controls */}
-      <div className="flex flex-row justify-between items-center mb-4 gap-4">
-        <div className="relative w-full sm:max-w-xs">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-          </svg>
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-monument-primary transition-colors" size={18} />
           <input
             type="text"
-            placeholder="Search by event, venue, or department..."
+            placeholder="Quick find events, teams, or venues..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 w-full"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-transparent focus:border-monument-primary/20 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all outline-none shadow-sm"
           />
-        </div>
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
-            <FaTable /> Table
-          </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
-            <FaThLarge /> Cards
-          </button>
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {viewMode === 'table' ? (
-          <motion.div key="table" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="table-container">
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-800">
-                <thead className="table-header bg-gray-50 dark:bg-gray-700">
-            <tr>
-                <th className="table-cell text-left dark:text-gray-300">Event</th>
-                <th className="table-cell text-left dark:text-gray-300">Departments</th>
-                <th className="table-cell text-left dark:text-gray-300">Venue</th>
-                <th className="table-cell text-left dark:text-gray-300">Time</th>
-                <th className="table-cell text-left dark:text-gray-300">Date</th>
-                <th className="table-cell text-left dark:text-gray-300">Status</th>
-                <th className="table-cell text-center dark:text-gray-300">Actions</th>
-            </tr>
-            </thead>
-                <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
-                  {filteredSchedules.map((schedule) => (
-                <tr key={schedule.id} className="table-row dark:hover:bg-gray-700/50">
-                  <td className="table-cell dark:text-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{schedule.events?.icon || '❓'}</span>
-                      <span>{schedule.events ? formatEventName(schedule.events) : 'N/A'}</span>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden px-4 md:px-6 pb-20 lg:pb-0">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-4">
+             <div className="w-12 h-12 border-4 border-monument-primary border-t-transparent rounded-full animate-spin" />
+             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Tournament Data...</p>
+          </div>
+        ) : (
+          <div className="h-full overflow-y-auto custom-scrollbar p-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
+              {filteredSchedules.map((s) => {
+                const dynStatus = getDynamicStatus(s);
+                return (
+                  <div key={s.id} className="h-fit bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-lg border border-gray-100 dark:border-gray-700/50 overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300">
+                    <div className={`${dynStatus.color} px-8 py-2.5 flex justify-between items-center text-white`}>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{dynStatus.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{s.end_date && s.end_date !== s.date ? `${formatDate(s.date)} — ${formatDate(s.end_date)}` : formatDate(s.date)}</span>
                     </div>
-                  </td>
-                  <td className="table-cell">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {schedule.departments.map((deptName, index) => {
-                      const dept = departmentMap.get(deptName);
-                      if (!dept) return null;
-                      return (
-                        <Fragment key={dept.id}>
-                          <div title={dept.name}>
-                            {dept.image_url ? (
-                              <Image
-                                src={dept.image_url}
-                                alt={dept.name}
-                                width={32}
-                                height={32}
-                                className="w-8 h-8 object-cover rounded-full"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:bg-gray-600 dark:text-gray-300" title={dept.name}>
-                                {dept.name.substring(0, 2)}
-                              </div>
-                            )}
+
+                    <div className="p-6 space-y-4 flex-1">
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl drop-shadow-sm">{s.events?.icon || '🏅'}</span>
+                        <div className="flex flex-col min-w-0">
+                          <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">{formatEventName(s.events)}</h3>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                            {typeof s.events?.category === 'object' && s.events.category ? s.events.category.name : categories.find(c => c.id === s.events?.category)?.name || ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50/50 dark:bg-gray-900/40 rounded-[2rem] p-4 border border-gray-100 dark:border-gray-700/50">
+                        <div className="flex items-center justify-around gap-2 relative">
+                          {s.departments.map((dName, i) => {
+                            const d = departmentMap.get(dName);
+                            const isWinner = d && s.winner_id === d.id;
+                            return (
+                              <Fragment key={i}>
+                                <div className="flex flex-col items-center gap-2 relative">
+                                  {isWinner && (
+                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-1 z-10 w-6 h-6 flex items-center justify-center text-sm drop-shadow-md">
+                                      🏆
+                                    </motion.div>
+                                  )}
+                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 border-white dark:border-gray-800'}`}>
+                                    {d?.image_url ? (
+                                      <img src={d.image_url} className="w-full h-full rounded-full object-cover" />
+                                    ) : (
+                                      dName.slice(0, 3).toUpperCase()
+                                    )}
+                                  </div>
+                                  <span className={`text-[10px] font-black uppercase tracking-widest ${isWinner ? 'text-yellow-600' : 'text-gray-400'}`}>
+                                    {d?.abbreviation || dName.slice(0,3)}
+                                  </span>
+                                </div>
+                                {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-200 dark:text-gray-700 italic opacity-20">vs</span>}
+                              </Fragment>
+                            );
+                          })}
+                        </div>
+                        
+                        {s.status === 'finished' && (Number(s.score_a) > 0 || Number(s.score_b) > 0) && (
+                          <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50 font-black text-2xl italic text-gray-900 dark:text-gray-100">
+                            <span className={s.winner_id === (departmentMap.get(s.departments[0])?.id) ? 'text-emerald-500' : 'opacity-30'}>{s.score_a || 0}</span>
+                            <span className="text-gray-200">—</span>
+                            <span className={s.winner_id === (departmentMap.get(s.departments[1])?.id) ? 'text-emerald-500' : 'opacity-30'}>{s.score_b || 0}</span>
                           </div>
-                          {index < schedule.departments.length - 1 && <div className="h-8 flex items-center justify-center px-1">
-                            <span className="font-black text-monument-primary dark:text-violet-400 italic">vs</span>
-                          </div>}
-                        </Fragment>
+                        )}
+                      </div>
+
+                      <div className="space-y-2.5 pt-1">
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <Clock size={16} className="shrink-0" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest">
+                             {s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day Event" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <MapPin size={16} className="shrink-0" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest truncate">{s.venues?.name || 'TBA'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50/50 dark:bg-gray-900/40 px-8 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-end items-center gap-3">
+                       {dynStatus.status !== 'finished' ? (
+                         <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
+                           <FaCheck size={14} />
+                         </button>
+                       ) : (
+                         <button onClick={() => handleResetMatch(s.id)} className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Reset Match Status">
+                           <span className="text-sm">🔄</span>
+                         </button>
+                       )}
+                       <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
+                         <span className="text-sm">🏆</span>
+                       </button>
+                       <button onClick={() => { 
+                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
+                       }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
+                       <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Control Modal (Form) */}
+      <AnimatePresence>
+        {showFormModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-xl bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-monument-primary/10">
+              <div className="px-8 pt-8 pb-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700/50">
+                <div>
+                  <h2 className="text-gray-900 dark:text-gray-100 font-black text-xl uppercase tracking-tight">{editingId ? 'Edit Schedule' : 'Create New Schedule'}</h2>
+                </div>
+                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-all active:scale-95"><X size={16} strokeWidth={3} /></button>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Events</label>
+                    <SingleSelectDropdown 
+                      options={eventOptions}
+                      selectedValue={eventId}
+                      onChange={setEventId}
+                      placeholder="SELECT EVENT"
+                      dropDirection="down"
+                    />
+                  </div>
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Tournament Venue</label>
+                    <SingleSelectDropdown 
+                      options={venueOptions}
+                      selectedValue={venueId}
+                      onChange={setVenueId}
+                      placeholder="SELECT VENUE"
+                      dropDirection="down"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Competing Departments</label>
+                    <span className={`text-[9px] font-black uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-monument-primary/10 text-monument-primary' : 'bg-gray-100 text-gray-400'}`}>{selectedDepartments.length}/3 selected</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {departments.map((d) => {
+                      const isSelected = selectedDepartments.includes(d.name);
+                      return (
+                        <button key={d.id} onClick={() => { setSelectedDepartments(prev => isSelected ? prev.filter(x => x !== d.name) : (prev.length < 3 ? [...prev, d.name] : prev)); }} className={`flex flex-col items-center p-2 rounded-2xl transition-all border-2 ${isSelected ? 'border-monument-primary bg-monument-primary/5 shadow-md scale-105' : selectedDepartments.length >= 3 ? 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-30 cursor-not-allowed' : 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-60 hover:opacity-100'}`}>
+                          {d.image_url ? <img src={d.image_url} className="w-8 h-8 rounded-full mb-1" /> : <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full mb-1" />}
+                          <span className="text-[8px] font-black uppercase truncate w-full text-center">{d.name}</span>
+                        </button>
                       );
                     })}
                   </div>
-                </td>
-                  <td className="table-cell">{schedule.venues?.name || 'N/A'}</td>
-                  <td className="table-cell">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</td>
-                  <td className="table-cell">{formatDate(schedule.date)}</td>
-                  <td className="table-cell">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        getDynamicStatus(schedule).status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
-                        getDynamicStatus(schedule).status === 'ongoing' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 animate-pulse' :
-                        'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                      }`}
-                    >
-                      {getDynamicStatus(schedule).label}
-                    </span>
-                  </td>
-                  <td className="table-cell text-center">
-                  <div className="flex gap-2 justify-center">
-                  <button
-                    onClick={() => {
-                      setEditingId(schedule.id);
-                      setEventId(schedule.event_id);
-                      setSelectedDepartments(schedule.departments);
-                      setVenueId(schedule.venue_id);
-                      setStartTime(schedule.start_time.substring(0, 5));
-                      setEndTime(schedule.end_time.substring(0, 5));
-                      setIsWholeDay(schedule.start_time.startsWith("00:00") && schedule.end_time.startsWith("23:59"));
-                      setDate(schedule.date);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(schedule.id)}
-                    className="btn-danger py-1 px-3 text-sm rounded"
-                  >
-                    🗑️ Delete
-                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Start Date</label>
+                    <DatePickerDropdown value={date} onChange={setDate} />
                   </div>
-                </td>
-              </tr>
-                  ))}
-                  {filteredSchedules.length === 0 && (
-              <tr>
-                  <td colSpan={7} className="table-cell text-center py-4 text-gray-500">
-                      {searchQuery ? "No schedules match your search." : "No schedules yet."}
-                </td>
-              </tr>
-                  )}
-          </tbody>
-          </table>
-        </div>
-          </motion.div>
-        ) : (
-          <motion.div key="card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSchedules.map((schedule) => {
-              const { label, color, icon } = getDynamicStatus(schedule);
-              return (
-                <div key={schedule.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
-                  <div className={`${color} px-4 py-2 flex items-center justify-between`}>
-                    <span className="text-white font-semibold text-sm flex items-center gap-2">
-                      <span>{icon}</span>{label}
-                    </span>
-                    <span className="text-white text-xs opacity-90 font-bold">{formatDate(schedule.date)}</span>
-                  </div>
-                  <div className="p-4 space-y-3 flex-grow flex flex-col">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-2xl">{schedule.events?.icon || '🏅'}</span>
-                        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{schedule.events?.name || 'N/A'}</h3>
-                      </div>
-                    </div>
-                    <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
-                      <div className="flex items-center justify-center gap-4 flex-wrap">
-                        {schedule.departments.map((deptName, i) => {
-                          const dept = departmentMap.get(deptName);
-                          return (
-                            <Fragment key={dept ? dept.id : deptName}>
-                              <div className="flex flex-col items-center gap-1" title={dept?.name}>
-                                {dept?.image_url ? (
-                                  <Image src={dept.image_url} alt={dept.name} width={48} height={48} className="rounded-full w-12 h-12 object-cover border-2 border-gray-200 dark:border-gray-600" />
-                                ) : (
-                                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-sm font-bold text-gray-500 dark:text-gray-300">
-                                    {dept?.name.slice(0, 3) || deptName.slice(0, 3)}
-                                  </div>
-                                )}
-                              </div>
-                              {i < schedule.departments.length - 1 && <span className="text-monument-primary dark:text-violet-400 text-lg font-black self-center italic">vs</span>}
-                            </Fragment>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                          <FaClock />
-                          <span>Time</span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</p>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                          <FaMapMarkerAlt />
-                          <span>Venue</span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">{schedule.venues?.name || "TBA"}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-2 flex gap-2 justify-end rounded-b-lg mt-auto">
-                    <button onClick={() => { setEditingId(schedule.id); setEventId(schedule.event_id); setSelectedDepartments(schedule.departments); setVenueId(schedule.venue_id); setStartTime(schedule.start_time.substring(0, 5)); setEndTime(schedule.end_time.substring(0, 5)); setIsWholeDay(schedule.start_time.startsWith("00:00") && schedule.end_time.startsWith("23:59")); setDate(schedule.date); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors" title="Edit">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
-                    </button>
-                    <button onClick={() => handleDelete(schedule.id)} className="p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors" title="Delete">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                    </button>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">End Date <span className="text-gray-300 normal-case font-medium">(optional)</span></label>
+                    <DatePickerDropdown value={endDate || ''} onChange={(val) => setEndDate(val || null)} />
                   </div>
                 </div>
-              );
-            })}
-            {filteredSchedules.length === 0 && (
-              <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-                <div className="text-6xl mb-4">🗓️</div>
-                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Yet"}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new schedule using the form above."}</p>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Time Window</label>
+                    <button onClick={() => setIsWholeDay(!isWholeDay)} className={`text-[8px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full transition-all ${isWholeDay ? 'bg-monument-primary text-white ring-2 ring-monument-primary/30' : 'bg-gray-100 text-gray-400'}`}>Whole Day</button>
+                  </div>
+                  {!isWholeDay ? (
+                    <div className="flex items-center gap-2">
+                       <div className="flex-1">
+                        <TimePickerDropdown value={startTime} onChange={setStartTime} />
+                      </div>
+                      <span className="text-[9px] font-black text-gray-300">TO</span>
+                      <div className="flex-1">
+                        <TimePickerDropdown value={endTime} onChange={setEndTime} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full py-3 bg-monument-primary/5 border-2 border-dashed border-monument-primary/20 rounded-2xl flex items-center justify-center text-[9px] font-black text-monument-primary uppercase tracking-widest">Whole Day Match Window</div>
+                  )}
+                </div>
+
+                <div className="pt-4">
+                  <button onClick={handleSaveSchedule} disabled={isSubmitting} className="w-full bg-monument-primary text-white py-4 rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : editingId ? (<span>Update Record</span>) : (<span>Deploy Schedule</span>)}
+                  </button>
+                </div>
               </div>
-            )}
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-    <ConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this schedule entry? This action cannot be undone."
-      />
-      <Toaster />
+      {/* Result Recording Modal */}
+      <AnimatePresence>
+        {showResultModal && resultMatch && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowResultModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-[3rem] shadow-2xl overflow-hidden border border-white/20">
+
+              {resultMatch.departments.length >= 3 ? (
+                /* ═══ 3-TEAM MEDAL ASSIGNMENT MODAL ═══ */
+                <>
+                  <div className="bg-monument-primary px-8 py-5 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-white font-black text-sm uppercase tracking-[0.1em]">Assign Medals</h2>
+                      <p className="text-white/60 text-[10px] font-bold tracking-tight uppercase">{resultMatch.events?.name} — Auto-links to Results</p>
+                    </div>
+                    <button onClick={() => setShowResultModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+                  </div>
+
+                  <div className="p-8 space-y-6">
+                    <div className="bg-violet-50 dark:bg-violet-900/20 p-3 rounded-2xl border border-violet-100 dark:border-violet-900/30 flex items-center gap-3">
+                      <AlertCircle className="text-monument-primary shrink-0" size={16} />
+                      <span className="text-[9px] font-bold text-monument-primary dark:text-violet-300 uppercase tracking-tight">3-team match — medals will be auto-saved to the Results page & Podium.</span>
+                    </div>
+
+                    {(['gold', 'silver', 'bronze'] as const).map((medal) => {
+                      const medalIcon = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : '🥉';
+                      const medalLabel = medal === 'gold' ? 'Gold' : medal === 'silver' ? 'Silver' : 'Bronze';
+                      const currentId = medal === 'gold' ? medalGoldId : medal === 'silver' ? medalSilverId : medalBronzeId;
+                      const setter = medal === 'gold' ? setMedalGoldId : medal === 'silver' ? setMedalSilverId : setMedalBronzeId;
+                      const otherIds = [medalGoldId, medalSilverId, medalBronzeId].filter((_, idx) => idx !== ['gold', 'silver', 'bronze'].indexOf(medal));
+
+                      return (
+                        <div key={medal} className="flex items-center gap-4">
+                          <span className="text-3xl w-10 flex justify-center shrink-0">{medalIcon}</span>
+                          <div className="flex-1">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">{medalLabel}</label>
+                            <div className="flex gap-2 flex-wrap">
+                              {/* No Team option */}
+                              <button
+                                onClick={() => setter(currentId === '' ? null : '')}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                  currentId === ''
+                                    ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                    : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-sm">✖️</span> No Team
+                              </button>
+                              {/* Awaiting option */}
+                              <button
+                                onClick={() => setter(currentId === 'awaiting' ? null : 'awaiting')}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                  currentId === 'awaiting'
+                                    ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                    : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-sm">⏳</span> Awaiting
+                              </button>
+                              {/* Team options */}
+                              {resultMatch.departments.map((dName) => {
+                                const d = departmentMap.get(dName);
+                                if (!d) return null;
+                                const isSelected = currentId === d.id;
+                                const isTaken = otherIds.includes(d.id);
+                                return (
+                                  <button
+                                    key={d.id}
+                                    onClick={() => !isTaken && setter(isSelected ? null : d.id)}
+                                    disabled={isTaken}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                      isSelected
+                                        ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                        : isTaken
+                                        ? 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-300 opacity-40 cursor-not-allowed'
+                                        : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-600 hover:border-gray-200 hover:bg-white'
+                                    }`}
+                                  >
+                                    {d.image_url ? (
+                                      <img src={d.image_url} className="w-6 h-6 rounded-full object-cover" />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[8px]">{d.abbreviation?.slice(0,2)}</div>
+                                    )}
+                                    {d.abbreviation || dName}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {!medalGoldId && medalGoldId !== '' && medalGoldId !== 'awaiting' && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-center gap-3">
+                        <AlertCircle className="text-amber-500 shrink-0" size={16} />
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight">Assign at least Gold to finalize.</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4 pt-2">
+                      <button onClick={() => setShowResultModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all">Cancel</button>
+                      <button onClick={handleSaveResult} disabled={isSubmittingResult || (medalGoldId === null)} className="flex-[2] py-4 bg-monument-primary text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
+                        Finalize Medals
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* ═══ 2-TEAM WINNER PICKER MODAL ═══ */
+                <>
+                  <div className="bg-monument-primary px-8 py-5 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-white font-black text-sm uppercase tracking-[0.1em]">Record Winner & Outcome</h2>
+                      <p className="text-white/60 text-[10px] font-bold tracking-tight uppercase">{resultMatch.events?.name} - Final Score</p>
+                    </div>
+                    <button onClick={() => setShowResultModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    <div className="flex items-center justify-around gap-6">
+                      {resultMatch.departments.map((dName, i) => {
+                        const d = departmentMap.get(dName);
+                        const isSelected = winnerId === d?.id;
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-4">
+                            <button onClick={() => d && setWinnerId(d.id)} className={`group relative w-24 h-24 rounded-full p-1 transition-all duration-500 ${isSelected ? 'ring-8 ring-monument-primary/20 scale-110' : 'ring-2 ring-gray-100 dark:ring-gray-700 grayscale opacity-60 hover:opacity-100 hover:grayscale-0'}`}>
+                              <div className={`w-full h-full rounded-full overflow-hidden border-4 shadow-xl ${isSelected ? 'border-monument-primary' : 'border-white dark:border-gray-800'}`}>
+                                {d?.image_url ? <img src={d.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center font-black text-xl">{dName.slice(0,2)}</div>}
+                              </div>
+                              {isSelected && (
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-monument-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-4 border-white font-black">
+                                  🏆
+                                </motion.div>
+                              )}
+                            </button>
+                            <div className="flex flex-col items-center">
+                              <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isSelected ? 'text-monument-primary' : 'text-gray-400'}`}>{d?.abbreviation || dName}</span>
+                              <input type="number" value={i === 0 ? scoreA : scoreB} onChange={(e) => i === 0 ? setScoreA(parseInt(e.target.value) || 0) : setScoreB(parseInt(e.target.value) || 0)} placeholder="SCORE" className="w-20 text-center bg-gray-50 dark:bg-gray-700/50 border-none rounded-xl mt-3 font-black text-2xl py-2 focus:ring-2 focus:ring-monument-primary/30" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {!winnerId && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-center gap-3">
+                        <AlertCircle className="text-amber-500 shrink-0" size={18} />
+                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-tight">You must pick a championship winner to finalize the result.</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4">
+                      <button onClick={() => setShowResultModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all">Cancel</button>
+                      <button onClick={handleSaveResult} disabled={isSubmittingResult || !winnerId} className="flex-[2] py-4 bg-monument-primary text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
+                        Deploy Final Result
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowConfirmModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+              <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/30 text-rose-500 rounded-full flex items-center justify-center mx-auto ring-8 ring-rose-500/5">
+                <Trash2 size={28} />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-gray-900 dark:text-white font-black uppercase tracking-tight text-lg">Erase match record?</h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">This action is permanent and will remove the schedule from all views.</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">Abort</button>
+                <button onClick={handleDeleteSchedule} className="flex-1 py-3 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20">Delete Forever</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

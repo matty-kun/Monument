@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimePickerDropdownProps {
   value: string; // "HH:mm" 24h format
@@ -73,38 +74,44 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
     <div className="relative" ref={dropdownRef}>
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors'}`}
       >
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-monument-primary" />
-          <span className="text-gray-900 dark:text-gray-200 font-bold">
+          <span className="text-gray-900 dark:text-gray-200 font-bold text-xs">
             {currentDisplayTime}
           </span>
         </div>
-        <span className="text-gray-400">▼</span>
+        <span className="text-gray-400 text-[10px]">▼</span>
       </div>
 
+      <AnimatePresence>
       {isOpen && !disabled && (
-        <div className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col p-4">
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-2xl p-1 gap-1 mb-4 w-fit mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: -8, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          className="absolute z-[999] bottom-full mb-2 w-full min-w-[180px] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[1.5rem] shadow-2xl overflow-hidden flex flex-col p-3 sm:p-4"
+        >
+          <div className="flex bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 gap-1 mb-3 w-fit mx-auto border border-gray-100/50 dark:border-white/5">
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTempAmpm('AM'); }}
-              className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${tempAmpm === 'AM' ? 'bg-monument-primary text-white shadow-lg' : 'text-gray-300 dark:text-gray-500 hover:text-gray-600'}`}
+              className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'AM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
             >
               AM
             </button>
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTempAmpm('PM'); }}
-              className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${tempAmpm === 'PM' ? 'bg-monument-primary text-white shadow-lg' : 'text-gray-300 dark:text-gray-500 hover:text-gray-600'}`}
+              className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'PM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
             >
               PM
             </button>
           </div>
 
-          <div className="max-h-60 overflow-y-auto custom-scrollbar px-2">
-            <div className="grid grid-cols-1 gap-1">
+          <div className="max-h-48 overflow-y-auto custom-scrollbar px-1">
+            <div className="grid grid-cols-1 gap-0.5">
               {times.map((t) => {
                 const [h, m] = t.split(':').map(Number);
                 let h24 = h;
@@ -118,7 +125,7 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
                     key={t}
                     type="button"
                     onClick={() => handleTimeSelect(t)}
-                    className={`py-2 px-4 text-left text-sm font-bold rounded-xl transition-all ${isSelected ? 'text-monument-primary bg-blue-50 dark:bg-blue-900/30' : 'text-gray-300 dark:text-gray-500 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                    className={`py-2 px-3 text-left text-xs font-black uppercase tracking-wide rounded-lg transition-all ${isSelected ? 'text-monument-primary bg-monument-primary/5 shadow-sm' : 'text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                   >
                     {t}
                   </button>
@@ -126,8 +133,9 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
               })}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
