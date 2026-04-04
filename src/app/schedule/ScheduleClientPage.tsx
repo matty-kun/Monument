@@ -7,9 +7,9 @@ import React, {
   useMemo,
   Fragment,
 } from "react";
-import Image from "next/image";import { CardContent } from "@/components/ui/Card";
+import Image from "next/image";
+import { CardContent } from "@/components/ui/Card";
 import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge } from "react-icons/fa";
-import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 
@@ -76,18 +76,8 @@ export default function ScheduleClientPage({
   const [allVenues] = useState<Venue[]>(initialVenues);
   const [allDepartments] = useState<Department[]>(initialDepartments);
   const [allCategories] = useState<Category[]>(initialCategories);
-  // Filters
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [eventFilter, setEventFilter] = useState("all");
-  const [venueFilter, setVenueFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
-  const [dateFromFilter, setDateFromFilter] = useState("");
-  const [dateToFilter, setDateToFilter] = useState("");
-  const [timeFromFilter, setTimeFromFilter] = useState("");
-  const [timeToFilter, setTimeToFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); // New state for view mode
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   // ✅ Dynamic status
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
@@ -155,60 +145,14 @@ export default function ScheduleClientPage({
       });
     }
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(
-        (s) => getDynamicStatus(s).status === statusFilter
-      );
-    }
-
-    if (eventFilter !== "all") {
-      filtered = filtered.filter(s => s.event_id === eventFilter);
-    }
-
-    if (venueFilter !== "all") {
-      filtered = filtered.filter(s => s.venue_id === venueFilter);
-    }
-
-    if (departmentFilter !== "all") {
-      filtered = filtered.filter(s => 
-        s.departments.some(d => typeof d === 'string' ? d === departmentFilter : d.name === departmentFilter)
-      );
-    }
-
-    if (dateFromFilter) filtered = filtered.filter((s) => s.date >= dateFromFilter);
-    if (dateToFilter) filtered = filtered.filter((s) => s.date <= dateToFilter);
-    if (timeFromFilter) filtered = filtered.filter((s) => s.start_time >= timeFromFilter);
-    if (timeToFilter) filtered = filtered.filter((s) => s.end_time <= timeToFilter);
-
     setFilteredSchedules(filtered);
   }, [
     schedules,
     searchQuery,
-    statusFilter,
-    eventFilter,
-    venueFilter,
-    departmentFilter,
-    dateFromFilter,
-    dateToFilter,
-    timeFromFilter,
-    timeToFilter,
-    getDynamicStatus,
     getCategoryName,
   ]);
 
-  // ✅ Clear filters
-  const clearFilters = () => {
-    setStatusFilter("all");
-    setEventFilter("all");
-    setVenueFilter("all");
-    setDepartmentFilter("all");
-    setDateFromFilter("");
-    setDateToFilter("");
-    setTimeFromFilter("");
-    setTimeToFilter("");
-    setSearchQuery("");
-  };
-  const clearAll = () => { clearFilters(); setSearchQuery(""); };
+  const clearAll = () => { setSearchQuery(""); };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "TBA";
@@ -261,151 +205,7 @@ export default function ScheduleClientPage({
         </div>
       </div>
 
-      {/* ---------- FILTERS ---------- */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-6">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex items-center justify-center text-xl leading-none">🔍</div>
-            <h3 className="font-semibold text-base md:text-lg leading-none">Filters</h3>
-            <button
-              onClick={clearAll}
-              className="ml-2 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
-            >
-              Clear
-            </button>
-          </div>
-          <button
-            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="text-xs md:text-sm border px-2 md:px-3 py-1 md:py-2 rounded-md hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
-          >
-            {isFiltersOpen ? "Hide ▲" : "Show ▼"}
-          </button>
-        </div>
 
-        <AnimatePresence>
-          {isFiltersOpen && (
-            <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="overflow-hidden"
-            >
-                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {/* Status */}
-                            <div>
-                              <label className="block text-sm font-medium mb-1">Status</label>
-                              <SingleSelectDropdown
-                                options={[
-                                  { id: "all", name: "All Statuses" },
-                                  { id: "upcoming", name: "Upcoming", icon: "⏳" },
-                                  { id: "ongoing", name: "Ongoing", icon: "🔴" },
-                                  { id: "finished", name: "Finished", icon: "✅" },
-                                ]}
-                                selectedValue={statusFilter}
-                                onChange={setStatusFilter}
-                                placeholder="Select Status"
-                              />
-                            </div>
-
-                            {/* Event */}
-                            <div>
-                              <label className="block text-sm font-medium mb-1">Event</label>
-                              <SingleSelectDropdown
-                                options={[{ id: "all", name: "All Events" }, ...allEvents.map(e => ({ id: e.id, name: e.name, icon: e.icon || undefined }))]}
-                                selectedValue={eventFilter}
-                                onChange={setEventFilter}
-                                placeholder="Select Event"
-                              />
-                            </div>
-
-                            {/* Venue */}
-                            <div>
-                              <label className="block text-sm font-medium mb-1">Venue</label>
-                              <SingleSelectDropdown
-                                options={[
-                                  { id: "all", name: "All Venues" },
-                                  ...allVenues.map((v) => ({ id: v.id!, name: v.name })),
-                                ]}
-                                selectedValue={venueFilter}
-                                onChange={setVenueFilter}
-                                placeholder="Select Venue"
-                              />
-                            </div>
-
-                            {/* Department */}
-                            <div>
-                              <label className="block text-sm font-medium mb-1">Team</label>
-                              <SingleSelectDropdown
-                                options={[
-                                  { id: "all", name: "All Teams" },
-                                  ...allDepartments.map((d) => ({
-                                    id: d.name,
-                                    name: d.name,
-                                    image_url: d.image_url,
-                                  })),
-                                ]}
-                                selectedValue={departmentFilter}
-                                onChange={setDepartmentFilter}
-                                placeholder="Select Team"
-                              />
-                            </div>
-              
-                            {/* Date Range */}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-medium mb-1">Date Range</label>
-                              <div className="flex items-center gap-2 ">
-                                <div className="relative flex-1">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <FaCalendarAlt />
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={dateFromFilter}
-                                    onChange={(e) => setDateFromFilter(e.target.value)}
-                                    className="input pl-10"
-                                    aria-label="Date From"
-                                  />
-                                </div>
-                                <span className="text-gray-500 dark:text-gray-400">to</span>
-                                <div className="relative flex-1">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <FaCalendarAlt />
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={dateToFilter}
-                                    onChange={(e) => setDateToFilter(e.target.value)}
-                                    className="input pl-10"
-                                    aria-label="Date To"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-              
-                            {/* Time Range */}
-                            <div className="md:col-span-2">
-                              <label className="block text-sm font-medium mb-1">Time Range</label>
-                              <div className="flex items-center gap-2 ">
-                                <div className="relative flex-1">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <FaClock />
-                                  </div>
-                                  <input type="time" value={timeFromFilter} onChange={(e) => setTimeFromFilter(e.target.value)} className="input pl-10" />
-                                </div>
-                                <span className="text-gray-500 dark:text-gray-400">to</span>
-                                <div className="relative flex-1">
-                                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                    <FaClock />
-                                  </div>
-                                  <input type="time" value={timeToFilter} onChange={(e) => setTimeToFilter(e.target.value)} className="input pl-10" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
       <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
         📊 Showing {filterCount} of {totalCount} events
@@ -530,8 +330,8 @@ export default function ScheduleClientPage({
             ) : (
               <div className="col-span-full text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div className="text-6xl mb-4">🗓️</div>
-                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Match Filters"}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Try adjusting your filter criteria."}</p>
+                <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Available"}</h3>
+<p className="text-sm text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Check back later for updates."}</p>
               </div>
             )}
           </motion.div>

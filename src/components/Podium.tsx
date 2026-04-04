@@ -52,8 +52,8 @@ export default function Podium({ leaderboard }: PodiumProps) {
       className="flex flex-col items-center"
     >
       <div className="text-3xl md:text-4xl mb-4">{medal}</div>
-      <div className={`relative ${position === "1st" ? "w-32 h-32 md:w-52 md:h-52" : position === "2nd" ? "w-24 h-24 md:w-40 md:h-40" : "w-20 h-20 md:w-36 md:h-36"} mb-4 md:mb-6 flex items-center justify-center`}>
-        <span className="text-4xl md:text-6xl opacity-20">🏆</span>
+      <div className={`relative ${position === "1st" ? "w-32 h-32 md:w-52 md:h-52" : position === "2nd" ? "w-24 h-24 md:w-40 md:h-40" : "w-20 h-20 md:w-36 md:h-36"} mb-4 md:mb-6 flex items-center justify-center text-center`}>
+        <span className="text-4xl md:text-6xl opacity-20 leading-none">🏆</span>
       </div>
       <div className="text-center mb-4">
         <div className="text-lg md:text-xl font-semibold text-gray-400 dark:text-gray-500">Awaiting Champion</div>
@@ -85,8 +85,8 @@ export default function Podium({ leaderboard }: PodiumProps) {
                 {topThree[0].image_url ? (
                   <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
-                    <span className="text-4xl md:text-5xl font-black text-gray-500">
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
+                    <span className="text-4xl md:text-6xl font-black text-gray-500 dark:text-gray-600 leading-none tracking-tighter">
                       {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
                     </span>
                   </div>
@@ -128,8 +128,8 @@ export default function Podium({ leaderboard }: PodiumProps) {
                 {topThree[1].image_url ? (
                   <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
-                    <span className="text-4xl md:text-5xl font-black text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
+                    <span className="text-4xl md:text-6xl font-black text-gray-400 dark:text-gray-500 leading-none tracking-tighter">
                       {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
                     </span>
                   </div>
@@ -171,8 +171,8 @@ export default function Podium({ leaderboard }: PodiumProps) {
                 {topThree[2].image_url ? (
                   <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-contain" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-50">
-                    <span className="text-4xl md:text-5xl font-black text-gray-600">
+                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
+                    <span className="text-4xl md:text-6xl font-black text-gray-600 dark:text-gray-700 leading-none tracking-tighter">
                       {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
                     </span>
                   </div>

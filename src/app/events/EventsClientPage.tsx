@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import { FaTable, FaThLarge } from "react-icons/fa";
 
 // Types
@@ -57,11 +56,6 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
   const [allCategories] = useState(initialCategories);
   const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null; abbreviation?: string }[]>([]);
 
-  // Filter states
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [medalFilter, setMedalFilter] = useState<string>("all");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
@@ -83,16 +77,6 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
       );
     }
 
-    if (categoryFilter !== "all") {
-      processed = processed.filter(r => r.category === categoryFilter);
-    }
-    if (medalFilter !== "all") {
-      processed = processed.filter(r => r.medal_type === medalFilter);
-    }
-    if (departmentFilter !== "all") {
-      processed = processed.filter(r => r.department_name === departmentFilter);
-    }
-
     if (allDepartments.length === 0 && processed.length > 0) {
       const departmentMap = new Map<string, { name: string; image_url: string | null; abbreviation: string }>();
       results.forEach(r => {
@@ -108,7 +92,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
     }
 
     setFilteredResults(processed);
-  }, [results, categoryFilter, medalFilter, departmentFilter, searchQuery, allDepartments.length, getCategoryName]);
+  }, [results, searchQuery, allDepartments.length, getCategoryName]);
 
   const grouped = useMemo(() => {
     return filteredResults.reduce((acc, result) => {
@@ -134,10 +118,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
     }, {} as Record<string, GroupedResult>);
   }, [filteredResults, getCategoryName]);
 
-  const clearFilters = () => {
-    setCategoryFilter("all");
-    setMedalFilter("all");
-    setDepartmentFilter("all");
+  const clearAll = () => {
     setSearchQuery("");
   };
 
@@ -182,96 +163,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
         </div>
       </div>
 
-      {/* ---------- FILTERS ---------- */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-6">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="flex items-center justify-center text-xl leading-none">🔍</div>
-            <h3 className="font-semibold text-base md:text-lg leading-none">Filters</h3>
-            <button
-              onClick={clearFilters}
-              className="ml-2 px-2 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900"
-            >
-              Clear
-            </button>
-          </div>
-          <button
-            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            className="text-xs md:text-sm border px-2 md:px-3 py-1 md:py-2 rounded-md hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
-          >
-            {isFiltersOpen ? "Hide ▲" : "Show ▼"}
-          </button>
-        </div>
 
-        <AnimatePresence>
-          {isFiltersOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Category</label>
-                    <SingleSelectDropdown
-                      options={[
-                        { id: 'all', name: 'All Categories' },
-                        ...allCategories.map(c => ({ id: c.id, name: c.name, icon: c.icon }))
-                      ]}
-                      selectedValue={categoryFilter}
-                      onChange={(value) => setCategoryFilter(value)}
-                      placeholder="Select Category"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Medal Type</label>
-                    <SingleSelectDropdown
-                      options={medalOptions}
-                      selectedValue={medalFilter}
-                      onChange={(value) => setMedalFilter(value)}
-                      placeholder="Select Medal"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Team</label>
-                    <SingleSelectDropdown
-                      options={[
-                        { id: 'all', name: 'All Teams' },
-                        ...allDepartments.map(dept => ({ 
-                          id: dept.name, 
-                          name: dept.name, 
-                          image_url: dept.image_url || undefined 
-                        })),
-                      ]}
-                      selectedValue={departmentFilter}
-                      onChange={(value) => setDepartmentFilter(value)}
-                      placeholder="Select Team"
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {isFiltersOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="overflow-hidden"
-            >
-              {/* ... filter content ... */}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
       <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
         📊 Showing {Object.keys(grouped).length} matching events with {filteredResults.length} results
@@ -348,8 +240,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
             {Object.keys(grouped).length === 0 && (
               <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
                 <div className="text-6xl mb-4">🏟️</div>
-                <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Results Match Your Search" : (results.length === 0 ? "No Event Results Yet" : "No Events Match Filters")}</h3>
-                <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : (results.length === 0 ? "Check back soon for the latest winners!" : "Try adjusting your filter criteria.")}</p>
+                <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Results Match Your Search" : (results.length === 0 ? "No Event Results Yet" : "No Events Found")}</h3>
+<p className="text-sm text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : (results.length === 0 ? "Check back soon for the latest winners!" : "Events will be listed once results are available.")}</p>
               </div>
             )}
           </motion.div>
