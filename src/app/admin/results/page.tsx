@@ -225,7 +225,12 @@ export default function AddResultPage() {
       }
 
       toast.success("Event results finalized successfully!", { id: loadingToast });
-      fetchEventData();
+      setEventId("");
+      setGoldId("awaiting");
+      setSilverId("awaiting");
+      setBronzeId("awaiting");
+      setCurrentEventResults([]);
+      setIsEditing(false);
       fetchDropdownData();
     } catch (error: any) {
       toast.error(`Error: ${error.message}`, { id: loadingToast });
@@ -350,7 +355,7 @@ export default function AddResultPage() {
                             options={[
                               { id: "", name: "No Participant", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
-                              ...competingDepartments
+                              ...competingDepartments.filter(d => d.id !== silverId && d.id !== bronzeId)
                             ]}
                             selectedValue={goldId}
                             onChange={(id) => {
@@ -372,7 +377,7 @@ export default function AddResultPage() {
                             options={[
                               { id: "", name: "No Participant", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
-                              ...competingDepartments
+                              ...competingDepartments.filter(d => d.id !== goldId && d.id !== bronzeId)
                             ]}
                             selectedValue={silverId}
                             onChange={(id) => {
@@ -394,7 +399,7 @@ export default function AddResultPage() {
                             options={[
                               { id: "", name: "No Participant", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
-                              ...competingDepartments
+                              ...competingDepartments.filter(d => d.id !== goldId && d.id !== silverId)
                             ]}
                             selectedValue={bronzeId}
                             onChange={(id) => {
@@ -490,7 +495,7 @@ export default function AddResultPage() {
                   </p>
                 </div>
               ) : viewMode === 'cards' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-20">
                   {groupedRecentResults.map(({ eventId, items, event }, index) => {
                     return (
                       <motion.div 
@@ -559,7 +564,7 @@ export default function AddResultPage() {
                   })}
                 </div>
               ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mb-20">
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[600px] table-auto">
                       <thead>
