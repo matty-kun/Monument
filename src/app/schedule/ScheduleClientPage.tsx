@@ -86,6 +86,7 @@ export default function ScheduleClientPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusTab, setStatusTab] = useState<'all' | 'ongoing' | 'upcoming' | 'finished'>('all');
   const [showRefresh, setShowRefresh] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   const supabase = createClient();
 
@@ -147,7 +148,8 @@ export default function ScheduleClientPage({
         const eventName = s.events?.name?.toLowerCase() || '';
         const departmentNames = s.departments.map(d => (typeof d === 'string' ? d.toLowerCase() : d.name.toLowerCase()));
         const categoryName = s.events?.category ? (typeof s.events.category === 'object' ? s.events.category.name.toLowerCase() : getCategoryName(s.events.category)?.toLowerCase() || '') : '';
-        return eventName.includes(lowercasedQuery) || departmentNames.some(dn => dn.includes(lowercasedQuery)) || categoryName.includes(lowercasedQuery);
+        const venueName = s.venues?.name?.toLowerCase() || '';
+        return eventName.includes(lowercasedQuery) || departmentNames.some(dn => dn.includes(lowercasedQuery)) || categoryName.includes(lowercasedQuery) || venueName.includes(lowercasedQuery);
       });
     }
 
@@ -165,13 +167,22 @@ export default function ScheduleClientPage({
       const valA = isNaN(timeA) ? Infinity : timeA;
       const valB = isNaN(timeB) ? Infinity : timeB;
 
-      if (prioA === 2) {
-        // Both finished, sort by most recently finished (descending)
-        return valB - valA;
+      if (valA !== valB) {
+        if (prioA === 2) {
+          // Both finished, sort by most recently finished (descending)
+          return valB - valA;
+        }
+        // Both live or upcoming, sort by closest first (ascending)
+        return valA - valB;
       }
       
-      // Both live or upcoming, sort by closest first (ascending)
-      return valA - valB;
+      const nameA = a.events?.name?.toLowerCase() || '';
+      const nameB = b.events?.name?.toLowerCase() || '';
+      if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+      const venueA = a.venues?.name?.toLowerCase() || '';
+      const venueB = b.venues?.name?.toLowerCase() || '';
+      return venueA.localeCompare(venueB);
     });
 
     setFilteredSchedules(filtered);
@@ -226,14 +237,24 @@ export default function ScheduleClientPage({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-row justify-between items-center mb-6 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full">
-        <div className="relative w-full max-w-sm shrink">
-          <svg className="absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 font-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <div className="flex flex-row items-center justify-between mb-6 w-full relative">
+        <div className={`relative transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] shrink w-full ${isSearchFocused ? 'max-w-full flex-1 z-20 md:max-w-sm md:flex-none' : 'max-w-[60%] sm:max-w-sm'}`}>
+          <svg className={`absolute left-3.5 md:left-4 top-1/2 -translate-y-1/2 h-4 w-4 font-black transition-colors duration-300 ${isSearchFocused ? 'text-monument-primary' : 'text-gray-400'}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
-          <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input pl-10 md:pl-12 py-2.5 md:py-3 w-full bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm text-sm" />
+          <input 
+            type="text" 
+            placeholder="Search events, venues, or categories..." 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className={`pl-10 md:pl-12 py-2.5 md:py-3 w-full bg-white dark:bg-gray-800 border-2 rounded-xl text-sm focus:outline-none focus:ring-0 transition-all font-medium text-gray-700 dark:text-gray-200 ${isSearchFocused ? 'border-monument-primary shadow-xl shadow-monument-primary/10' : 'border-gray-100 dark:border-gray-700 shadow-sm'}`}
+          />
         </div>
-        <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner shrink-0 overflow-x-auto custom-scrollbar">
+        <div 
+          className={`transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] flex items-center bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner overflow-hidden whitespace-nowrap transform-gpu shrink-0 ${isSearchFocused ? 'max-w-0 opacity-0 p-0 ml-0 gap-0 border-0 pointer-events-none md:max-w-xl md:opacity-100 md:p-1 md:ml-4 md:gap-1 md:pointer-events-auto' : 'max-w-md md:max-w-xl opacity-100 p-1 ml-2 md:ml-4 gap-1'}`}
+        >
           {(['all', 'ongoing', 'upcoming', 'finished'] as const).map(tab => {
             const isActive = statusTab === tab;
             let Icon = LayoutGrid;
