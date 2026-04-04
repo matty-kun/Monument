@@ -149,7 +149,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
   ];
 
   return (
-    <>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-4">
         <h1 className="text-4xl font-bold text-monument-primary mb-2">🏟️ Event Results</h1>
         <p className="text-gray-600 dark:text-gray-400">Competition results and winners by event</p>
@@ -440,6 +440,6 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

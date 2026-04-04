@@ -60,8 +60,9 @@ export default function Navbar() {
     }
     return `${baseClasses} text-gray-500 hover:text-monument-primary dark:text-gray-400 dark:hover:text-violet-400`;
   };
+  const isMainAdminPath = pathname?.startsWith('/admin');
 
-
+  if (isMainAdminPath) return null;
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50">

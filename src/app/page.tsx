@@ -59,6 +59,8 @@ export default async function ScoreboardPage() {
   const leaderboard = await fetchLeaderboard();
 
   return (
-    <LeaderboardClientPage initialLeaderboard={leaderboard} />
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <LeaderboardClientPage initialLeaderboard={leaderboard} />
+    </div>
   );
-}
+}

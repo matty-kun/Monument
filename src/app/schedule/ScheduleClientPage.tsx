@@ -224,7 +224,7 @@ export default function ScheduleClientPage({
   const totalCount = useMemo(() => schedules.length, [schedules]);
 
   return (
-    <>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-4">
         <h1 className="text-3xl md:text-4xl font-bold text-monument-primary mb-2">
           🗓️ Schedule
@@ -647,6 +647,6 @@ export default function ScheduleClientPage({
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };

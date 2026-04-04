@@ -82,16 +82,16 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
         className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         {selectedOption ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {selectedOption.icon ? (
-              <span className="text-xl w-6 h-6 flex items-center justify-center">{selectedOption.icon}</span>
+              <span className="text-xl w-6 h-6 flex items-center justify-center shrink-0">{selectedOption.icon}</span>
             ) : selectedOption.image_url ? (
-              <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" priority />
+              <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full shrink-0" priority />
             ) : null}
-            <span className="ml-1 text-gray-900 dark:text-gray-200 truncate">{selectedOption.name}</span>
+            <span className="ml-1 text-gray-900 dark:text-gray-200 truncate block">{selectedOption.name}</span>
           </div>
-        ) : <span className="text-gray-500 dark:text-gray-400">{placeholder}</span>}
-        <span className="text-gray-400">▼</span>
+        ) : <span className="text-gray-500 dark:text-gray-400 truncate flex-1 block">{placeholder}</span>}
+        <span className="text-gray-400 shrink-0 ml-2">▼</span>
       </div>
       {isOpen && !disabled && (
         <div className="absolute z-[60] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-72">

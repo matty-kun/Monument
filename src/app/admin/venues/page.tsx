@@ -8,7 +8,7 @@ import ConfirmModal from "../../../components/ConfirmModal";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
-import { FaTable, FaThLarge } from "react-icons/fa";
+import { FaTable, FaThLarge, FaSearch, FaMapMarkerAlt, FaEdit, FaTrash } from "react-icons/fa";
 
 interface Venue {
   id: string;
@@ -23,274 +23,170 @@ export default function VenuesPage() {
   const [editingVenue, setEditingVenue] = useState<Venue | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [venueToDeleteId, setVenueToDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchVenues = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("venues")
-      .select("id, name")
-      .order("name", { ascending: true });
-
-    if (error) {
-      toast.error("Error fetching venues.");
-      console.error("Error fetching venues:", error);
-    } else {
-      setVenues(data);
-    }
+    const { data, error } = await supabase.from("venues").select("id, name").order("name", { ascending: true });
+    if (!error) setVenues(data);
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
     fetchVenues();
+    document.title = "Manage Venues | CITE FEST 2026";
   }, [fetchVenues]);
 
   const handleFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const nameToSubmit = editingVenue ? editingVenue.name : newVenueName;
-
-    if (!nameToSubmit.trim()) {
-      toast.error("Venue name cannot be empty.");
-      return;
-    }
+    const name = editingVenue ? editingVenue.name : newVenueName;
+    if (!name.trim()) { toast.error("Name is required."); return; }
 
     if (editingVenue) {
-      // Update venue
-      const { error } = await supabase
-        .from("venues")
-        .update({ name: nameToSubmit.trim() })
-        .eq("id", editingVenue.id);
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("A venue with this name already exists.");
-        } else {
-          toast.error(`Error updating venue: ${error.message}`);
-        }
-      } else {
-        toast.success("Venue updated successfully!");
-        setEditingVenue(null);
-        fetchVenues();
-      }
+      const { error } = await supabase.from("venues").update({ name: name.trim() }).eq("id", editingVenue.id);
+      if (error) toast.error(error.message);
+      else { toast.success("Venue updated!"); setEditingVenue(null); fetchVenues(); }
     } else {
-      // Add venue
-      const { error } = await supabase
-        .from("venues")
-        .insert([{ name: nameToSubmit.trim() }]);
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("A venue with this name already exists.");
-        } else {
-          toast.error(`Error adding venue: ${error.message}`);
-        }
-      } else {
-        toast.success("Venue added successfully!");
-        setNewVenueName("");
-        fetchVenues();
-      }
+      const { error } = await supabase.from("venues").insert([{ name: name.trim() }]);
+      if (error) toast.error(error.message);
+      else { toast.success("Venue added!"); setNewVenueName(""); fetchVenues(); }
     }
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setVenueToDeleteId(id);
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!venueToDeleteId) return;
-
-    const { error } = await supabase
-      .from("venues")
-      .delete()
-      .eq("id", venueToDeleteId);
-
-    if (error) {
-      toast.error("Error deleting venue. It might be in use in a schedule.");
-    } else {
-      toast.success("Venue deleted successfully!");
-      fetchVenues();
-    }
-
-    setShowConfirmModal(false);
-    setVenueToDeleteId(null);
   };
 
   const filteredVenues = useMemo(() => {
-    if (!searchQuery) {
-      return venues;
-    }
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return venues.filter(venue =>
-      venue.name.toLowerCase().includes(lowercasedQuery)
-    );
+    if (!searchQuery) return venues;
+    return venues.filter(v => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [venues, searchQuery]);
 
+  if (loading) return <div className="flex justify-center items-center h-screen"><BouncingBallsLoader /></div>;
+
   return (
-    <div className="max-w-4xl mx-auto dark:text-gray-200">
-      <Toaster position="top-center" />
-      <Breadcrumbs
-        items={[
-          { href: "/admin/dashboard", label: "Dashboard" },
-          { label: "Manage Venues" },
-        ]}
-      />
-
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-monument-primary mb-2">
-          📍 Manage Venues
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Add, edit, or delete event venues.
-        </p>
+    <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
+        <Breadcrumbs items={[{ href: "/admin/dashboard", label: "Dashboard" }, { label: "Manage Venues" }]} />
+      </div>
+      
+      <div className="mb-4 shrink-0">
+        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingVenue ? 'Edit Venue' : 'Manage Venues'}</h1>
+        <p className="text-sm text-gray-500 font-medium">Define locations where competitions and events will take place</p>
       </div>
 
-      {/* Form Section */}
-      <div className="card mb-8 dark:bg-gray-800">
-        <form
-          onSubmit={handleFormSubmit}
-          className="flex flex-col sm:flex-row gap-4 items-end"
-        >
-          <div className="flex-grow w-full">
-            <label
-              htmlFor="venue-name"
-              className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
-            >
-              {editingVenue ? "Edit Venue Name" : "New Venue Name"}
-            </label>
-            <input
-              id="venue-name"
-              type="text"
-              placeholder="e.g., University Gym"
-              className="input dark:bg-gray-700 dark:border-gray-600"
-              value={editingVenue ? editingVenue.name : newVenueName}
-              onChange={(e) =>
-                editingVenue
-                  ? setEditingVenue({ ...editingVenue, name: e.target.value })
-                  : setNewVenueName(e.target.value)
-              }
-              required
-            />
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            {editingVenue && (
-              <button
-                type="button"
-                onClick={() => setEditingVenue(null)}
-                className="btn btn-secondary w-1/2 sm:w-auto"
-              >
-                Cancel
-              </button>
-            )}
-            <button type="submit" className="btn btn-primary w-full sm:w-auto">
-              {editingVenue ? "💾 Save" : "➕ Add"}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Search and View Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-        <div className="relative w-full md:w-1/2">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search venues..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 w-full"
-          />
-        </div>
-        <div className="inline-flex rounded-md shadow-sm bg-white dark:bg-gray-800 self-end">
-          <button onClick={() => setViewMode('table')} className={`px-3 py-2 text-sm font-medium rounded-l-lg flex items-center gap-2 ${viewMode === 'table' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-            <FaTable /> Table
-          </button>
-          <button onClick={() => setViewMode('card')} className={`px-3 py-2 text-sm font-medium rounded-r-lg flex items-center gap-2 ${viewMode === 'card' ? 'bg-monument-primary text-white dark:bg-violet-600' : 'text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-            <FaThLarge /> Cards
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex flex-col justify-center items-center p-10">
-          <BouncingBallsLoader />
-        </div>
-      ) : (
-        <AnimatePresence mode="wait">
-          {viewMode === 'table' ? (
-            <motion.div key="table" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="table-container">
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white dark:bg-gray-800">
-                  <thead className="table-header bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="table-cell text-left text-xs font-medium uppercase tracking-wider dark:text-gray-300">Venue Name</th>
-                      <th className="table-cell text-center text-xs font-medium uppercase tracking-wider dark:text-gray-300">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-100 dark:bg-gray-800 dark:divide-gray-700">
-                    {filteredVenues.map((venue) => (
-                      <tr key={venue.id} className="table-row dark:hover:bg-gray-700/50">
-                        <td className="table-cell font-medium text-gray-900 dark:text-gray-100">{venue.name}</td>
-                        <td className="table-cell text-center text-sm font-medium">
-                          <div className="flex gap-2 justify-center">
-                            <button onClick={() => setEditingVenue(venue)} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">✏️ Edit</button>
-                            <button onClick={() => handleDeleteClick(venue.id)} className="btn-danger py-1 px-3 text-sm rounded">🗑️ Delete</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredVenues.length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                          {searchQuery ? "No venues match your search." : "No venues yet."}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
+        {/* LEFT COLUMN: Entry Form */}
+        <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
+              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
+                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">{editingVenue ? 'Update Venue' : 'New Venue'}</h2>
               </div>
-            </motion.div>
-          ) : (
-            <motion.div key="card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVenues.map((venue) => (
-                <Card key={venue.id} className="flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <CardHeader className="p-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">📍</span>
-                      <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate" title={venue.name}>
-                        {venue.name}
-                      </CardTitle>
-                    </div>
-                  </CardHeader>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 p-3 flex gap-2 justify-end rounded-b-lg mt-auto">
-                    <button onClick={() => { setEditingVenue(venue); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-1 px-3 rounded text-sm transition-colors">✏️ Edit</button>
-                    <button onClick={() => handleDeleteClick(venue.id)} className="btn-danger py-1 px-3 text-sm rounded">🗑️ Delete</button>
+              
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
+                <form onSubmit={handleFormSubmit} className="space-y-6 flex flex-col">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Venue Name</label>
+                    <input 
+                       type="text" 
+                       value={editingVenue ? editingVenue.name : newVenueName} 
+                       onChange={(e) => editingVenue ? setEditingVenue({ ...editingVenue, name: e.target.value }) : setNewVenueName(e.target.value)}
+                       className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl px-4 py-4 text-sm font-bold shadow-inner placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all" 
+                       placeholder="e.g. University Gym" 
+                       required 
+                    />
                   </div>
-                </Card>
-              ))}
-              {filteredVenues.length === 0 && (
-                <div className="col-span-full text-center py-16 bg-white dark:bg-gray-800 rounded-lg shadow">
-                  <div className="text-6xl mb-4">📍</div>
-                  <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Venues Match Your Search" : "No Venues Yet"}</h3>
-                  <p className="text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Add a new venue using the form above."}</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
 
-      {/* Confirm Delete Modal */}
+                  <div className="flex flex-col gap-3 pt-2">
+                    <button type="submit" className="w-full bg-monument-primary hover:bg-monument-dark text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/20 active:scale-95">
+                      {editingVenue ? 'UPDATE VENUE' : 'ADD VENUE'}
+                    </button>
+                    {editingVenue && (
+                      <button type="button" onClick={() => setEditingVenue(null)} className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 transition-colors">Cancel Edit</button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+        </div>
+
+        {/* RIGHT COLUMN: List */}
+        <div className="lg:col-span-8 h-full flex flex-col min-h-0 pb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 shrink-0 mb-4">
+               <div className="relative flex-1 w-full">
+                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input type="text" placeholder="Search venues..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl pl-12 pr-4 py-3 text-sm font-medium" />
+               </div>
+               <div className="flex bg-gray-50 dark:bg-gray-900/50 p-1 rounded-xl">
+                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaTable size={18}/></button>
+                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaThLarge size={18}/></button>
+               </div>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <AnimatePresence mode="wait">
+                {viewMode === 'table' ? (
+                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden transition-all hover:shadow-md">
+                    <div className="overflow-y-auto custom-scrollbar overflow-x-auto relative flex-1">
+                      <table className="min-w-full divide-y divide-gray-50 dark:divide-gray-700">
+                        <thead className="bg-gray-50/50 dark:bg-gray-900/20 sticky top-0 z-10 backdrop-blur-sm">
+                        <tr>
+                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue Name</th>
+                          <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                        {filteredVenues.length === 0 ? (
+                          <tr><td colSpan={2} className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No venues found</td></tr>
+                        ) : filteredVenues.map((v) => (
+                          <tr key={v.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group">
+                            <td className="px-8 py-5">
+                              <span className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight">{v.name}</span>
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button onClick={() => { setEditingVenue(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
+                                <button onClick={() => { setVenueToDeleteId(v.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar p-2 h-full">
+                  {filteredVenues.length === 0 ? (
+                     <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No venues found</div>
+                  ) : filteredVenues.map((v) => (
+                    <div key={v.id} className="bg-white dark:bg-gray-800 p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:-translate-y-1 transition-all group relative items-center flex flex-row gap-5">
+                       <div className="w-12 h-12 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center text-monument-primary border border-gray-100 dark:border-gray-700 shadow-sm"><FaMapMarkerAlt size={20} /></div>
+                       <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight flex-1 truncate">{v.name}</h4>
+                       <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setEditingVenue(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                          <button onClick={() => { setVenueToDeleteId(v.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
+                       </div>
+                    </div>
+                  ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+        </div>
+      </div>
+
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleConfirmDelete}
+        onConfirm={async () => {
+          if (!venueToDeleteId) return;
+          const { error } = await supabase.from("venues").delete().eq("id", venueToDeleteId);
+          if (error) toast.error("Error deleting venue. It might be in use.");
+          else { toast.success("Venue deleted!"); fetchVenues(); }
+          setShowConfirmModal(false); setVenueToDeleteId(null);
+        }}
         title="Confirm Deletion"
         message="Are you sure you want to delete this venue? This action cannot be undone."
       />
+      <Toaster />
     </div>
   );
 }
