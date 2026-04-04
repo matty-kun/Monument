@@ -24,7 +24,7 @@ export interface SingleSelectDropdownProps {
   dropDirection?: 'up' | 'down';
 }
 
-function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 'Select an option', disabled = false, dropDirection = 'down' }: SingleSelectDropdownProps) {
+function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 'Select an option', disabled = false, dropDirection = 'up' }: SingleSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -95,7 +95,7 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
         <span className="text-gray-400 shrink-0 ml-2">▼</span>
       </div>
       {isOpen && !disabled && (
-        <div className={`absolute z-[60] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-72 ${dropDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+        <div className={`absolute z-[999] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-72 ${dropDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           <div className="p-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
               <input
                   type="text"

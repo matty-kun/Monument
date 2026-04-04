@@ -51,10 +51,14 @@ interface Schedule {
   start_time: string;
   end_time: string;
   date: string;
-  status: "upcoming" | "ongoing" | "finished";
+  end_date?: string | null;
+  status: "scheduled" | "live" | "finished";
+  winner_id?: string | null;
+  score_a?: number | null;
+  score_b?: number | null;
 }
 
-type ScheduleStatus = "ongoing" | "upcoming" | "finished";
+type ScheduleStatus = "live" | "scheduled" | "finished";
 
 // Type for the raw data from Supabase before normalization
 type RawScheduleFromSupabase = Omit<
@@ -71,45 +75,45 @@ const getDynamicStatus = (
 ): { status: ScheduleStatus; label: string; color: string; icon: string } => {
   if (!schedule.date || !schedule.start_time || !schedule.end_time)
     return {
-      status: "upcoming",
+      status: "scheduled",
       label: "Upcoming",
-      color: "bg-yellow-500",
+      color: "bg-amber-500",
       icon: "⏳",
     };
 
   const now = new Date();
   const start = new Date(`${schedule.date}T${schedule.start_time}`);
-  const end = new Date(`${schedule.date}T${schedule.end_time}`);
+  const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
 
   if (isNaN(start.getTime()))
     return {
-      status: "upcoming",
+      status: "scheduled",
       label: "Upcoming",
-      color: "bg-yellow-500",
+      color: "bg-amber-500",
       icon: "⏳",
     };
 
   if (now < start)
     return {
-      status: "upcoming",
+      status: "scheduled",
       label: "Upcoming",
-      color: "bg-yellow-500",
+      color: "bg-amber-500",
       icon: "⏳",
     };
 
   if (now >= start && now <= end)
     return {
-      status: "ongoing",
+      status: "live",
       label: "Live Now",
-      color: "bg-green-500 animate-pulse",
+      color: "bg-emerald-500 animate-pulse",
       icon: "🔴",
     };
 
   return {
     status: "finished",
     label: "Finished",
-    color: "bg-red-500",
-    icon: "✅",
+    color: "bg-rose-500",
+    icon: "🏁",
   };
 };
 
@@ -127,8 +131,12 @@ export default async function SchedulePage() {
         start_time,
         end_time,
         date,
+        end_date,
         status,
         departments,
+        winner_id,
+        score_a,
+        score_b,
         events ( id, name, icon, division, gender, category ),
         venues ( name )
       `)
@@ -177,8 +185,8 @@ export default async function SchedulePage() {
       }));
 
       const statusOrder: Record<ScheduleStatus, number> = {
-        ongoing: 1,
-        upcoming: 2,
+        live: 1,
+        scheduled: 2,
         finished: 3,
       };
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DatePickerDropdownProps {
   value: string; // "YYYY-MM-DD"
@@ -113,45 +114,51 @@ export default function DatePickerDropdown({ value, onChange, disabled = false }
     <div className="relative" ref={dropdownRef}>
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors'}`}
       >
         <div className="flex items-center gap-2">
           <CalendarIcon className="w-4 h-4 text-monument-primary" />
-          <span className="text-gray-900 dark:text-gray-200 font-bold">
+          <span className="text-gray-900 dark:text-gray-200 font-bold text-xs">
             {formattedDisplayDate}
           </span>
         </div>
-        <span className="text-gray-400">▼</span>
+        <span className="text-gray-400 text-[10px]">▼</span>
       </div>
 
+      <AnimatePresence mode="wait">
       {isOpen && !disabled && (
-        <div className="absolute z-[70] mt-1 w-[280px] sm:w-[320px] left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl p-4 sm:p-6 flex flex-col">
+        <motion.div 
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: -8, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+          className="absolute z-[999] bottom-full mb-2 w-[260px] sm:w-[280px] left-1/2 -track-x-1/2 sm:left-0 sm:translate-x-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl p-4 sm:p-5 flex flex-col"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
               {monthName} {year}
             </h3>
-            <div className="flex gap-4">
-              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)); }} className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <ChevronLeft className="w-5 h-5" />
+            <div className="flex gap-2">
+              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)); }} className="p-1.5 text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all">
+                <ChevronLeft className="w-4 h-4" />
               </button>
-              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)); }} className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <ChevronRight className="w-5 h-5" />
+              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)); }} className="p-1.5 text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all">
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Week Days */}
-          <div className="grid grid-cols-7 mb-4">
+          <div className="grid grid-cols-7 mb-2">
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-              <span key={i} className="text-center text-xs font-black text-gray-400 uppercase">
+              <span key={i} className="text-center text-[9px] font-black text-gray-400 uppercase">
                 {day}
               </span>
             ))}
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-y-2 mb-8">
+          <div className="grid grid-cols-7 gap-y-1 mb-4">
             {days.map((item, i) => {
               const currentYear = viewDate.getFullYear();
               // Calculate actual year for padding months
@@ -166,10 +173,10 @@ export default function DatePickerDropdown({ value, onChange, disabled = false }
                   type="button"
                   onClick={(e) => handleDateSelect(e, item.day, item.month)}
                   className={`
-                    relative flex items-center justify-center h-10 w-10 mx-auto rounded-full text-sm font-bold transition-all
-                    ${!item.current ? 'text-gray-200 dark:text-gray-700 pointer-events-none' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}
-                    ${isSelected(item.day, item.month, item.month < 0 ? -1 : item.month > 11 ? 1 : 0) ? '!bg-monument-primary !text-white shadow-lg' : ''}
-                    ${isToday(item.day, actMonth, actYear) && !isSelected(item.day, item.month, 0) ? 'border border-monument-primary/20' : ''}
+                    relative flex items-center justify-center h-8 w-8 mx-auto rounded-full text-xs font-bold transition-all
+                    ${!item.current ? 'text-gray-200 dark:text-gray-700 pointer-events-none' : 'text-gray-500 dark:text-gray-400 hover:bg-monument-primary/10 hover:text-monument-primary'}
+                    ${isSelected(item.day, item.month, item.month < 0 ? -1 : item.month > 11 ? 1 : 0) ? '!bg-monument-primary !text-white shadow-md scale-105' : ''}
+                    ${isToday(item.day, actMonth, actYear) && !isSelected(item.day, item.month, 0) ? 'border border-monument-primary/30' : ''}
                   `}
                 >
                   {item.day}
@@ -179,24 +186,25 @@ export default function DatePickerDropdown({ value, onChange, disabled = false }
           </div>
 
           {/* Footer Buttons */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-50 dark:border-gray-700">
             <button 
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(""); setIsOpen(false); }}
-              className="py-3 px-6 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-sm font-black hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              className="py-2.5 px-4 bg-gray-50 dark:bg-gray-900/50 text-gray-400 dark:text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
             >
               Remove
             </button>
             <button 
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); }}
-              className="py-3 px-6 bg-monument-primary text-white rounded-full text-sm font-black shadow-lg hover:shadow-monument-primary/20 transition-all"
+              className="py-2.5 px-4 bg-monument-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-monument-primary/10 hover:bg-monument-dark transition-all active:scale-95"
             >
               Done
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

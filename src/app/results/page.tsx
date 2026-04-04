@@ -61,13 +61,14 @@ const getCategoryIcon = (categoryName: string | null): string => {
 };
 
 export default async function EventResultsPage() {
-  const supabase = await createClient(); // FIXED: Added await here
+  const supabase = await createClient();
 
   const fetchEventData = async (): Promise<{
     results: ProcessedResult[];
     categories: { id: string; name: string; icon?: string }[];
   }> => {
-    const { data, error } = await supabase
+    // FIXED: Fetch only medal results, removing match winners from the Events Hall of Fame
+    const { data: resultsData, error: resultsError } = await supabase
       .from("results")
       .select(`
         id,
@@ -77,13 +78,13 @@ export default async function EventResultsPage() {
         departments ( name, abbreviation, image_url )
       `);
 
-    if (error) {
-      console.error("Error fetching event results:", error);
+    if (resultsError) {
+      console.error("Error fetching event results:", resultsError);
       return { results: [], categories: [] };
     }
 
-    const typedData = data as unknown as Result[];
-    const processedResults: ProcessedResult[] = typedData.map((r) => ({
+    const typedResults = resultsData as unknown as Result[];
+    const processedResults: ProcessedResult[] = typedResults.map((r) => ({
       event_name: r.events?.name || "Unknown Event",
       category: r.events?.category || null,
       division: r.events?.division || null,
@@ -99,11 +100,6 @@ export default async function EventResultsPage() {
     const { data: categoriesData, error: categoriesError } = await supabase
       .from("categories")
       .select("id, name");
-
-    if (categoriesError) {
-      console.error("Error fetching categories:", categoriesError);
-      return { results: processedResults, categories: [] };
-    }
 
     const processedCategories =
       categoriesData?.map((c: { id: string; name: string }) => ({

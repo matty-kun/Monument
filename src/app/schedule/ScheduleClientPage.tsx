@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import Image from "next/image";
 import { CardContent } from "@/components/ui/Card";
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTable, FaThLarge, FaTrophy } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ interface Department {
   name: string;
   abbreviation?: string | null;
   image_url?: string;
+  nickname?: string;
 }
 
 interface Event {
@@ -25,7 +26,7 @@ interface Event {
   name: string;
   abbreviation?: string;
   icon: string | null;
-  category: string | { name: string } | null; // Allow string for UUID
+  category: string | { name: string } | null;
   division: string | null;
   gender: string | null;
 }
@@ -50,10 +51,14 @@ interface Schedule {
   start_time: string;
   end_time: string;
   date: string;
-  status: "upcoming" | "ongoing" | "finished";
+  end_date?: string | null;
+  status: "scheduled" | "live" | "finished";
+  winner_id?: string | null;
+  score_a?: number | null;
+  score_b?: number | null;
 }
 
-type ScheduleStatus = "ongoing" | "upcoming" | "finished";
+type ScheduleStatus = "live" | "scheduled" | "finished";
 
 interface ScheduleClientPageProps {
     initialSchedules: Schedule[];
@@ -77,366 +82,231 @@ export default function ScheduleClientPage({
   const [allDepartments] = useState<Department[]>(initialDepartments);
   const [allCategories] = useState<Category[]>(initialCategories);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); // New state for view mode
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); 
 
-  // ✅ Dynamic status
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
-    if (!schedule.date || !schedule.start_time || !schedule.end_time)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
+    if (schedule.status === "finished") {
+      return { status: "finished", label: "Finished", color: "bg-rose-500", icon: "🏁" };
+    }
+    if (!schedule.date || !schedule.start_time || !schedule.end_time) {
+      return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
+    }
     const now = new Date();
     const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.date}T${schedule.end_time}`);
-
-    if (isNaN(start.getTime()))
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-
-    if (now < start)
-      return {
-        status: "upcoming",
-        label: "Upcoming",
-        color: "bg-yellow-500",
-        icon: "⏳",
-      };
-    if (now >= start && now <= end)
-      return {
-        status: "ongoing",
-        label: "Live Now",
-        color: "bg-green-500 animate-pulse",
-        icon: "🔴",
-      };
-    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
+    const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
+    if (isNaN(start.getTime())) return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
+    if (now < start) return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
+    if (now >= start && now <= end) return { status: "live", label: "Live Now", color: "bg-emerald-500 animate-pulse", icon: "🔴" };
+    return { status: "finished", label: "Finished", color: "bg-rose-500", icon: "🏁" };
   }, []);
 
   const getCategoryName = useCallback((categoryId: string | { name: string } | null | undefined) => {
     if (!categoryId) return null;
-    if (typeof categoryId === 'object' && categoryId !== null && 'name' in categoryId) {
-      return categoryId.name;
-    }
-    return allCategories.find(c => c.id === categoryId)?.name || categoryId.toString();
+    if (typeof categoryId === 'object' && categoryId !== null && 'name' in categoryId) return categoryId.name;
+    return allCategories.find(c => c.id === categoryId)?.name || null;
   }, [allCategories]);
 
-  // ✅ Re-filter
   useEffect(() => {
     let filtered: Schedule[] = [...schedules];
-
     if (searchQuery) {
       const lowercasedQuery = searchQuery.toLowerCase();
       filtered = filtered.filter((s) => {
         const eventName = s.events?.name?.toLowerCase() || '';
         const departmentNames = s.departments.map(d => (typeof d === 'string' ? d.toLowerCase() : d.name.toLowerCase()));
-        const categoryName = getCategoryName(s.events?.category)?.toLowerCase() || '';
-
-        return (
-          eventName.includes(lowercasedQuery) ||
-          departmentNames.some(dn => dn.includes(lowercasedQuery)) ||
-          categoryName.includes(lowercasedQuery)
-        );
+        const categoryName = s.events?.category ? (typeof s.events.category === 'object' ? s.events.category.name.toLowerCase() : getCategoryName(s.events.category)?.toLowerCase() || '') : '';
+        return eventName.includes(lowercasedQuery) || departmentNames.some(dn => dn.includes(lowercasedQuery)) || categoryName.includes(lowercasedQuery);
       });
     }
-
     setFilteredSchedules(filtered);
-  }, [
-    schedules,
-    searchQuery,
-    getCategoryName,
-  ]);
-
-  const clearAll = () => { setSearchQuery(""); };
+  }, [schedules, searchQuery, getCategoryName]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "TBA";
-    // Adding T00:00:00 ensures the date isn't affected by timezone shifts
     const date = new Date(dateString + 'T00:00:00');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}-${day}-${year}`;
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${date.getFullYear()}`;
   };
 
-  const filterCount = useMemo(() => filteredSchedules.length, [filteredSchedules]);
-  const totalCount = useMemo(() => schedules.length, [schedules]);
+  const getDepartmentInfo = (d: Department | string): Department => {
+    if (typeof d === 'string') {
+      const matched = allDepartments.find(dept => dept.name === d || dept.abbreviation === d);
+      return (matched as Department) || { id: '', name: d, abbreviation: d, image_url: null };
+    }
+    return d as Department;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="mb-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-monument-primary mb-2">
-          🗓️ Schedule
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          View upcoming, ongoing, and finished events
-        </p>
+        <h1 className="text-3xl md:text-4xl font-black text-monument-primary uppercase tracking-tight mb-2">🗓️ Schedule</h1>
+        <p className="text-gray-500 dark:text-gray-400 font-medium italic">View upcoming, live, and recorded victories across the tournament</p>
       </div>
 
-      {/* Search and View Controls */}
-      <div className="flex flex-row justify-between items-center mb-4 gap-4">
-        <div className="relative w-full sm:max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <div className="flex flex-row justify-between items-center mb-6 gap-4">
+        <div className="relative w-full sm:max-w-md">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 font-black" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
-          <input
-            type="text"
-            placeholder="Search by event or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 w-full"
-          />
+          <input type="text" placeholder="Search events, teams, or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input pl-12 py-3 w-full bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm" />
         </div>
-
-        <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg dark:bg-gray-700 self-center">
-          <button onClick={() => setViewMode('card')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
-            <FaThLarge />
-            Cards
-          </button>
-          <button onClick={() => setViewMode('table')} className={`px-3 py-1 text-sm font-medium rounded-md transition-colors flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-600/50'}`}>
-            <FaTable />
-            Table
-          </button>
+        <div className="flex items-center gap-1 p-1 bg-gray-50 rounded-xl dark:bg-gray-900 shadow-inner self-center shrink-0">
+          <button onClick={() => setViewMode('card')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'card' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}><FaThLarge /> Cards</button>
+          <button onClick={() => setViewMode('table')} className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${viewMode === 'table' ? 'bg-white text-monument-primary shadow-md dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600'}`}><FaTable /> Table</button>
         </div>
       </div>
-
-
 
       <AnimatePresence mode="wait">
         {viewMode === 'card' ? (
-          <motion.div
-            key="card-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          >
+          <motion.div key="card-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSchedules.length > 0 ? (
               filteredSchedules.map((s) => {
-                const { label, color, icon } = getDynamicStatus(s);
+                const { label, color, icon, status } = getDynamicStatus(s);
                 return (
-                  <div
-                    key={s.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow"
-                  >
-                    <div
-                      className={`${color} px-4 py-2 flex items-center justify-between`}
-                    >
-                      <span className="text-white font-semibold text-sm flex items-center gap-2">
-                        <span>{icon}</span>
-                        {label}
-                      </span>
-                      <span className="text-white text-xs opacity-90 font-bold">
-                        {formatDate(s.date)}
-                      </span>
+                  <div key={s.id} className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-xl transition-all duration-300">
+                    <div className={`${color} px-6 py-2.5 flex justify-between items-center text-white`}>
+                      <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">{icon} {label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{s.end_date && s.end_date !== s.date ? `${formatDate(s.date)} — ${formatDate(s.end_date)}` : formatDate(s.date)}</span>
                     </div>
-                    <CardContent className="p-4 pt-4 space-y-4 text-center">
-                      <div className="flex flex-col items-center justify-center gap-2">
+                    <CardContent className="p-6 space-y-4 flex-1 text-center flex flex-col">
+                      <div className="flex flex-col items-center gap-2">
                         <div className="flex items-center gap-2">
-                          {s.events?.icon && (
-                            <span className="text-3xl">{s.events.icon}</span>
-                          )}
-                          <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100">
-                            {s.events?.name || "N/A"}
-                          </h3>
+                          <span className="text-3xl drop-shadow-sm">{s.events?.icon || '🏅'}</span>
+                          <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight leading-tight">{s.events?.name || "N/A"}</h3>
                         </div>
-                        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs">
-                          {s.events?.category && (
-                            <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
-                              {/* If category is an object it has a name, otherwise it's a UUID we need to look up */}
-                              {typeof s.events.category === 'object' ? s.events.category.name : getCategoryName(s.events.category)}
-                            </span>
-                          )}
-                          {s.events?.division && s.events.division !== 'N/A' && (
-                            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full dark:bg-purple-900/50 dark:text-purple-300">
-                              {s.events.division}
-                            </span>
-                          )}
-                          {s.events?.gender && s.events.gender !== 'N/A' && (
-                            <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full dark:bg-pink-900/50 dark:text-pink-300">
-                              {s.events.gender}
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const catName = s.events?.category ? (typeof s.events.category === 'object' ? s.events.category.name : getCategoryName(s.events.category)) : null;
+                          const div = s.events?.division && s.events.division !== 'N/A' ? s.events.division : null;
+                          const gen = s.events?.gender && s.events.gender !== 'N/A' ? s.events.gender : null;
+                          return (catName || div || gen) ? (
+                            <div className="flex flex-wrap items-center justify-center gap-2 mt-0.5 min-h-[18px]">
+                              {catName && <span className="bg-blue-50/50 text-blue-600 px-2 py-0.5 rounded-full dark:bg-blue-900/10 dark:text-blue-300 text-[8px] font-black uppercase tracking-widest leading-none">{catName}</span>}
+                              {div && <span className="bg-purple-50/50 text-purple-600 px-2 py-0.5 rounded-full dark:bg-purple-900/10 dark:text-purple-300 text-[8px] font-black uppercase tracking-widest leading-none">{div}</span>}
+                              {gen && <span className="bg-rose-50/50 text-rose-600 px-2 py-0.5 rounded-full dark:bg-rose-900/10 dark:text-rose-300 text-[8px] font-black uppercase tracking-widest leading-none">{gen}</span>}
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
-                      <div className="border-t border-gray-100 dark:border-gray-700 pt-4"></div>
-                      <div>
-                        <div className="flex items-start justify-center gap-4 flex-wrap">
-                          {s.departments.map((d, i) => (
-                            <Fragment key={typeof d === "string" ? d : d.id}>
-                              <div className="flex flex-col items-center gap-2">
-                                {typeof d === "object" && d.image_url ? (
-                                  <Image
-                                    src={d.image_url}
-                                    alt={d.name}
-                                    width={64}
-                                    height={64}
-                                    className="rounded-full w-16 h-16 object-cover border-4 border-gray-200 dark:border-gray-600"
-                                  />
-                                ) : (
-                                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-monument-primary/20 dark:bg-violet-900/30 text-xl font-bold text-monument-primary dark:text-violet-400">
-                                    {typeof d === "object"
-                                      ? d.abbreviation || d.name.slice(0, 3)
-                                      : d.slice(0, 3)}
+
+                      <div className="bg-gray-50/30 dark:bg-gray-900/20 rounded-3xl p-5 border border-gray-100 dark:border-gray-700/50 flex-1 flex flex-col justify-center">
+                        <div className="flex items-center justify-around gap-2 relative">
+                          {s.departments.map((dep, i) => {
+                            const dInfo = getDepartmentInfo(dep);
+                            const isWinner = s.winner_id === dInfo.id && s.winner_id !== null;
+                            const isH2H = s.departments.length === 2;
+                            
+                            return (
+                              <Fragment key={i}>
+                                <div className="flex flex-col items-center gap-2.5 relative">
+                                  {isWinner && (
+                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-1 z-10 w-6 h-6 flex items-center justify-center text-sm drop-shadow-md">
+                                        <FaTrophy className="text-yellow-400" />
+                                    </motion.div>
+                                  )}
+                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-yellow-500/20' : 'bg-white dark:bg-gray-700 text-gray-400 border-white dark:border-gray-800'}`}>
+                                    {dInfo.image_url ? <Image src={dInfo.image_url} alt={dInfo.name} width={56} height={56} className="rounded-full object-cover w-full h-full" /> : (dInfo.abbreviation || dInfo.name.slice(0, 2).toUpperCase())}
                                   </div>
-                                )}
-                                <span className="text-sm font-semibold">
-                                  {typeof d === "object" ? d.abbreviation || d.name : d}
-                                </span>
-                              </div>
-                              {i < s.departments.length - 1 && (
-                                <span className="text-monument-primary dark:text-violet-500 text-xl font-black self-center italic">
-                                  vs
-                                </span>
-                              )}
-                            </Fragment>
-                          ))}
+                                  <div className="flex flex-col mt-0.5">
+                                     {isWinner && isH2H && (
+                                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[7px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Winner</motion.span>
+                                     )}
+                                     <span className={`text-[9px] font-bold uppercase tracking-tight mt-0.5 leading-tight max-w-[80px] break-words line-clamp-2 transition-colors ${isWinner ? 'text-gray-900 dark:text-white font-black' : 'text-gray-500/80'}`}>{dInfo.nickname || dInfo.name}</span>
+                                  </div>
+                                </div>
+                                {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-200 dark:text-gray-700 italic opacity-20 self-center">vs</span>}
+                              </Fragment>
+                            );
+                          })}
                         </div>
+                        
+                        {status === "finished" && s.departments.length === 2 && (Number(s.score_a) > 0 || Number(s.score_b) > 0) && (
+                          <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700/50 font-black text-2xl italic text-gray-900 dark:text-gray-100">
+                             <span className={s.winner_id === (typeof s.departments[0] === 'object' ? s.departments[0].id : null) ? 'text-emerald-500' : 'opacity-40'}>{s.score_a || 0}</span>
+                             <span className="text-gray-200">—</span>
+                             <span className={s.winner_id === (typeof s.departments[1] === 'object' ? s.departments[1].id : null) ? 'text-emerald-500' : 'opacity-40'}>{s.score_b || 0}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                            <FaClock />
-                            <span>Time</span>
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">
-                            {formatTime(s.start_time)} - {formatTime(s.end_time)}
-                          </p>
+
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Schedule</span>
+                          <p className="text-[10px] font-black text-gray-800 dark:text-gray-100 uppercase">{s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}</p>
                         </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                            <FaMapMarkerAlt />
-                            <span>Venue</span>
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-1">
-                            {s.venues?.name || "TBA"}
-                          </p>
-                        </div>  
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Venue</span>
+                          <p className="text-[10px] font-black text-monument-primary uppercase italic truncate w-full px-2">{s.venues?.name || "TBA"}</p>
+                        </div>
                       </div>
                     </CardContent>
                   </div>
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-                <div className="text-6xl mb-4">🗓️</div>
-                <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Available"}</h3>
-<p className="text-sm text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Check back later for updates."}</p>
+              <div className="col-span-full text-center py-20 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center">
+                <span className="text-6xl mb-4 opacity-30">🗓️</span>
+                <h3 className="text-xl font-black text-gray-400 uppercase tracking-tight">No matching schedules</h3>
               </div>
             )}
           </motion.div>
         ) : (
-          <motion.div
-            key="table-view"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="table-container"
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-800 dark:text-gray-300 rounded-lg shadow-md overflow-hidden">
-                <thead className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+          <motion.div key="table-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="min-w-full bg-white dark:bg-gray-800">
+                <thead className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Event</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Venue</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Departments</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Competition</th>
+                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timeline</th>
+                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Venue</th>
+                    <th className="px-8 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Matchup</th>
+                    <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredSchedules.length > 0 ? (
-                    filteredSchedules.map((s) => {
-                      const { label } = getDynamicStatus(s);
-                      return (
-                        <tr key={s.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-800 dark:even:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl">{s.events?.icon || '🏅'}</span>
-                              <span className="font-semibold text-gray-900 dark:text-gray-100">{s.events?.name || 'N/A'}</span>
-                              <div className="flex flex-wrap items-center gap-1 text-xs ml-2">
-                                {s.events?.category && (
-                                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full dark:bg-blue-900/50 dark:text-blue-300">
-                                    {typeof s.events.category === 'object' ? s.events.category.name : getCategoryName(s.events.category)}
-                                  </span>
-                                )}
-                                {s.events?.division && s.events.division !== 'N/A' && (
-                                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full dark:bg-purple-900/50 dark:text-purple-300">
-                                    {s.events.division}
-                                  </span>
-                                )}
-                                {s.events?.gender && s.events.gender !== 'N/A' && (
-                                  <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded-full dark:bg-pink-900/50 dark:text-pink-300">
-                                    {s.events.gender}
-                                  </span>
-                                )}
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {filteredSchedules.map((s) => {
+                    const { label, color } = getDynamicStatus(s);
+                    return (
+                      <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
+                        <td className="px-8 py-5">
+                           <div className="flex items-center gap-4">
+                              <span className="text-2xl drop-shadow-sm group-hover:scale-110 transition-transform">{s.events?.icon || '🏅'}</span>
+                              <div className="flex flex-col">
+                                 <span className="font-black text-sm text-gray-900 dark:text-gray-100 uppercase tracking-tight">{s.events?.name}</span>
+                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{s.events?.category ? (typeof s.events.category === 'object' ? s.events.category.name : getCategoryName(s.events.category)) || '' : ''}</span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap font-bold">{formatDate(s.date)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col items-start">
-                              <span>{formatTime(s.start_time)}</span>
-                              <span>{formatTime(s.end_time)}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">{s.venues?.name || 'TBA'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-4">
-                              {s.departments.map((d, i) => (
-                                <Fragment key={typeof d === "string" ? d : d.id}>
-                                  <div className="flex flex-col items-center gap-1 text-center">
-                                    {typeof d === "object" && d.image_url ? (
-                                      <Image src={d.image_url} alt={d.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600" />
-                                    ) : (
-                                      <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-600 text-sm font-bold text-gray-500 dark:text-gray-300">
-                                        {typeof d === "object" ? d.abbreviation || d.name.slice(0, 2) : d.slice(0, 2)}
-                                      </div>
-                                    )}
-                                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                      {typeof d === 'object' ? d.abbreviation || d.name : d}
-                                    </span>
-                                  </div>
-                                  {i < s.departments.length - 1 && (
-                                    <span className="text-monument-primary dark:text-violet-500 text-lg font-black self-center italic">
-                                      vs
-                                    </span>
-                                  )}
-                                </Fragment>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                s.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' :
-                                s.status === 'ongoing' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
-                                'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                              }`}>
-                              {label}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
-                        <div className="flex flex-col items-center">
-                          <div className="text-4xl mb-2">🗓️</div>
-                          <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200">{searchQuery ? "No Schedules Match Your Search" : "No Schedules Match Filters"}</h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{searchQuery ? "Try a different search term." : "Try adjusting your filter criteria."}</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                           </div>
+                        </td>
+                        <td className="px-8 py-5 whitespace-nowrap">
+                           <div className="flex flex-col">
+                              <span className="text-xs font-black text-gray-800 dark:text-gray-100">{s.end_date && s.end_date !== s.date ? `${formatDate(s.date)} — ${formatDate(s.end_date)}` : formatDate(s.date)}</span>
+                              <span className="text-[10px] font-bold text-monument-primary uppercase italic mt-1">{s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)} - ${formatTime(s.end_time)}`}</span>
+                           </div>
+                        </td>
+                        <td className="px-8 py-5 text-xs font-black text-gray-500 uppercase italic tracking-tight">{s.venues?.name || 'TBA'}</td>
+                        <td className="px-8 py-5">
+                           <div className="flex items-center justify-center gap-6">
+                              {s.departments.map((dep, i) => {
+                                 const dInfo = getDepartmentInfo(dep);
+                                 const isWinner = s.winner_id === dInfo.id && s.winner_id !== null;
+                                 return (
+                                    <Fragment key={i}>
+                                       <div className="flex items-center gap-2 relative">
+                                          {isWinner && <span className="absolute -top-3 -right-1 text-[10px]">🏆</span>}
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-black border-2 transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-md' : 'bg-gray-50 text-gray-400 border-white dark:border-gray-700/50'}`}>
+                                             {dInfo.image_url ? <img src={dInfo.image_url} className="w-full h-full rounded-full object-cover" /> : (dInfo.abbreviation || dInfo.name.slice(0, 2).toUpperCase())}
+                                          </div>
+                                          <span className={`text-[10px] font-black uppercase ${isWinner ? 'text-yellow-600 font-black' : 'text-gray-400'}`}>{dInfo.nickname || dInfo.abbreviation || dInfo.name}</span>
+                                       </div>
+                                       {i < s.departments.length - 1 && <span className="text-[10px] opacity-20 italic font-black">vs</span>}
+                                    </Fragment>
+                                 );
+                              })}
+                           </div>
+                        </td>
+                        <td className="px-8 py-5">
+                           <span className={`${color} px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-md`}>{label}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

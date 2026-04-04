@@ -1,37 +1,42 @@
 "use client";
 
-import { useState, useEffect, useMemo, Fragment, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useMemo, useCallback, Fragment } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
-import toast, { Toaster } from 'react-hot-toast';
-import ConfirmModal from '../../../components/ConfirmModal';
-import MultiSelectDropdown from '../../../components/MultiSelectDropdown';
-import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import TimePickerDropdown from '../../../components/TimePickerDropdown';
-import DatePickerDropdown from "../../../components/DatePickerDropdown";
+import { 
+  Plus, 
+  Search, 
+  LayoutGrid, 
+  List, 
+  Trash2, 
+  CheckCircle2, 
+  Clock, 
+  MapPin, 
+  Calendar,
+  Settings2,
+  X,
+  AlertCircle
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
 import { formatTime } from "@/lib/utils";
-import { FaTable, FaThLarge, FaClock, FaMapMarkerAlt, FaSearch, FaPlus, FaTrash, FaEdit, FaCalendarAlt } from "react-icons/fa";
+import SingleSelectDropdown from "@/components/SingleSelectDropdown";
+import DatePickerDropdown from "@/components/DatePickerDropdown";
+import TimePickerDropdown from "@/components/TimePickerDropdown";
 
+// --- Types ---
 interface Department {
   id: string;
   name: string;
-  image_url?: string;
+  abbreviation: string;
+  image_url: string | null;
 }
 
 interface Event {
   id: string;
   name: string;
-  icon?: string;
-  category?: string | null;
-  gender?: string | null;
-  division?: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
+  icon: string | null;
+  category: { id: string; name: string } | string | null;
 }
 
 interface Venue {
@@ -43,98 +48,173 @@ interface Schedule {
   id: string;
   event_id: string;
   venue_id: string;
-  events: { name: string; icon: string | null; gender: string | null; division: string | null; } | null;
-  venues: { name: string } | null;
   departments: string[];
   start_time: string;
   end_time: string;
   date: string;
-  status: "upcoming" | "ongoing" | "finished";
+  status: "scheduled" | "live" | "finished";
+  winner_id: string | null;
+  score_a: number | null;
+  score_b: number | null;
+  events: Event | null;
+  venues: Venue | null;
+  end_date: string | null;
 }
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return "TBA";
-  const d = new Date(dateString + 'T00:00:00');
-  if (isNaN(d.getTime())) return "TBA";
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${month}-${day}-${year}`;
-};
+// --- Icons / Components ---
+const FaClock = ({ size }: { size?: number }) => <Clock size={size || 14} />;
+const FaMapMarkerAlt = ({ size }: { size?: number }) => <MapPin size={size || 14} />;
+const FaCalendarAlt = ({ size }: { size?: number }) => <Calendar size={size || 14} />;
+const FaTrash = () => <Trash2 size={14} />;
+const FaEdit = () => <Settings2 size={14} />;
+const FaCheck = ({ size }: { size?: number }) => <CheckCircle2 size={size || 14} />;
 
-export default function SchedulePage() {
+export default function AdminSchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [allDepartments, setAllDepartments] = useState<Department[]>([]);
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [allVenues, setAllVenues] = useState<Venue[]>([]);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [eventId, setEventId] = useState("");
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [venueId, setVenueId] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [date, setDate] = useState("");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Form states
+  const [eventId, setEventId] = useState("");
+  const [venueId, setVenueId] = useState("");
+  const [date, setDate] = useState("");
+  const [endDate, setEndDate] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState("08:00");
+  const [endTime, setEndTime] = useState("09:00");
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isWholeDay, setIsWholeDay] = useState(false);
+
+  // Result Modal states
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultMatch, setResultMatch] = useState<Schedule | null>(null);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [scoreA, setScoreA] = useState<number>(0);
+  const [scoreB, setScoreB] = useState<number>(0);
+  const [isSubmittingResult, setIsSubmittingResult] = useState(false);
+
+  // 3-team medal assignment states
+  const [medalGoldId, setMedalGoldId] = useState<string | null>(null);
+  const [medalSilverId, setMedalSilverId] = useState<string | null>(null);
+  const [medalBronzeId, setMedalBronzeId] = useState<string | null>(null);
+
+  // Deletion Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
-  const [searchQuery, setSearchQuery] = useState("");
+
   const supabase = createClient();
 
-  const getDynamicStatus = useCallback((schedule: Schedule) => {
-    if (!schedule.date || !schedule.start_time || !schedule.end_time) return { status: "upcoming", label: "Upcoming", color: "bg-yellow-500", icon: "⏳" };
-    const now = new Date();
-    const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.date}T${schedule.end_time}`);
-    if (isNaN(start.getTime())) return { status: "upcoming", label: "Upcoming", color: "bg-yellow-500", icon: "⏳" };
-    if (now < start) return { status: "upcoming", label: "Upcoming", color: "bg-yellow-500", icon: "⏳" };
-    if (now >= start && now <= end) return { status: "ongoing", label: "Live Now", color: "bg-green-500 animate-pulse", icon: "🔴" };
-    return { status: "finished", label: "Finished", color: "bg-red-500", icon: "✅" };
-  }, []);
-
   const fetchSchedules = useCallback(async () => {
-    const { data, error } = await supabase.from("schedules").select(`*, start_time, end_time, events ( name, icon, gender, division ), venues ( name )`).order("date");
-    if (!error && data) {
-      const statusOrder: Record<string, number> = { ongoing: 1, upcoming: 2, finished: 3 };
-      const sortedData = data.sort((a, b) => {
-        const orderA = statusOrder[getDynamicStatus(a).status] || 4;
-        const orderB = statusOrder[getDynamicStatus(b).status] || 4;
-        if (orderA !== orderB) return orderA - orderB;
-        return new Date(a.date + "T" + a.start_time).getTime() - new Date(b.date + "T" + b.start_time).getTime();
-      });
-      setSchedules(sortedData);
-    }
-  }, [supabase, getDynamicStatus]);
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("schedules")
+      .select(`
+        *,
+        events (*),
+        venues (*)
+      `)
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+    
+    if (error) toast.error("Failed to fetch schedules");
+    else setSchedules(data || []);
+    setLoading(false);
+  }, [supabase]);
 
   const fetchData = useCallback(async () => {
-    const [deptRes, eventRes, venueRes, catRes] = await Promise.all([
-      supabase.from("departments").select("id, name, image_url").order("name"),
-      supabase.from("events").select("id, name, icon, category, gender, division").order("category,name"),
-      supabase.from("venues").select("id, name").order("name"),
-      supabase.from("categories").select("id, name").order("name")
+    const [eventsRes, venuesRes, deptsRes, catRes] = await Promise.all([
+      supabase.from("events").select("*").order("name"),
+      supabase.from("venues").select("*").order("name"),
+      supabase.from("departments").select("*").order("name"),
+      supabase.from("categories").select("id, name")
     ]);
-    if (!deptRes.error) setAllDepartments(deptRes.data);
-    if (!eventRes.error) setAllEvents(eventRes.data);
-    if (!venueRes.error) setAllVenues(venueRes.data);
-    if (!catRes.error) setAllCategories(catRes.data);
+
+    if (eventsRes.data) setEvents(eventsRes.data);
+    if (venuesRes.data) setVenues(venuesRes.data);
+    if (deptsRes.data) setDepartments(deptsRes.data);
+    if (catRes.data) setCategories(catRes.data);
   }, [supabase]);
 
   useEffect(() => {
     fetchSchedules();
     fetchData();
-    document.title = "Manage Schedule | CITE FEST 2026";
-    const channel = supabase.channel('schedules-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, () => fetchSchedules()).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchSchedules, fetchData, supabase]);
+  }, [fetchSchedules, fetchData]);
 
-  async function handleAddOrUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!eventId || !venueId || !date) { toast.error("Missing required fields."); return; }
-    const finalStartTime = isWholeDay ? "00:00" : startTime;
-    const finalEndTime = isWholeDay ? "23:59" : endTime;
+  const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d])), [departments]);
+  const departmentIdMap = useMemo(() => new Map(departments.map(d => [d.id, d])), [departments]);
+
+  const filteredSchedules = useMemo(() => {
+    return schedules.filter(s => {
+      const eventName = s.events?.name?.toLowerCase() || '';
+      const venueName = s.venues?.name?.toLowerCase() || '';
+      const depts = s.departments.join(' ').toLowerCase();
+      const q = searchQuery.toLowerCase();
+      return eventName.includes(q) || venueName.includes(q) || depts.includes(q);
+    });
+  }, [schedules, searchQuery]);
+
+  const groupedEvents = useMemo(() => {
+    return events.reduce((acc, ev) => {
+      let categoryName = 'Uncategorized';
+      if (typeof ev.category === 'object' && ev.category) {
+        categoryName = ev.category.name;
+      } else if (typeof ev.category === 'string') {
+        categoryName = categories.find(c => c.id === ev.category)?.name || 'Uncategorized';
+      }
+      
+      const cat = categoryName;
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push({ ...ev, icon: ev.icon });
+      return acc;
+    }, {} as Record<string, any[]>);
+  }, [events, categories]);
+
+  const eventOptions = useMemo(() => {
+    return Object.entries(groupedEvents).map(([cat, evs]) => ({
+      label: cat,
+      options: evs.map(ev => ({
+        id: ev.id,
+        name: ev.name,
+        icon: ev.icon
+      }))
+    }));
+  }, [groupedEvents]);
+
+  const venueOptions = useMemo(() => {
+    return venues.map(v => ({
+      id: v.id,
+      name: v.name,
+      icon: "📍"
+    }));
+  }, [venues]);
+
+  async function handleSaveSchedule() {
+    if (!eventId || !venueId || !date || selectedDepartments.length < 1) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const payload = {
+      event_id: eventId,
+      venue_id: venueId,
+      date,
+      end_date: endDate || date,
+      start_time: isWholeDay ? "00:00:00" : `${startTime}:00`,
+      end_time: isWholeDay ? "23:59:59" : `${endTime}:00`,
+      departments: selectedDepartments,
+      status: 'scheduled' as const
+    };
+
     try {
-      const payload = { event_id: eventId, departments: selectedDepartments, venue_id: venueId, start_time: finalStartTime, end_time: finalEndTime, date };
       if (editingId) {
         const { error } = await supabase.from("schedules").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -142,275 +222,574 @@ export default function SchedulePage() {
       } else {
         const { error } = await supabase.from("schedules").insert([payload]);
         if (error) throw error;
-        toast.success("Schedule added!");
+        toast.success("Schedule created!");
       }
-      resetForm();
+      closeModal();
       fetchSchedules();
-    } catch (error: any) { toast.error(error.message); }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function resetForm() {
-    setEventId(""); setSelectedDepartments([]); setVenueId(""); setStartTime(""); setEndTime(""); setDate(""); setIsWholeDay(false); setEditingId(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  async function handleConfirmDelete() {
+  async function handleDeleteSchedule() {
     if (!scheduleToDeleteId) return;
-    const toastId = toast.loading("Deleting schedule...");
     try {
       const { error } = await supabase.from("schedules").delete().eq("id", scheduleToDeleteId);
       if (error) throw error;
-      toast.success("Schedule deleted!", { id: toastId });
+      toast.success("Schedule deleted");
       fetchSchedules();
     } catch (error: any) {
-      toast.error(`Deletion failed: ${error.message}`, { id: toastId });
+      toast.error(error.message);
+    } finally {
+      setShowConfirmModal(false);
+      setScheduleToDeleteId(null);
     }
-    setShowConfirmModal(false);
-    setScheduleToDeleteId(null);
   }
 
-  const formatEventName = useCallback((event: any) => {
-    if (!event) return 'N/A';
-    const parts = [event.name];
-    if (event.division && event.division !== 'N/A') parts.push(`(${event.division})`);
-    if (event.gender) parts.push(`- ${event.gender}`);
-    return parts.join(' ');
-  }, []);
+  async function handleResetMatch(id: string) {
+    const toastId = toast.loading("Resetting match match...");
+    try {
+      const { error } = await supabase.from("schedules").update({ 
+        status: 'scheduled',
+        winner_id: null,
+        score_a: null,
+        score_b: null
+      }).eq("id", id);
+      if (error) throw error;
+      toast.success("Match has been reset to upcoming!", { id: toastId });
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(`Reset failed: ${error.message}`, { id: toastId });
+    }
+  }
 
-  const groupedEvents = useMemo(() => {
-    if (!allEvents.length || !allCategories.length) return [];
-    const catMap = new Map(allCategories.map(c => [c.id, c.name]));
-    const groups: any = allEvents.reduce((acc: any, ev) => {
-      const cat = ev.category ? catMap.get(ev.category) || "Uncategorized" : "Uncategorized";
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push({ id: ev.id, name: formatEventName(ev) });
-      return acc;
-    }, {});
-    return Object.entries(groups).map(([label, options]) => ({ label, options: options as { id: string, name: string }[] }));
-  }, [allEvents, allCategories, formatEventName]);
+  async function handleSaveResult() {
+    if (!resultMatch) return;
+    const is3Team = resultMatch.departments.length >= 3;
 
-  const filteredSchedules = useMemo(() => {
-    if (!searchQuery) return schedules;
-    const q = searchQuery.toLowerCase();
-    return schedules.filter(s => formatEventName(s.events).toLowerCase().includes(q) || s.venues?.name.toLowerCase().includes(q) || s.departments.join(' ').toLowerCase().includes(q));
-  }, [schedules, searchQuery, formatEventName]);
+    setIsSubmittingResult(true);
+    const toastId = toast.loading(is3Team ? "Recording medals & finishing match..." : "Saving match result...");
+    try {
+      if (is3Team) {
+        // 3-team: update schedule status to finished
+        const { error: schedError } = await supabase
+          .from("schedules")
+          .update({ status: 'finished', winner_id: medalGoldId })
+          .eq("id", resultMatch.id);
+        if (schedError) throw schedError;
 
-  const departmentMap = useMemo(() => new Map(allDepartments.map(d => [d.name, d])), [allDepartments]);
+        // Auto-link: delete existing results for this event, then insert medals
+        await supabase.from('results').delete().eq('event_id', resultMatch.event_id);
+
+        const resultsBatch: { event_id: string; department_id: string | null; medal_type: string; points: number }[] = [];
+        if (medalGoldId !== null && medalGoldId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalGoldId === '' ? null : medalGoldId, medal_type: 'gold', points: medalGoldId === '' ? 0 : 200 });
+        if (medalSilverId !== null && medalSilverId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalSilverId === '' ? null : medalSilverId, medal_type: 'silver', points: medalSilverId === '' ? 0 : 150 });
+        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalBronzeId === '' ? null : medalBronzeId, medal_type: 'bronze', points: medalBronzeId === '' ? 0 : 100 });
+
+        if (resultsBatch.length > 0) {
+          const { error: resError } = await supabase.from('results').insert(resultsBatch);
+          if (resError) throw resError;
+        }
+
+        toast.success("Match finished & medals recorded!", { id: toastId });
+      } else {
+        // 2-team: existing behavior (schedule-only)
+        const { error } = await supabase
+          .from("schedules")
+          .update({
+            winner_id: winnerId,
+            score_a: scoreA,
+            score_b: scoreB,
+            status: 'finished'
+          })
+          .eq("id", resultMatch.id);
+        if (error) throw error;
+        toast.success("Match result recorded!", { id: toastId });
+      }
+
+      setShowResultModal(false);
+      fetchSchedules();
+    } catch (error: any) {
+      toast.error(`Save failed: ${error.message}`, { id: toastId });
+    } finally {
+      setIsSubmittingResult(false);
+    }
+  }
+
+  function openResultModal(schedule: Schedule) {
+    setResultMatch(schedule);
+    setWinnerId(schedule.winner_id);
+    setScoreA(schedule.score_a || 0);
+    setScoreB(schedule.score_b || 0);
+    // Reset 3-team medal state
+    setMedalGoldId(null);
+    setMedalSilverId(null);
+    setMedalBronzeId(null);
+    setShowResultModal(true);
+  }
+
+  const getDynamicStatus = (schedule: Schedule) => {
+    if (schedule.status === 'finished') return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
+    const now = new Date();
+    const start = new Date(`${schedule.date}T${schedule.start_time}`);
+    const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
+    if (now >= start && now <= end) return { label: 'Live Now', color: 'bg-emerald-500 animate-pulse', status: 'live' };
+    if (now > end) return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
+    return { label: 'Upcoming', color: 'bg-amber-500', status: 'scheduled' };
+  };
+
+  const closeModal = () => {
+    setShowFormModal(false);
+    setEditingId(null);
+    setEventId("");
+    setVenueId("");
+    setSelectedDepartments([]);
+    setDate("");
+    setEndDate(null);
+    setStartTime("08:00");
+    setEndTime("09:00");
+    setIsWholeDay(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+  };
+
+  const formatEventName = (ev: Event | null) => {
+    if (!ev) return "N/A";
+    return ev.name.length > 25 ? ev.name.substring(0, 25) + '...' : ev.name;
+  };
 
   return (
-    <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
-        <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Schedule' }]} />
+    <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden">
+      <Toaster position="top-right" />
+      
+      {/* Header / Search Area */}
+      <div className="flex-none p-4 md:p-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-monument-primary uppercase tracking-tight">Admin Control Center</h1>
+            <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Schedules & Competition Management</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { closeModal(); setShowFormModal(true); }}
+              className="flex items-center gap-2 px-6 py-3 bg-monument-primary hover:bg-monument-primary/95 text-white rounded-[1.2rem] shadow-xl shadow-monument-primary/20 transition-all text-xs font-black uppercase tracking-widest"
+            >
+              <Plus size={16} strokeWidth={3} />
+              <span>Create Schedule</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-monument-primary transition-colors" size={18} />
+          <input
+            type="text"
+            placeholder="Quick find events, teams, or venues..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-transparent focus:border-monument-primary/20 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all outline-none shadow-sm"
+          />
+        </div>
       </div>
 
-      <div className="mb-4 shrink-0">
-        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingId ? 'Edit Schedule' : 'Manage Schedule'}</h1>
-        <p className="text-sm text-gray-500 font-medium">Coordinate competition times, venues, and participating teams</p>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden px-4 md:px-6 pb-20 lg:pb-0">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-4">
+             <div className="w-12 h-12 border-4 border-monument-primary border-t-transparent rounded-full animate-spin" />
+             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Tournament Data...</p>
+          </div>
+        ) : (
+          <div className="h-full overflow-y-auto custom-scrollbar p-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
+              {filteredSchedules.map((s) => {
+                const dynStatus = getDynamicStatus(s);
+                return (
+                  <div key={s.id} className="h-fit bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-lg border border-gray-100 dark:border-gray-700/50 overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300">
+                    <div className={`${dynStatus.color} px-8 py-2.5 flex justify-between items-center text-white`}>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{dynStatus.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{s.end_date && s.end_date !== s.date ? `${formatDate(s.date)} — ${formatDate(s.end_date)}` : formatDate(s.date)}</span>
+                    </div>
+
+                    <div className="p-6 space-y-4 flex-1">
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl drop-shadow-sm">{s.events?.icon || '🏅'}</span>
+                        <div className="flex flex-col min-w-0">
+                          <h3 className="text-xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">{formatEventName(s.events)}</h3>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                            {typeof s.events?.category === 'object' && s.events.category ? s.events.category.name : categories.find(c => c.id === s.events?.category)?.name || ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50/50 dark:bg-gray-900/40 rounded-[2rem] p-4 border border-gray-100 dark:border-gray-700/50">
+                        <div className="flex items-center justify-around gap-2 relative">
+                          {s.departments.map((dName, i) => {
+                            const d = departmentMap.get(dName);
+                            const isWinner = d && s.winner_id === d.id;
+                            return (
+                              <Fragment key={i}>
+                                <div className="flex flex-col items-center gap-2 relative">
+                                  {isWinner && (
+                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-1 z-10 w-6 h-6 flex items-center justify-center text-sm drop-shadow-md">
+                                      🏆
+                                    </motion.div>
+                                  )}
+                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 border-white dark:border-gray-800'}`}>
+                                    {d?.image_url ? (
+                                      <img src={d.image_url} className="w-full h-full rounded-full object-cover" />
+                                    ) : (
+                                      dName.slice(0, 3).toUpperCase()
+                                    )}
+                                  </div>
+                                  <span className={`text-[10px] font-black uppercase tracking-widest ${isWinner ? 'text-yellow-600' : 'text-gray-400'}`}>
+                                    {d?.abbreviation || dName.slice(0,3)}
+                                  </span>
+                                </div>
+                                {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-200 dark:text-gray-700 italic opacity-20">vs</span>}
+                              </Fragment>
+                            );
+                          })}
+                        </div>
+                        
+                        {s.status === 'finished' && (Number(s.score_a) > 0 || Number(s.score_b) > 0) && (
+                          <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50 font-black text-2xl italic text-gray-900 dark:text-gray-100">
+                            <span className={s.winner_id === (departmentMap.get(s.departments[0])?.id) ? 'text-emerald-500' : 'opacity-30'}>{s.score_a || 0}</span>
+                            <span className="text-gray-200">—</span>
+                            <span className={s.winner_id === (departmentMap.get(s.departments[1])?.id) ? 'text-emerald-500' : 'opacity-30'}>{s.score_b || 0}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2.5 pt-1">
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <Clock size={16} className="shrink-0" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest">
+                             {s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day Event" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-500">
+                          <MapPin size={16} className="shrink-0" />
+                          <span className="text-[11px] font-bold uppercase tracking-widest truncate">{s.venues?.name || 'TBA'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50/50 dark:bg-gray-900/40 px-8 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-end items-center gap-3">
+                       {dynStatus.status !== 'finished' ? (
+                         <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
+                           <FaCheck size={14} />
+                         </button>
+                       ) : (
+                         <button onClick={() => handleResetMatch(s.id)} className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Reset Match Status">
+                           <span className="text-sm">🔄</span>
+                         </button>
+                       )}
+                       <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
+                         <span className="text-sm">🏆</span>
+                       </button>
+                       <button onClick={() => { 
+                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
+                       }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
+                       <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
-        {/* LEFT COLUMN: Entry Form */}
-        <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
-              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">{editingId ? 'Update Entry' : 'Schedule Entry Form'}</h2>
+      {/* Control Modal (Form) */}
+      <AnimatePresence>
+        {showFormModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-xl bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-monument-primary/10">
+              <div className="px-8 pt-8 pb-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700/50">
+                <div>
+                  <h2 className="text-gray-900 dark:text-gray-100 font-black text-xl uppercase tracking-tight">{editingId ? 'Edit Schedule' : 'Create New Schedule'}</h2>
+                </div>
+                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-all active:scale-95"><X size={16} strokeWidth={3} /></button>
               </div>
-              
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
-                <form onSubmit={handleAddOrUpdate} className="space-y-6 flex flex-col">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Competition Event</label>
-                    <SingleSelectDropdown options={groupedEvents} selectedValue={eventId} onChange={setEventId} placeholder="Pick an event" />
+              <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Events</label>
+                    <SingleSelectDropdown 
+                      options={eventOptions}
+                      selectedValue={eventId}
+                      onChange={setEventId}
+                      placeholder="SELECT EVENT"
+                      dropDirection="down"
+                    />
                   </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Competing Teams</label>
-                    <MultiSelectDropdown options={allDepartments} selectedValues={selectedDepartments} onChange={(name) => setSelectedDepartments(prev => prev.includes(name) ? prev.filter(d => d !== name) : [...prev, name])} placeholder="Select teams" />
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Tournament Venue</label>
+                    <SingleSelectDropdown 
+                      options={venueOptions}
+                      selectedValue={venueId}
+                      onChange={setVenueId}
+                      placeholder="SELECT VENUE"
+                      dropDirection="down"
+                    />
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Location / Venue</label>
-                    <SingleSelectDropdown options={allVenues.map(v => ({ id: v.id, name: v.name }))} selectedValue={venueId} onChange={setVenueId} placeholder="Pick a venue" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Competing Departments</label>
+                    <span className={`text-[9px] font-black uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-monument-primary/10 text-monument-primary' : 'bg-gray-100 text-gray-400'}`}>{selectedDepartments.length}/3 selected</span>
                   </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {departments.map((d) => {
+                      const isSelected = selectedDepartments.includes(d.name);
+                      return (
+                        <button key={d.id} onClick={() => { setSelectedDepartments(prev => isSelected ? prev.filter(x => x !== d.name) : (prev.length < 3 ? [...prev, d.name] : prev)); }} className={`flex flex-col items-center p-2 rounded-2xl transition-all border-2 ${isSelected ? 'border-monument-primary bg-monument-primary/5 shadow-md scale-105' : selectedDepartments.length >= 3 ? 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-30 cursor-not-allowed' : 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-60 hover:opacity-100'}`}>
+                          {d.image_url ? <img src={d.image_url} className="w-8 h-8 rounded-full mb-1" /> : <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full mb-1" />}
+                          <span className="text-[8px] font-black uppercase truncate w-full text-center">{d.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Competition Date</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Start Date</label>
                     <DatePickerDropdown value={date} onChange={setDate} />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">End Date <span className="text-gray-300 normal-case font-medium">(optional)</span></label>
+                    <DatePickerDropdown value={endDate || ''} onChange={(val) => setEndDate(val || null)} />
+                  </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Start Time</label>
-                        <TimePickerDropdown value={startTime} onChange={setStartTime} disabled={isWholeDay} />
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Time Window</label>
+                    <button onClick={() => setIsWholeDay(!isWholeDay)} className={`text-[8px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-full transition-all ${isWholeDay ? 'bg-monument-primary text-white ring-2 ring-monument-primary/30' : 'bg-gray-100 text-gray-400'}`}>Whole Day</button>
+                  </div>
+                  {!isWholeDay ? (
+                    <div className="flex items-center gap-2">
+                       <div className="flex-1">
+                        <TimePickerDropdown value={startTime} onChange={setStartTime} />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">End Time</label>
-                        <TimePickerDropdown value={endTime} onChange={setEndTime} disabled={isWholeDay} />
+                      <span className="text-[9px] font-black text-gray-300">TO</span>
+                      <div className="flex-1">
+                        <TimePickerDropdown value={endTime} onChange={setEndTime} />
                       </div>
                     </div>
-                    
-                    <label className="flex items-center gap-3 cursor-pointer group p-3 bg-gray-50 dark:bg-gray-900/50 rounded-2xl">
-                       <input type="checkbox" checked={isWholeDay} onChange={(e) => setIsWholeDay(e.target.checked)} className="peer sr-only" />
-                       <div className="w-5 h-5 border-2 border-gray-200 dark:border-gray-700 rounded-md peer-checked:bg-monument-primary peer-checked:border-monument-primary transition-all flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 bg-white rounded-sm scale-0 peer-checked:scale-100 transition-transform"></div>
-                       </div>
-                       <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">All Day Event</span>
-                    </label>
-                  </div>
+                  ) : (
+                    <div className="w-full py-3 bg-monument-primary/5 border-2 border-dashed border-monument-primary/20 rounded-2xl flex items-center justify-center text-[9px] font-black text-monument-primary uppercase tracking-widest">Whole Day Match Window</div>
+                  )}
+                </div>
 
-                  <div className="flex flex-col gap-3 pt-2">
-                    <button type="submit" className="w-full bg-monument-primary hover:bg-monument-dark text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/20 active:scale-95">
-                      {editingId ? 'UPDATE SCHEDULE' : 'ADD TO SCHEDULE'}
-                    </button>
-                    {editingId && (
-                      <button type="button" onClick={resetForm} className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 transition-colors">Cancel Edit</button>
-                    )}
-                  </div>
-                </form>
+                <div className="pt-4">
+                  <button onClick={handleSaveSchedule} disabled={isSubmitting} className="w-full bg-monument-primary text-white py-4 rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : editingId ? (<span>Update Record</span>) : (<span>Deploy Schedule</span>)}
+                  </button>
+                </div>
               </div>
-            </div>
-        </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
-        {/* RIGHT COLUMN: List */}
-        <div className="lg:col-span-8 h-full flex flex-col min-h-0 pb-2">
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 shrink-0 mb-4">
-               <div className="relative flex-1 w-full">
-                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" placeholder="Search by event, venue, or team..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl pl-12 pr-4 py-3 text-sm font-medium" />
-               </div>
-               <div className="flex bg-gray-50 dark:bg-gray-900/50 p-1 rounded-xl shrink-0">
-                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaTable size={18}/></button>
-                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaThLarge size={18}/></button>
-               </div>
-            </div>
+      {/* Result Recording Modal */}
+      <AnimatePresence>
+        {showResultModal && resultMatch && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowResultModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-[3rem] shadow-2xl overflow-hidden border border-white/20">
 
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <AnimatePresence mode="wait">
-                {viewMode === 'table' ? (
-                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden transition-all hover:shadow-md">
-                    <div className="overflow-y-auto custom-scrollbar overflow-x-auto relative flex-1">
-                      <table className="min-w-full divide-y divide-gray-50 dark:divide-gray-700 space-y-0">
-                        <thead className="bg-gray-50/50 dark:bg-gray-900/20 sticky top-0 z-10 backdrop-blur-sm">
-                        <tr>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Event & Status</th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Teams</th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Time & Place</th>
-                          <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                        {filteredSchedules.length === 0 ? (
-                          <tr><td colSpan={4} className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No schedules found</td></tr>
-                        ) : filteredSchedules.map((s) => {
-                          const status = getDynamicStatus(s);
-                          return (
-                            <tr key={s.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group">
-                              <td className="px-8 py-5">
-                                <div className="flex items-center gap-4">
-                                  <span className="text-2xl">{s.events?.icon || '🏅'}</span>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight">{formatEventName(s.events)}</span>
-                                    <span className={`inline-flex w-fit px-2 py-0.5 mt-1 rounded-md text-[9px] font-black uppercase text-white ${status.color}`}>{status.label}</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {s.departments.map((dName, i) => {
-                                    const d = departmentMap.get(dName);
-                                    return (
-                                      <Fragment key={i}>
-                                        {d?.image_url ? <img src={d.image_url} className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-700 shadow-sm" title={dName} /> : <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold" title={dName}>{dName.slice(0,2)}</div>}
-                                        {i < s.departments.length - 1 && <span className="text-[10px] font-black text-monument-primary italic">vs</span>}
-                                      </Fragment>
-                                    );
-                                  })}
-                                </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                <div className="flex flex-col space-y-1">
-                                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400"><FaClock size={10} /><span className="text-[11px] font-bold uppercase">{formatTime(s.start_time)} - {formatTime(s.end_time)}</span></div>
-                                  <div className="flex items-center gap-2 text-gray-400"><FaMapMarkerAlt size={10} /><span className="text-[11px] font-bold uppercase">{s.venues?.name || 'TBA'}</span></div>
-                                  <div className="flex items-center gap-2 text-monument-primary"><FaCalendarAlt size={10} /><span className="text-[11px] font-black uppercase">{formatDate(s.date)}</span></div>
-                                </div>
-                              </td>
-                              <td className="px-8 py-5 text-right">
-                                <div className="flex justify-end gap-2">
-                                  <button onClick={() => { 
-                                    setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                                  }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
-                                  <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+              {resultMatch.departments.length >= 3 ? (
+                /* ═══ 3-TEAM MEDAL ASSIGNMENT MODAL ═══ */
+                <>
+                  <div className="bg-monument-primary px-8 py-5 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-white font-black text-sm uppercase tracking-[0.1em]">Assign Medals</h2>
+                      <p className="text-white/60 text-[10px] font-bold tracking-tight uppercase">{resultMatch.events?.name} — Auto-links to Results</p>
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar p-2 h-full">
-                  {filteredSchedules.length === 0 ? (
-                    <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No schedules found</div>
-                  ) : filteredSchedules.map((s) => {
-                    const status = getDynamicStatus(s);
-                    return (
-                      <div key={s.id} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all group overflow-hidden">
-                         <div className={`${status.color} px-6 py-2 flex justify-between items-center`}>
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">{status.label}</span>
-                            <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">{formatDate(s.date)}</span>
-                         </div>
-                         <div className="p-6 space-y-6">
-                            <div className="flex items-center gap-4">
-                               <span className="text-4xl">{s.events?.icon || '🏅'}</span>
-                               <div className="flex-1">
-                                  <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight">{formatEventName(s.events)}</h4>
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{s.venues?.name || 'TBA'}</p>
-                               </div>
-                            </div>
-                            <div className="flex items-center justify-center gap-4 p-4 bg-gray-50/50 dark:bg-gray-900/30 rounded-3xl">
-                               {s.departments.map((dName, i) => {
-                                 const d = departmentMap.get(dName);
-                                 return (
-                                   <Fragment key={i}>
-                                      <div className="flex flex-col items-center gap-1.5">
-                                         {d?.image_url ? <img src={d.image_url} className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-700 shadow-md" /> : <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center text-xs font-black">{dName.slice(0,3)}</div>}
-                                      </div>
-                                      {i < s.departments.length - 1 && <span className="text-sm font-black text-monument-primary italic">VS</span>}
-                                   </Fragment>
-                                 );
-                               })}
-                            </div>
-                            <div className="flex justify-between items-center pt-2">
-                               <div className="flex items-center gap-2 text-gray-500 font-black text-[11px] uppercase tracking-wider"><FaClock className="text-monument-primary" /> {formatTime(s.start_time)} - {formatTime(s.end_time)}</div>
-                               <div className="flex gap-2">
-                                  <button onClick={() => { 
-                                    setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                                  }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all"><FaEdit size={12}/></button>
-                                  <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all"><FaTrash size={12}/></button>
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                    );
-                  })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-        </div>
-      </div>
+                    <button onClick={() => setShowResultModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+                  </div>
 
-      <ConfirmModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this schedule? This action cannot be undone."
-      />
-      <Toaster />
+                  <div className="p-8 space-y-6">
+                    <div className="bg-violet-50 dark:bg-violet-900/20 p-3 rounded-2xl border border-violet-100 dark:border-violet-900/30 flex items-center gap-3">
+                      <AlertCircle className="text-monument-primary shrink-0" size={16} />
+                      <span className="text-[9px] font-bold text-monument-primary dark:text-violet-300 uppercase tracking-tight">3-team match — medals will be auto-saved to the Results page & Podium.</span>
+                    </div>
+
+                    {(['gold', 'silver', 'bronze'] as const).map((medal) => {
+                      const medalIcon = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : '🥉';
+                      const medalLabel = medal === 'gold' ? 'Gold' : medal === 'silver' ? 'Silver' : 'Bronze';
+                      const currentId = medal === 'gold' ? medalGoldId : medal === 'silver' ? medalSilverId : medalBronzeId;
+                      const setter = medal === 'gold' ? setMedalGoldId : medal === 'silver' ? setMedalSilverId : setMedalBronzeId;
+                      const otherIds = [medalGoldId, medalSilverId, medalBronzeId].filter((_, idx) => idx !== ['gold', 'silver', 'bronze'].indexOf(medal));
+
+                      return (
+                        <div key={medal} className="flex items-center gap-4">
+                          <span className="text-3xl w-10 flex justify-center shrink-0">{medalIcon}</span>
+                          <div className="flex-1">
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">{medalLabel}</label>
+                            <div className="flex gap-2 flex-wrap">
+                              {/* No Team option */}
+                              <button
+                                onClick={() => setter(currentId === '' ? null : '')}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                  currentId === ''
+                                    ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                    : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-sm">✖️</span> No Team
+                              </button>
+                              {/* Awaiting option */}
+                              <button
+                                onClick={() => setter(currentId === 'awaiting' ? null : 'awaiting')}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                  currentId === 'awaiting'
+                                    ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                    : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-400 hover:border-gray-200 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-sm">⏳</span> Awaiting
+                              </button>
+                              {/* Team options */}
+                              {resultMatch.departments.map((dName) => {
+                                const d = departmentMap.get(dName);
+                                if (!d) return null;
+                                const isSelected = currentId === d.id;
+                                const isTaken = otherIds.includes(d.id);
+                                return (
+                                  <button
+                                    key={d.id}
+                                    onClick={() => !isTaken && setter(isSelected ? null : d.id)}
+                                    disabled={isTaken}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-2xl border-2 transition-all text-[10px] font-black uppercase tracking-tight ${
+                                      isSelected
+                                        ? 'border-monument-primary bg-violet-50 dark:bg-violet-900/30 text-monument-primary scale-105 shadow-md'
+                                        : isTaken
+                                        ? 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-300 opacity-40 cursor-not-allowed'
+                                        : 'border-transparent bg-gray-50 dark:bg-gray-900/30 text-gray-600 hover:border-gray-200 hover:bg-white'
+                                    }`}
+                                  >
+                                    {d.image_url ? (
+                                      <img src={d.image_url} className="w-6 h-6 rounded-full object-cover" />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[8px]">{d.abbreviation?.slice(0,2)}</div>
+                                    )}
+                                    {d.abbreviation || dName}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {!medalGoldId && medalGoldId !== '' && medalGoldId !== 'awaiting' && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-center gap-3">
+                        <AlertCircle className="text-amber-500 shrink-0" size={16} />
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight">Assign at least Gold to finalize.</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4 pt-2">
+                      <button onClick={() => setShowResultModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all">Cancel</button>
+                      <button onClick={handleSaveResult} disabled={isSubmittingResult || (medalGoldId === null)} className="flex-[2] py-4 bg-monument-primary text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
+                        Finalize Medals
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* ═══ 2-TEAM WINNER PICKER MODAL ═══ */
+                <>
+                  <div className="bg-monument-primary px-8 py-5 flex justify-between items-center">
+                    <div>
+                      <h2 className="text-white font-black text-sm uppercase tracking-[0.1em]">Record Winner & Outcome</h2>
+                      <p className="text-white/60 text-[10px] font-bold tracking-tight uppercase">{resultMatch.events?.name} - Final Score</p>
+                    </div>
+                    <button onClick={() => setShowResultModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+                  </div>
+
+                  <div className="p-8 space-y-8">
+                    <div className="flex items-center justify-around gap-6">
+                      {resultMatch.departments.map((dName, i) => {
+                        const d = departmentMap.get(dName);
+                        const isSelected = winnerId === d?.id;
+                        return (
+                          <div key={i} className="flex flex-col items-center gap-4">
+                            <button onClick={() => d && setWinnerId(d.id)} className={`group relative w-24 h-24 rounded-full p-1 transition-all duration-500 ${isSelected ? 'ring-8 ring-monument-primary/20 scale-110' : 'ring-2 ring-gray-100 dark:ring-gray-700 grayscale opacity-60 hover:opacity-100 hover:grayscale-0'}`}>
+                              <div className={`w-full h-full rounded-full overflow-hidden border-4 shadow-xl ${isSelected ? 'border-monument-primary' : 'border-white dark:border-gray-800'}`}>
+                                {d?.image_url ? <img src={d.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center font-black text-xl">{dName.slice(0,2)}</div>}
+                              </div>
+                              {isSelected && (
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-monument-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-4 border-white font-black">
+                                  🏆
+                                </motion.div>
+                              )}
+                            </button>
+                            <div className="flex flex-col items-center">
+                              <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isSelected ? 'text-monument-primary' : 'text-gray-400'}`}>{d?.abbreviation || dName}</span>
+                              <input type="number" value={i === 0 ? scoreA : scoreB} onChange={(e) => i === 0 ? setScoreA(parseInt(e.target.value) || 0) : setScoreB(parseInt(e.target.value) || 0)} placeholder="SCORE" className="w-20 text-center bg-gray-50 dark:bg-gray-700/50 border-none rounded-xl mt-3 font-black text-2xl py-2 focus:ring-2 focus:ring-monument-primary/30" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {!winnerId && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-center gap-3">
+                        <AlertCircle className="text-amber-500 shrink-0" size={18} />
+                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-tight">You must pick a championship winner to finalize the result.</span>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4">
+                      <button onClick={() => setShowResultModal(false)} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all">Cancel</button>
+                      <button onClick={handleSaveResult} disabled={isSubmittingResult || !winnerId} className="flex-[2] py-4 bg-monument-primary text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-monument-primary/20 hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
+                        Deploy Final Result
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowConfirmModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+              <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/30 text-rose-500 rounded-full flex items-center justify-center mx-auto ring-8 ring-rose-500/5">
+                <Trash2 size={28} />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-gray-900 dark:text-white font-black uppercase tracking-tight text-lg">Erase match record?</h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">This action is permanent and will remove the schedule from all views.</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">Abort</button>
+                <button onClick={handleDeleteSchedule} className="flex-1 py-3 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20">Delete Forever</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
