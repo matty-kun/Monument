@@ -59,7 +59,11 @@ export default function AddResultPage() {
   const supabase = createClient();
 
   const fetchDropdownData = useCallback(async () => {
-    const { data: deptData } = await supabase.from("departments").select("id, name, image_url").neq("name", "No Participant");
+    const { data: deptData } = await supabase
+      .from("departments")
+      .select("id, name, image_url")
+      .not("name", "ilike", "No Team")
+      .not("name", "ilike", "No Participant");
     const { data: eventData } = await supabase.from("events").select("id, name, icon, category").order("category,name");
     const { data: categoriesData } = await supabase.from("categories").select("id, name");
     if (deptData) setDepartments(deptData);
@@ -107,10 +111,9 @@ export default function AddResultPage() {
       const silver = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'silver');
       const bronze = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'bronze');
       
-      const NO_PART = "caf4e458-e85a-4e4e-abd3-3f9397ac2b43";
-      setGoldId(gold ? (gold.department_id === NO_PART ? "" : gold.department_id) : "awaiting");
-      setSilverId(silver ? (silver.department_id === NO_PART ? "" : silver.department_id) : "awaiting");
-      setBronzeId(bronze ? (bronze.department_id === NO_PART ? "" : bronze.department_id) : "awaiting");
+      setGoldId(gold ? (gold.department_id || "") : "awaiting");
+      setSilverId(silver ? (silver.department_id || "") : "awaiting");
+      setBronzeId(bronze ? (bronze.department_id || "") : "awaiting");
     }
 
     const awardedDeptIds = new Set((existingResults || []).map(r => r.department_id));
@@ -212,11 +215,9 @@ export default function AddResultPage() {
       // 2. Prepare the new results batch (Only the selected medals)
       const resultsBatch = [];
 
-      // Add Medals (Use dummy UUID for No Participant, granting 0 points)
-      const NO_PART = "caf4e458-e85a-4e4e-abd3-3f9397ac2b43";
-      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? NO_PART : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200 });
-      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? NO_PART : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150 });
-      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? NO_PART : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100 });
+      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? null : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200 });
+      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? null : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150 });
+      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? null : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100 });
 
       // 3. Perform Bulk Insert
       if (resultsBatch.length > 0) {
@@ -321,13 +322,13 @@ export default function AddResultPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
-        <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
-              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
+        <div className="lg:col-span-4 h-fit flex flex-col pb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible transition-all hover:shadow-md flex flex-col">
+              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 z-10 backdrop-blur-sm rounded-t-3xl">
                 <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">{isEditing ? 'Edit Result' : 'Medal Entry Form'}</h2>
               </div>
               
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col pt-4">
+              <div className="p-6 relative flex flex-col pt-4">
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 dark:text-gray-500">Step 1: Select Event</label>
@@ -336,13 +337,16 @@ export default function AddResultPage() {
                       selectedValue={eventId}
                       onChange={(id) => {
                         setEventId(id);
-                        setGoldId("");
-                        setSilverId("");
-                        setBronzeId("");
+                        setGoldId("awaiting");
+                        setSilverId("awaiting");
+                        setBronzeId("awaiting");
+                        if (!id) setIsEditing(false);
                       }}
                       placeholder="Pick a competition"
                     />
                   </div>
+
+
 
                   <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4 dark:text-gray-500">Step 2: Assign Medals</label>
@@ -353,7 +357,7 @@ export default function AddResultPage() {
                         <div className="flex-1">
                           <SingleSelectDropdown
                             options={[
-                              { id: "", name: "No Participant", icon: "✖️" },
+                              { id: "", name: "No Team", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
                               ...competingDepartments.filter(d => d.id !== silverId && d.id !== bronzeId)
                             ]}
@@ -375,7 +379,7 @@ export default function AddResultPage() {
                         <div className="flex-1">
                           <SingleSelectDropdown
                             options={[
-                              { id: "", name: "No Participant", icon: "✖️" },
+                              { id: "", name: "No Team", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
                               ...competingDepartments.filter(d => d.id !== goldId && d.id !== bronzeId)
                             ]}
@@ -397,7 +401,7 @@ export default function AddResultPage() {
                         <div className="flex-1">
                           <SingleSelectDropdown
                             options={[
-                              { id: "", name: "No Participant", icon: "✖️" },
+                              { id: "", name: "No Team", icon: "✖️" },
                               { id: "awaiting", name: "Awaiting Result...", icon: "⏳" },
                               ...competingDepartments.filter(d => d.id !== goldId && d.id !== silverId)
                             ]}
@@ -409,6 +413,7 @@ export default function AddResultPage() {
                             }}
                             placeholder="Select Bronze Team"
                             disabled={!eventId}
+                            dropDirection="up"
                           />
                         </div>
                       </div>
@@ -524,27 +529,27 @@ export default function AddResultPage() {
                                return (
                                  <div key={medal} className={`flex items-center gap-3 p-2 rounded-xl ${department ? 'bg-gray-50 dark:bg-gray-900/50' : ''}`}>
                                     <span className="text-xl w-6 flex justify-center drop-shadow-sm">{icon}</span>
-                                    {department && department.name === "No Participant" ? (
-                                      <div className="flex items-center gap-2 flex-1 min-w-0" title="No Participant">
-                                        <span className="text-xs font-semibold italic text-gray-400 dark:text-gray-500 truncate pr-2">No Participant</span>
-                                      </div>
-                                    ) : department ? (
-                                      <div className="flex items-center gap-2 flex-1 min-w-0" title={department.name}>
-                                        {department.image_url ? (
-                                          <Image src={department.image_url} alt="" width={24} height={24} className="rounded-full shrink-0" />
-                                        ) : (
-                                          <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500">
-                                            {department.name.substring(0, 2).toUpperCase()}
-                                          </div>
-                                        )}
-                                        <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate pr-2">{department.name}</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
-                                        <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
-                                        Awaiting...
-                                      </span>
-                                    )}
+                                     {item && !department ? (
+                                       <div className="flex items-center gap-2 flex-1 min-w-0" title="No Team">
+                                         <span className="text-xs font-semibold italic text-gray-400 dark:text-gray-500 truncate pr-2">No Team</span>
+                                       </div>
+                                     ) : department ? (
+                                       <div className="flex items-center gap-2 flex-1 min-w-0" title={department.name}>
+                                         {department.image_url ? (
+                                           <Image src={department.image_url} alt="" width={24} height={24} className="rounded-full shrink-0" />
+                                         ) : (
+                                           <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                             {department.name.substring(0, 2).toUpperCase()}
+                                           </div>
+                                         )}
+                                         <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate pr-2">{department.name}</span>
+                                       </div>
+                                     ) : (
+                                       <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                                         <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                                         Awaiting...
+                                       </span>
+                                     )}
                                  </div>
                                );
                              })}
@@ -595,27 +600,27 @@ export default function AddResultPage() {
                                 <td key={medal} className="px-3 py-2">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="text-sm w-4 flex justify-center opacity-80 shrink-0">{icon}</span>
-                                    {dept && dept.name === "No Participant" ? (
-                                      <div className="flex items-center gap-1.5 overflow-hidden">
-                                        <span className="text-[10px] font-semibold italic text-gray-400 dark:text-gray-500 truncate">No Participant</span>
-                                      </div>
-                                    ) : dept ? (
-                                      <div className="flex items-center gap-1.5 overflow-hidden">
-                                        {dept.image_url ? (
-                                          <Image src={dept.image_url} alt="" width={18} height={18} className="rounded-full shadow-sm shrink-0" />
-                                        ) : (
-                                          <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[7px] font-bold text-gray-500 shrink-0">
-                                            {dept.name.substring(0, 2).toUpperCase()}
-                                          </div>
-                                        )}
-                                        <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{dept.name}</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[9px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
-                                        <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
-                                        Awaiting...
-                                      </span>
-                                    )}
+                                     {item && !dept ? (
+                                       <div className="flex items-center gap-1.5 overflow-hidden">
+                                         <span className="text-[10px] font-semibold italic text-gray-400 dark:text-gray-500 truncate">No Team</span>
+                                       </div>
+                                     ) : dept ? (
+                                       <div className="flex items-center gap-1.5 overflow-hidden">
+                                         {dept.image_url ? (
+                                           <Image src={dept.image_url} alt="" width={18} height={18} className="rounded-full shadow-sm shrink-0" />
+                                         ) : (
+                                           <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[7px] font-bold text-gray-500 shrink-0">
+                                             {dept.name.substring(0, 2).toUpperCase()}
+                                           </div>
+                                         )}
+                                         <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{dept.name}</span>
+                                       </div>
+                                     ) : (
+                                       <span className="text-[9px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
+                                         <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                                         Awaiting...
+                                       </span>
+                                     )}
                                   </div>
                                 </td>
                               );

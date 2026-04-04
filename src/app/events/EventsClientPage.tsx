@@ -275,7 +275,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                             </div>
                           ) : winner && !winner.department_id ? (
                             <span className="text-sm font-bold italic text-gray-400 dark:text-gray-500">
-                              No Participant
+                              No Team
                             </span>
                           ) : (
                             <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-400 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
@@ -346,9 +346,11 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                       {(["gold", "silver", "bronze"] as const).map((medal) => {
                         const winner = data.winners[medal];
                         const medalColor = medal === 'gold' ? 'border-yellow-400' : medal === 'silver' ? 'border-gray-400' : 'border-orange-400';
+                        const isNoParticipant = winner?.department_name === "No Team";
+
                         return (
                           <td key={medal} className="px-4 py-3 whitespace-nowrap text-center">
-                            {winner && winner.department_id ? (
+                            {winner && winner.department_id && !isNoParticipant ? (
                               <div className="flex items-center justify-center gap-2" title={winner.department_name || ''}>
                                 {winner.image_url ? (
                                   <Image src={winner.image_url} alt={getInitials(winner.department_name || '')} width={40} height={40} className={`w-10 h-10 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
@@ -361,8 +363,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                                   {winner.department_name}
                                 </span>
                               </div>
-                            ) : winner && !winner.department_id ? (
-                               <span className="text-sm font-bold italic text-gray-400 dark:text-gray-500">No Participant</span>
+                            ) : winner && (winner.department_name === "No Team" || !winner.department_id) ? (
+                               <span className="text-sm font-bold italic text-gray-400 dark:text-gray-500">No Team</span>
                             ) : (
                               <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-400 uppercase tracking-widest flex items-center justify-center gap-1.5 opacity-80">
                                  <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />

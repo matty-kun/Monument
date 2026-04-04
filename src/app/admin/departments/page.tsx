@@ -35,7 +35,12 @@ export default function DepartmentsPage() {
   const supabase = createClient();
 
   const fetchDepartments = useCallback(async () => {
-    const { data, error } = await supabase.from("departments").select("id, name, courses:abbreviation, image_url").order("name");
+    const { data, error } = await supabase
+      .from("departments")
+      .select("id, name, courses:abbreviation, image_url")
+      .not("name", "ilike", "No Team")
+      .not("name", "ilike", "No Participant")
+      .order("name");
     if (!error && data) setDepartments(data);
   }, [supabase]);
 

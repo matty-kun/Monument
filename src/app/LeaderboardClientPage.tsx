@@ -56,7 +56,9 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
 
     if (!Array.isArray(stats)) return;
 
-    const calculated = stats.map((row: LeaderboardRPCData) => ({
+    const calculated = stats
+      .filter((row: LeaderboardRPCData) => row.name !== "No Team")
+      .map((row: LeaderboardRPCData) => ({
       ...row,
       abbreviation: abbrMap.get(row.id) || null,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
