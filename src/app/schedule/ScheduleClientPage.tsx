@@ -13,6 +13,7 @@ import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTrophy } from "react-icons/fa
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 import { CalendarDays, Trophy, Clock, PlayCircle, LayoutGrid } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 interface Department {
   id: string;
@@ -84,6 +85,26 @@ export default function ScheduleClientPage({
   const [allCategories] = useState<Category[]>(initialCategories);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusTab, setStatusTab] = useState<'all' | 'ongoing' | 'upcoming' | 'finished'>('all');
+  const [showRefresh, setShowRefresh] = useState(false);
+  
+  const supabase = createClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('public-schedules-page')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'schedules' },
+        () => {
+          setShowRefresh(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
     if (schedule.status === "finished") {
@@ -175,6 +196,34 @@ export default function ScheduleClientPage({
         <CalendarDays className="w-8 h-8 md:w-10 md:h-10 text-monument-primary shrink-0" strokeWidth={3} />
         <h1 className="text-3xl md:text-4xl font-black text-monument-primary uppercase tracking-tight leading-none pt-1">Schedule</h1>
       </div>
+
+      <AnimatePresence>
+        {showRefresh && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-28 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none"
+          >
+            <button
+              onClick={() => window.location.reload()}
+              className="flex w-full md:w-auto items-center gap-3 bg-white dark:bg-gray-800 shadow-xl rounded-2xl pl-4 pr-5 py-3 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-50 active:scale-[0.98] transition-all text-left outline-none cursor-pointer group pointer-events-auto"
+            >
+              <div className="flex bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 w-10 h-10 rounded-full items-center justify-center text-xl shrink-0 group-hover:rotate-12 transition-transform">
+                ⭐
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-sm text-gray-800 dark:text-gray-100">
+                  New schedule updates available!
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  Click here to refresh the match schedules
+                </span>
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-row justify-between items-center mb-6 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full">
         <div className="relative w-full max-w-sm shrink">

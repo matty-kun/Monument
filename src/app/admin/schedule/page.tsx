@@ -15,7 +15,9 @@ import {
   Calendar,
   Settings2,
   X,
-  AlertCircle
+  AlertCircle,
+  ClipboardEdit,
+  Trophy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
@@ -318,15 +320,34 @@ export default function AdminSchedulePage() {
     }
   }
 
-  function openResultModal(schedule: Schedule) {
+  async function openResultModal(schedule: Schedule) {
     setResultMatch(schedule);
     setWinnerId(schedule.winner_id);
     setScoreA(schedule.score_a || 0);
     setScoreB(schedule.score_b || 0);
-    // Reset 3-team medal state
+    
+    // Reset 3-team medal state initially
     setMedalGoldId(null);
     setMedalSilverId(null);
     setMedalBronzeId(null);
+
+    if (schedule.departments.length >= 3) {
+      // Fetch existing results for this event
+      const { data } = await supabase
+        .from('results')
+        .select('medal_type, department_id')
+        .eq('event_id', schedule.event_id);
+
+      if (data) {
+        const gold = data.find(r => r.medal_type === 'gold');
+        const silver = data.find(r => r.medal_type === 'silver');
+        const bronze = data.find(r => r.medal_type === 'bronze');
+        if (gold) setMedalGoldId(gold.department_id || '');
+        if (silver) setMedalSilverId(silver.department_id || '');
+        if (bronze) setMedalBronzeId(bronze.department_id || '');
+      }
+    }
+
     setShowResultModal(true);
   }
 
@@ -491,7 +512,7 @@ export default function AdminSchedulePage() {
                          </button>
                        )}
                        <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
-                         <span className="text-sm">🏆</span>
+                         <ClipboardEdit size={16} />
                        </button>
                        <button onClick={() => { 
                          setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
@@ -612,12 +633,18 @@ export default function AdminSchedulePage() {
               {resultMatch.departments.length >= 3 ? (
                 /* ═══ 3-TEAM MEDAL ASSIGNMENT MODAL ═══ */
                 <>
-                  <div className="bg-monument-primary px-8 py-5 flex justify-between items-center">
-                    <div>
-                      <h2 className="text-white font-black text-sm uppercase tracking-[0.1em]">Assign Medals</h2>
-                      <p className="text-white/60 text-[10px] font-bold tracking-tight uppercase">{resultMatch.events?.name} — Auto-links to Results</p>
+                  <div className="bg-monument-primary px-8 py-6 flex justify-between items-start relative overflow-hidden">
+                    <div className="absolute -top-4 -right-2 p-8 opacity-10 rotate-12 scale-150 pointer-events-none">
+                      <Trophy size={100} />
                     </div>
-                    <button onClick={() => setShowResultModal(false)} className="text-white/80 hover:text-white"><X size={20} /></button>
+                    <div className="flex flex-col relative z-10 w-full pr-8">
+                      <span className="text-white/60 text-[9px] font-extrabold tracking-[0.2em] uppercase mb-1 flex items-center gap-1.5">
+                        <AlertCircle size={10} /> Auto-links to Results
+                      </span>
+                      <h2 className="text-white font-black text-xl uppercase tracking-tight leading-none mb-0.5 truncate">{resultMatch.events?.name}</h2>
+                      <h3 className="text-white/90 font-bold text-xs uppercase tracking-widest">Assign Medals</h3>
+                    </div>
+                    <button onClick={() => setShowResultModal(false)} className="w-8 h-8 flex items-center justify-center bg-black/20 hover:bg-black/40 text-white rounded-full transition-all relative z-10 shrink-0"><X size={16} strokeWidth={3} /></button>
                   </div>
 
                   <div className="p-8 space-y-6">
