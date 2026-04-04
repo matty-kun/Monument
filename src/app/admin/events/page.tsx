@@ -442,7 +442,7 @@ export default function ManageEventsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[0.7rem] font-black uppercase tracking-widest text-gray-400 mb-1">Gender</label>
                 <SingleSelectDropdown options={genderOptions} selectedValue={gender || "N/A"} onChange={setGender} />

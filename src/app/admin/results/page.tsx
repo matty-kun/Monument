@@ -176,9 +176,9 @@ export default function AddResultPage() {
       }
 
       let calculatedPoints = 0;
-      if (medalType === "gold") calculatedPoints = 1;
-      else if (medalType === "silver") calculatedPoints = 0.20;
-      else if (medalType === "bronze") calculatedPoints = 0.04;
+      if (medalType === "gold") calculatedPoints = 200;
+      else if (medalType === "silver") calculatedPoints = 150;
+      else if (medalType === "bronze") calculatedPoints = 100;
 
       const { error } = await supabase.from("results").insert([
         {
