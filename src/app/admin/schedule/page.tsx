@@ -52,7 +52,7 @@ interface Schedule {
   venue_id: string;
   departments: string[];
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   date: string;
   status: "scheduled" | "live" | "finished";
   winner_id: string | null;
@@ -91,7 +91,7 @@ export default function AdminSchedulePage() {
   const [date, setDate] = useState("");
   const [endDate, setEndDate] = useState<string | null>(null);
   const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("");
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [isWholeDay, setIsWholeDay] = useState(false);
 
@@ -211,7 +211,7 @@ export default function AdminSchedulePage() {
       date,
       end_date: endDate || date,
       start_time: isWholeDay ? "00:00:00" : `${startTime}:00`,
-      end_time: isWholeDay ? "23:59:59" : `${endTime}:00`,
+      end_time: isWholeDay ? "23:59:59" : endTime ? `${endTime}:00` : null,
       departments: selectedDepartments,
       status: 'scheduled' as const
     };
@@ -355,9 +355,10 @@ export default function AdminSchedulePage() {
     if (schedule.status === 'finished') return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
     const now = new Date();
     const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
-    if (now >= start && now <= end) return { label: 'Live Now', color: 'bg-emerald-500 animate-pulse', status: 'live' };
-    if (now > end) return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
+    const endStr = schedule.end_time ? `${schedule.end_date || schedule.date}T${schedule.end_time}` : null;
+    const end = endStr ? new Date(endStr) : null;
+    if (now >= start && (!end || now <= end)) return { label: 'Live Now', color: 'bg-emerald-500 animate-pulse', status: 'live' };
+    if (end && now > end) return { label: 'Finished', color: 'bg-rose-500', status: 'finished' };
     return { label: 'Upcoming', color: 'bg-amber-500', status: 'scheduled' };
   };
 
@@ -370,7 +371,7 @@ export default function AdminSchedulePage() {
     setDate("");
     setEndDate(null);
     setStartTime("08:00");
-    setEndTime("09:00");
+    setEndTime("");
     setIsWholeDay(false);
   };
 
@@ -491,7 +492,7 @@ export default function AdminSchedulePage() {
                         <div className="flex items-center gap-3 text-gray-500">
                           <Clock size={16} className="shrink-0" />
                           <span className="text-[11px] font-bold uppercase tracking-widest">
-                             {s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day Event" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}
+                             {s.start_time.startsWith("00:00") && s.end_time?.startsWith("23:59") ? "All Day Event" : `${formatTime(s.start_time)}${s.end_time ? ` — ${formatTime(s.end_time)}` : ''}`}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-500">
@@ -515,7 +516,7 @@ export default function AdminSchedulePage() {
                          <ClipboardEdit size={16} />
                        </button>
                        <button onClick={() => { 
-                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time.substring(0,5)); setIsWholeDay(s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59")); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
+                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
                        }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
                        <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
                     </div>
@@ -604,7 +605,7 @@ export default function AdminSchedulePage() {
                       </div>
                       <span className="text-[9px] font-black text-gray-300">TO</span>
                       <div className="flex-1">
-                        <TimePickerDropdown value={endTime} onChange={setEndTime} />
+                        <TimePickerDropdown value={endTime} onChange={setEndTime} allowClear />
                       </div>
                     </div>
                   ) : (

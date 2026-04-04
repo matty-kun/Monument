@@ -5,12 +5,13 @@ import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TimePickerDropdownProps {
-  value: string; // "HH:mm" 24h format
+  value: string; // "HH:mm" 24h format, or empty for none
   onChange: (value: string) => void;
   disabled?: boolean;
+  allowClear?: boolean;
 }
 
-export default function TimePickerDropdown({ value, onChange, disabled = false }: TimePickerDropdownProps) {
+export default function TimePickerDropdown({ value, onChange, disabled = false, allowClear = false }: TimePickerDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [tempAmpm, setTempAmpm] = useState<'AM' | 'PM'>(() => {
     if (!value) return 'AM';
@@ -61,6 +62,17 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
     setIsOpen(false);
   };
 
+  const handleAmpmChange = (newAmpm: 'AM' | 'PM') => {
+    setTempAmpm(newAmpm);
+    if (value) {
+      const [h, m] = value.split(':').map(Number);
+      let newH = h;
+      if (newAmpm === 'PM' && h < 12) newH += 12;
+      if (newAmpm === 'AM' && h >= 12) newH -= 12;
+      onChange(`${newH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+    }
+  };
+
   const currentDisplayTime = useMemo(() => {
     if (!value) return 'Select time';
     const [h24, m] = value.split(':');
@@ -78,11 +90,21 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
       >
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-monument-primary" />
-          <span className="text-gray-900 dark:text-gray-200 font-bold text-xs">
+          <span className={`font-bold text-xs ${!value ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'}`}>
             {currentDisplayTime}
           </span>
         </div>
-        <span className="text-gray-400 text-[10px]">▼</span>
+        <div className="flex items-center gap-2">
+          {allowClear && value && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onChange(''); }}
+              className="text-gray-400 hover:text-rose-500 transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          )}
+          <span className="text-gray-400 text-[10px]">▼</span>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -96,14 +118,14 @@ export default function TimePickerDropdown({ value, onChange, disabled = false }
           <div className="flex bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 gap-1 mb-3 w-fit mx-auto border border-gray-100/50 dark:border-white/5">
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTempAmpm('AM'); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAmpmChange('AM'); }}
               className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'AM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
             >
               AM
             </button>
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTempAmpm('PM'); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAmpmChange('PM'); }}
               className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'PM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
             >
               PM

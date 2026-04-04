@@ -51,7 +51,7 @@ interface Schedule {
   venues: Venue | null;
   departments: (Department | string)[];
   start_time: string;
-  end_time: string;
+  end_time: string | null;
   date: string;
   end_date?: string | null;
   status: "scheduled" | "live" | "finished";
@@ -110,15 +110,16 @@ export default function ScheduleClientPage({
     if (schedule.status === "finished") {
       return { status: "finished", label: "Finished", color: "bg-rose-500", icon: "🏁" };
     }
-    if (!schedule.date || !schedule.start_time || !schedule.end_time) {
+    if (!schedule.date || !schedule.start_time) {
       return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
     }
     const now = new Date();
     const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.end_date || schedule.date}T${schedule.end_time}`);
+    const endStr = schedule.end_time ? `${schedule.end_date || schedule.date}T${schedule.end_time}` : null;
+    const end = endStr ? new Date(endStr) : null;
     if (isNaN(start.getTime())) return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
     if (now < start) return { status: "scheduled", label: "Upcoming", color: "bg-amber-500", icon: "⏳" };
-    if (now >= start && now <= end) return { status: "live", label: "Live Now", color: "bg-emerald-500 animate-pulse", icon: "🔴" };
+    if (now >= start && (!end || now <= end)) return { status: "live", label: "Live Now", color: "bg-emerald-500 animate-pulse", icon: "🔴" };
     return { status: "finished", label: "Finished", color: "bg-rose-500", icon: "🏁" };
   }, []);
 
@@ -331,7 +332,7 @@ export default function ScheduleClientPage({
                       <div className="grid grid-cols-2 gap-4 pt-2">
                         <div className="flex flex-col items-center gap-1">
                           <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Schedule</span>
-                          <p className="text-[10px] font-black text-gray-800 dark:text-gray-100 uppercase">{s.start_time.startsWith("00:00") && s.end_time.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)} — ${formatTime(s.end_time)}`}</p>
+                          <p className="text-[10px] font-black text-gray-800 dark:text-gray-100 uppercase">{s.start_time.startsWith("00:00") && s.end_time?.startsWith("23:59") ? "All Day" : `${formatTime(s.start_time)}${s.end_time ? ` — ${formatTime(s.end_time)}` : ''}`}</p>
                         </div>
                         <div className="flex flex-col items-center gap-1">
                           <span className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Venue</span>
