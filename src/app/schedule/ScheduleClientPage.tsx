@@ -207,10 +207,6 @@ export default function ScheduleClientPage({
 
 
 
-      <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
-        📊 Showing {filterCount} of {totalCount} events
-      </div>
-
       <AnimatePresence mode="wait">
         {viewMode === 'card' ? (
           <motion.div

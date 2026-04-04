@@ -12,17 +12,17 @@ interface ProcessedResult {
   division: string | null;
   gender: string | null;
   event_icon: string | null;
-  department_id: string;
-  department_name: string;
-  department_abbreviation: string;
+  department_id: string | null;
+  department_name: string | null;
+  department_abbreviation: string | null;
   department_image_url?: string;
   medal_type: "gold" | "silver" | "bronze";
 }
 
 interface WinnerInfo {
-  department_id: string;
-  department_name: string;
-  department_abbreviation: string;
+  department_id: string | null;
+  department_name: string | null;
+  department_abbreviation: string | null;
   image_url?: string;
 }
 
@@ -71,8 +71,8 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
       const lowercasedQuery = searchQuery.toLowerCase();
       processed = processed.filter(r =>
         r.event_name.toLowerCase().includes(lowercasedQuery) ||
-        r.department_name.toLowerCase().includes(lowercasedQuery) ||
-        r.department_abbreviation.toLowerCase().includes(lowercasedQuery) ||
+        (r.department_name || '').toLowerCase().includes(lowercasedQuery) ||
+        (r.department_abbreviation || '').toLowerCase().includes(lowercasedQuery) ||
         (getCategoryName(r.category) || '').toLowerCase().includes(lowercasedQuery)
       );
     }
@@ -84,7 +84,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
           departmentMap.set(r.department_name, {
             name: r.department_name,
             image_url: r.department_image_url || null,
-            abbreviation: r.department_abbreviation,
+            abbreviation: r.department_abbreviation || "",
           });
         }
       });
@@ -165,10 +165,6 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
 
 
 
-      <div className="text-sm text-gray-500 mb-4 dark:text-gray-400 px-1">
-        📊 Showing {Object.keys(grouped).length} matching events with {filteredResults.length} results
-      </div>
-
       <AnimatePresence mode="wait">
         {viewMode === 'card' ? (
           <motion.div
@@ -216,19 +212,26 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                             <span className="text-xl">{medalIcon}</span>
                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">{medal}</span>
                           </div>
-                          {winner ? (
-                            <div className="flex items-center gap-2" title={winner.department_name}>
+                          {winner && winner.department_id ? (
+                            <div className="flex items-center gap-2" title={winner.department_name || ''}>
                                <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 text-right truncate max-w-[150px]">{winner.department_name}</span>
                               {winner.image_url ? (
-                                <Image src={winner.image_url} alt={getInitials(winner.department_name)} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor}`} />
+                                <Image src={winner.image_url} alt={getInitials(winner.department_name || '')} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor}`} />
                               ) : (
                                 <div className={`w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-300 border-2 ${medalColor}`}>
-                                  {getInitials(winner.department_name)}
+                                  {getInitials(winner.department_name || '')}
                                 </div>
                               )}
                             </div>
+                          ) : winner && !winner.department_id ? (
+                            <span className="text-sm font-bold italic text-gray-400 dark:text-gray-500">
+                              No Participant
+                            </span>
                           ) : (
-                            <span className="text-sm text-gray-400 dark:text-gray-500">Awaiting Result</span>
+                            <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-400 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                               <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                               Awaiting...
+                            </span>
                           )}
                         </div>
                       );
@@ -295,21 +298,26 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                         const medalColor = medal === 'gold' ? 'border-yellow-400' : medal === 'silver' ? 'border-gray-400' : 'border-orange-400';
                         return (
                           <td key={medal} className="px-4 py-3 whitespace-nowrap text-center">
-                            {winner ? (
-                              <div className="flex items-center justify-center gap-2" title={winner.department_name}>
+                            {winner && winner.department_id ? (
+                              <div className="flex items-center justify-center gap-2" title={winner.department_name || ''}>
                                 {winner.image_url ? (
-                                  <Image src={winner.image_url} alt={getInitials(winner.department_name)} width={40} height={40} className={`w-10 h-10 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
+                                  <Image src={winner.image_url} alt={getInitials(winner.department_name || '')} width={40} height={40} className={`w-10 h-10 object-cover rounded-full border-2 ${medalColor} shadow-sm`} />
                                 ) : (
                                   <div className={`w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm dark:text-gray-300 border-2 ${medalColor}`}>
-                                    {getInitials(winner.department_name)}
+                                    {getInitials(winner.department_name || '')}
                                   </div>
                                 )}
                                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
                                   {winner.department_name}
                                 </span>
                               </div>
+                            ) : winner && !winner.department_id ? (
+                               <span className="text-sm font-bold italic text-gray-400 dark:text-gray-500">No Participant</span>
                             ) : (
-                              <span className="text-gray-400 dark:text-gray-500">-</span>
+                              <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-400 uppercase tracking-widest flex items-center justify-center gap-1.5 opacity-80">
+                                 <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                                 Awaiting...
+                              </span>
                             )}
                           </td>
                         );

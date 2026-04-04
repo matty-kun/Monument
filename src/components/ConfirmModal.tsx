@@ -18,7 +18,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-[9999] flex justify-center items-center p-4 backdrop-blur-sm transition-all">
       <div className="relative p-5 border w-96 shadow-lg rounded-2xl bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="text-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">{title}</h3>

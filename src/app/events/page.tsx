@@ -39,9 +39,9 @@ interface ProcessedResult {
   division: string | null;
   gender: string | null;
   event_icon: string | null;
-  department_id: string;
-  department_name: string;
-  department_abbreviation: string;
+  department_id: string | null;
+  department_name: string | null;
+  department_abbreviation: string | null;
   department_image_url?: string;
   medal_type: "gold" | "silver" | "bronze";
 }
@@ -89,9 +89,9 @@ export default async function EventResultsPage() {
       division: r.events?.division || null,
       gender: r.events?.gender || null,
       event_icon: r.events?.icon || null,
-      department_id: r.department_id,
-      department_name: r.departments?.name || "Unknown Dept",
-      department_abbreviation: r.departments?.abbreviation || "",
+      department_id: r.department_id || null,
+      department_name: r.departments?.name || null,
+      department_abbreviation: r.departments?.abbreviation || null,
       department_image_url: r.departments?.image_url || undefined,
       medal_type: r.medal_type,
     }));

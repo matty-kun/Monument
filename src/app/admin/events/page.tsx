@@ -45,6 +45,7 @@ export default function ManageEventsPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { resolvedTheme } = useTheme();
   const supabase = createClient();
 
@@ -144,6 +145,7 @@ export default function ManageEventsPage() {
 
   async function handleConfirmDelete() {
     if (!eventToDeleteId) return;
+    setIsDeleting(true);
     const toastId = toast.loading("Deleting event...");
     try {
       const eventToDel = events.find(e => e.id === eventToDeleteId);
@@ -158,6 +160,8 @@ export default function ManageEventsPage() {
       fetchEvents();
     } catch (error: any) {
       toast.error(`Deletion failed: ${error.message}`, { id: toastId });
+    } finally {
+      setIsDeleting(false);
     }
     setShowConfirmModal(false);
     setEventToDeleteId(null);
@@ -353,25 +357,33 @@ export default function ManageEventsPage() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar p-2 h-full">
+                <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto custom-scrollbar p-2 h-full">
                   {filteredEvents.length === 0 ? (
                     <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No events found</div>
                   ) : filteredEvents.map((event) => (
-                    <div key={event.id} className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:-translate-y-1 transition-all group relative overflow-hidden">
-                       <div className="flex items-center gap-5">
-                          <PhotoOrEmoji icon={event.icon} className="w-16 h-16 object-cover rounded-2xl shadow-md border-2 border-white dark:border-gray-700" emojiSize="text-4xl" />
-                          <div className="flex-1 min-w-0">
-                             <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight truncate">{formatEventName(event)}</h4>
-                             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{getCategoryName(event.category)}</p>
+                    <div key={event.id} className="bg-white dark:bg-gray-700 p-5 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all group flex flex-col gap-3 relative">
+                       <div className="flex items-center justify-between">
+                          <PhotoOrEmoji icon={event.icon} className="w-12 h-12 object-cover rounded-2xl shadow-md border border-gray-100 dark:border-gray-600" />
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                             <button onClick={() => { 
+                                     setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
+                                     const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
+                                     window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                             }} className="p-2 bg-yellow-400 text-yellow-900 rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                             <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-red-500 text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
                           </div>
                        </div>
-                       <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { 
-                                  setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
-                                  const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                          }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
-                          <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
+                       <div className="flex-1">
+                          <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight mb-2">{formatEventName(event)}</h4>
+                          <div className="flex flex-wrap items-center gap-2">
+                             <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-600 rounded-full text-[9px] font-black text-gray-500 dark:text-gray-300 uppercase tracking-tighter">{getCategoryName(event.category)}</span>
+                             {(event.gender && event.gender !== "N/A") || (event.division && event.division !== "N/A") ? (
+                                <span className="text-[9px] font-bold text-gray-400 dark:text-gray-400 uppercase tracking-tighter">
+                                  {event.gender !== "N/A" ? event.gender : ''} 
+                                  {event.division !== "N/A" ? ` • ${event.division}` : ''}
+                                </span>
+                             ) : null}
+                          </div>
                        </div>
                     </div>
                   ))}
@@ -391,6 +403,28 @@ export default function ManageEventsPage() {
       />
 
       <Toaster />
+
+      <AnimatePresence>
+        {isDeleting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-[10000] flex flex-col items-center justify-center text-white text-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center"
+            >
+              <div className="w-20 h-20 border-4 border-monument-primary border-t-white rounded-full animate-spin mb-8 shadow-2xl shadow-violet-500/20" />
+              <h2 className="text-3xl font-black uppercase tracking-[0.2em] mb-2 leading-none">Deleting</h2>
+              <div className="h-1 w-12 bg-monument-primary rounded-full mb-4" />
+              <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Processing Database Permanent Directive</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
