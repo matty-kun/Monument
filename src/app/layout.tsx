@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata = {
+  metadataBase: new URL("https://citefest.vercel.app"),
   title: "Podium | CITE FEST 2026",
   description: "See the real-time team standings, medal counts, and total points for the CITE FEST 2026. Who will take the podium?",
   openGraph: {

@@ -14,6 +14,7 @@ interface LeaderboardRow {
   name: string;
   abbreviation: string | null;
   image_url?: string;
+  mascot_url?: string | null;
   total_points: number;
   golds: number;
   silvers: number;
@@ -25,6 +26,7 @@ interface LeaderboardRPCData {
   name: string;
   abbreviation: string | null;
   image_url?: string;
+  mascot_url?: string | null;
   golds: number;
   silvers: number;
   bronzes: number;
@@ -46,13 +48,13 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
       return;
     }
 
-    // 2. Fetch departments for abbreviations
-    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation');
+    // 2. Fetch departments for abbreviations and mascots
+    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation, mascot_url');
     if (deptError) {
       console.error("Error fetching abbreviations:", deptError);
     }
 
-    const abbrMap = new Map((departments as any[])?.map(d => [d.id, d.abbreviation]) || []);
+    const deptMetaMap = new Map((departments as any[])?.map(d => [d.id, { abbr: d.abbreviation, mascot: d.mascot_url }]) || []);
 
     if (!Array.isArray(stats)) return;
 
@@ -60,7 +62,8 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
       .filter((row: LeaderboardRPCData) => row.name !== "No Team")
       .map((row: LeaderboardRPCData) => ({
       ...row,
-      abbreviation: abbrMap.get(row.id) || null,
+      abbreviation: deptMetaMap.get(row.id)?.abbr || null,
+      mascot_url: deptMetaMap.get(row.id)?.mascot || null,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
     }));
     setLeaderboard(calculated);
