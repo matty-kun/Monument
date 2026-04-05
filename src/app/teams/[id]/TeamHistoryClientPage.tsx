@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { formatTime } from "@/lib/utils";
 
 interface TeamHistoryClientPageProps {
   team: {
@@ -95,7 +96,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
           <div className="mb-6">
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-monument-primary transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-              Back to Leaderboard
+              Back to Podium
             </Link>
           </div>
 
@@ -127,9 +128,24 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
 
             {/* Right Box: Points & Medals */}
             <div className="flex flex-col items-center md:items-stretch w-full md:w-auto shrink-0 mt-4 md:mt-0 max-w-sm">
-              <div className="bg-slate-600 dark:bg-[#1e1b4b]/60 border-2 border-slate-500 dark:border-indigo-900/50 rounded-3xl px-6 md:px-10 py-5 flex flex-col items-center mb-4 w-full text-center shadow-md">
-                <span className="text-xs font-semibold text-indigo-200 dark:text-indigo-300 mb-1 uppercase tracking-widest">Total Points</span>
+              <div className="bg-white dark:bg-[#1e1b4b]/60 border-2 border-gray-100 dark:border-indigo-900/50 rounded-3xl px-6 md:px-10 py-5 flex flex-col items-center mb-3 w-full text-center shadow-xl">
+                <span className="text-xs font-semibold text-gray-400 dark:text-indigo-300 mb-1 uppercase tracking-widest">Total Points</span>
                 <span className="text-6xl font-black text-monument-primary drop-shadow-sm">{stats.total_points}</span>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-0 w-full mt-2">
+                <div className="flex flex-col items-center">
+                   <span className="text-2xl mb-1">🥇</span>
+                   <span className="text-[10px] font-black text-yellow-600 dark:text-yellow-400 uppercase tracking-tighter">{stats.golds} Gold</span>
+                </div>
+                <div className="flex flex-col items-center border-x border-gray-100 dark:border-gray-700/30">
+                   <span className="text-2xl mb-1">🥈</span>
+                   <span className="text-[10px] font-black text-gray-500 dark:text-gray-300 uppercase tracking-tighter">{stats.silvers} Silver</span>
+                </div>
+                <div className="flex flex-col items-center">
+                   <span className="text-2xl mb-1">🥉</span>
+                   <span className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-tighter">{stats.bronzes} Bronze</span>
+                </div>
               </div>
               
 
@@ -203,7 +219,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                 
                 {item.itemType === 'schedule' && item.start_time && (
                   <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                    {item.date && new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} • {(item.start_time?.substring(0, 5) || "??:??")}
+                    {item.date && new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} • {formatTime(item.start_time)}
                   </div>
                 )}
                 
