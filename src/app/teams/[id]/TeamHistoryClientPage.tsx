@@ -109,6 +109,8 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                     src={team.image_url} 
                     alt={team.name} 
                     fill
+                    sizes="(max-width: 768px) 128px, 192px"
+                    priority
                     className="object-contain drop-shadow-xl"
                   />
                 ) : (

@@ -4,6 +4,7 @@ import LeaderboardClientPage from "./LeaderboardClientPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://citefest.vercel.app"),
   title: "Podium | CITE FEST",
   description: "See the real-time team standings, medal counts, and total points for the CITE FEST test. Who will take the podium?",
   openGraph: {
@@ -19,6 +20,7 @@ interface LeaderboardRow {
   name: string;
   abbreviation: string | null;
   image_url?: string;
+  mascot_url?: string | null;
   total_points: number;
   golds: number;
   silvers: number;
@@ -38,19 +40,20 @@ export default async function ScoreboardPage() {
       return [];
     }
     
-    // 2. Fetch all departments to get abbreviations (courses)
-    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation');
+    // 2. Fetch all departments to get abbreviations and mascots
+    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation, mascot_url');
     if (deptError) {
       console.error("Error fetching department abbreviations:", deptError);
     }
     
-    const abbrMap = new Map((departments as any[])?.map(d => [d.id, d.abbreviation]) || []);
+    const deptMetaMap = new Map((departments as any[])?.map(d => [d.id, { abbr: d.abbreviation, mascot: d.mascot_url }]) || []);
 
     if (!Array.isArray(stats)) return [];
 
     const calculated = stats.map((row: LeaderboardRpcResponse) => ({
       ...row,
-      abbreviation: abbrMap.get(row.id) || null,
+      abbreviation: deptMetaMap.get(row.id)?.abbr || null,
+      mascot_url: deptMetaMap.get(row.id)?.mascot || null,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
     }));
     return calculated;

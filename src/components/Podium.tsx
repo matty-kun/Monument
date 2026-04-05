@@ -10,6 +10,7 @@ interface LeaderboardRow {
   // Add abbreviation from the database if available
   abbreviation: string | null; 
   image_url?: string;
+  mascot_url?: string | null;
   total_points: number;
   golds: number;
   silvers: number;
@@ -83,7 +84,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
               <div className="relative w-24 h-24 md:w-40 md:h-40 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[0].image_url ? (
-                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill className="object-contain" />
+                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill sizes="(max-width: 768px) 96px, 160px" priority className="object-contain" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
                     <span className="text-4xl md:text-6xl font-black text-gray-500 dark:text-gray-600 leading-none tracking-tighter">
@@ -126,7 +127,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
               <div className="relative w-32 h-32 md:w-52 md:h-52 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[1].image_url ? (
-                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill className="object-contain" />
+                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill sizes="(max-width: 768px) 128px, 208px" priority className="object-contain" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
                     <span className="text-4xl md:text-6xl font-black text-gray-400 dark:text-gray-500 leading-none tracking-tighter">
@@ -169,7 +170,7 @@ export default function Podium({ leaderboard }: PodiumProps) {
             <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
               <div className="relative w-20 h-20 md:w-36 md:h-36 mb-4 md:mb-6 flex items-center justify-center">
                 {topThree[2].image_url ? (
-                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill className="object-contain" />
+                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill sizes="(max-width: 768px) 80px, 144px" priority className="object-contain" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
                     <span className="text-4xl md:text-6xl font-black text-gray-600 dark:text-gray-700 leading-none tracking-tighter">
