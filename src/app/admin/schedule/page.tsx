@@ -381,7 +381,7 @@ export default function AdminSchedulePage() {
   };
 
   const formatEventName = (ev: Event | null) => {
-    if (!ev) return "N/A";
+    if (!ev || !ev.name) return "N/A";
     return ev.name.length > 25 ? ev.name.substring(0, 25) + '...' : ev.name;
   };
 
@@ -466,11 +466,11 @@ export default function AdminSchedulePage() {
                                     {d?.image_url ? (
                                       <img src={d.image_url} className="w-full h-full rounded-full object-cover" />
                                     ) : (
-                                      dName.slice(0, 3).toUpperCase()
+                                      dName?.slice(0, 3).toUpperCase() || "??"
                                     )}
                                   </div>
                                   <span className={`text-[10px] font-black uppercase tracking-widest ${isWinner ? 'text-yellow-600' : 'text-gray-400'}`}>
-                                    {d?.abbreviation || dName.slice(0,3)}
+                                    {d?.abbreviation || dName?.slice(0,3) || "??"}
                                   </span>
                                 </div>
                                 {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-200 dark:text-gray-700 italic opacity-20">vs</span>}
@@ -516,7 +516,7 @@ export default function AdminSchedulePage() {
                          <ClipboardEdit size={16} />
                        </button>
                        <button onClick={() => { 
-                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time.substring(0,5)); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
+                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time?.substring(0,5) || "08:00"); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time?.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
                        }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
                        <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
                     </div>

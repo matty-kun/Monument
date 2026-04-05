@@ -196,7 +196,7 @@ export default function AdminDashboardPage() {
                       <span className="text-[9px] font-black tracking-widest text-monument-primary uppercase bg-monument-primary/10 px-2 py-1 rounded-md">{s.date}</span>
                    </div>
                    <div className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">
-                     {s.start_time.substring(0,5)} - {s.end_time.substring(0,5)} | {s.venues?.name || 'TBA'}
+                     {(s.start_time?.substring(0,5) || "??:??")} - {(s.end_time?.substring(0,5) || "??:??")} | {s.venues?.name || 'TBA'}
                    </div>
                    <div className="flex gap-1 text-[10px] font-black text-gray-400 uppercase">
                      {s.departments?.join(' VS ')}

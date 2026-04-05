@@ -203,7 +203,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                 
                 {item.itemType === 'schedule' && item.start_time && (
                   <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 mb-2">
-                    {item.date && new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} • {item.start_time.substring(0, 5)}
+                    {item.date && new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})} • {(item.start_time?.substring(0, 5) || "??:??")}
                   </div>
                 )}
                 

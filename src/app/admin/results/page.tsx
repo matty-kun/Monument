@@ -539,7 +539,7 @@ export default function AddResultPage() {
                                            <Image src={department.image_url} alt="" width={24} height={24} className="rounded-full shrink-0" />
                                          ) : (
                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500">
-                                             {department.name.substring(0, 2).toUpperCase()}
+                                             {department.name?.substring(0, 2).toUpperCase() || "??"}
                                            </div>
                                          )}
                                          <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate pr-2">{department.name}</span>
@@ -610,7 +610,7 @@ export default function AddResultPage() {
                                            <Image src={dept.image_url} alt="" width={18} height={18} className="rounded-full shadow-sm shrink-0" />
                                          ) : (
                                            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[7px] font-bold text-gray-500 shrink-0">
-                                             {dept.name.substring(0, 2).toUpperCase()}
+                                             {dept.name?.substring(0, 2).toUpperCase() || "??"}
                                            </div>
                                          )}
                                          <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{dept.name}</span>
