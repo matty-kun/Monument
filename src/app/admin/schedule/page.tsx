@@ -199,7 +199,7 @@ export default function AdminSchedulePage() {
   }, [venues]);
 
   async function handleSaveSchedule() {
-    if (!eventId || !venueId || !date || selectedDepartments.length < 1) {
+    if (!eventId || !venueId || !date) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -450,8 +450,15 @@ export default function AdminSchedulePage() {
                       </div>
 
                       <div className="bg-gray-50/50 dark:bg-gray-900/40 rounded-[2rem] p-4 border border-gray-100 dark:border-gray-700/50">
-                        <div className="flex items-center justify-around gap-2 relative">
-                          {s.departments.map((dName, i) => {
+                        <div className="flex items-center justify-around gap-2 relative min-h-[56px]">
+                          {s.departments.length === 0 ? (
+                            <div className="flex flex-col items-center py-2 opacity-50">
+                               <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 shadow-inner">
+                                  ?
+                               </div>
+                               <span className="text-[9px] font-black uppercase text-gray-400 tracking-[0.2em]">TBA Teams</span>
+                            </div>
+                          ) : s.departments.map((dName, i) => {
                             const d = departmentMap.get(dName);
                             const isWinner = d && s.winner_id === d.id;
                             return (
@@ -506,17 +513,29 @@ export default function AdminSchedulePage() {
 
                     <div className="bg-gray-50/50 dark:bg-gray-900/40 px-8 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-end items-center gap-3">
                        {dynStatus.status !== 'finished' ? (
-                         <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
-                           <FaCheck size={14} />
-                         </button>
+                         s.departments.length > 0 ? (
+                            <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
+                              <CheckCircle2 size={14} />
+                            </button>
+                         ) : (
+                            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams to finish match">
+                               <CheckCircle2 size={14} />
+                            </div>
+                         )
                        ) : (
                          <button onClick={() => handleResetMatch(s.id)} className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Reset Match Status">
                            <span className="text-sm">🔄</span>
                          </button>
                        )}
-                       <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
-                         <ClipboardEdit size={16} />
-                       </button>
+                       {s.departments.length > 0 ? (
+                        <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
+                          <ClipboardEdit size={16} />
+                        </button>
+                       ) : (
+                        <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams first to manage results">
+                           <ClipboardEdit size={16} className="opacity-30" />
+                        </div>
+                       )}
                        <button onClick={() => { 
                          setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time?.substring(0,5) || "08:00"); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time?.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
                        }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
@@ -569,7 +588,10 @@ export default function AdminSchedulePage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between px-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Competing Departments</label>
-                    <span className={`text-[9px] font-black uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-monument-primary/10 text-monument-primary' : 'bg-gray-100 text-gray-400'}`}>{selectedDepartments.length}/3 selected</span>
+                    <div className="flex items-center gap-2">
+                       {selectedDepartments.length > 0 && <button onClick={() => setSelectedDepartments([])} className="text-[8px] font-black uppercase tracking-widest text-monument-primary hover:bg-monument-primary/10 px-2 py-0.5 rounded-full transition-all">Set to TBA</button>}
+                       <span className={`text-[9px] font-black uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-monument-primary/10 text-monument-primary' : 'bg-gray-100 text-gray-400'}`}>{selectedDepartments.length}/3 selected</span>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {departments.map((d) => {

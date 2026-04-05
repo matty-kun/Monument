@@ -312,7 +312,14 @@ export default function ScheduleClientPage({
 
                       <div className="bg-gray-50/30 dark:bg-gray-900/20 rounded-3xl p-5 border border-gray-100 dark:border-gray-700/50 flex-1 flex flex-col justify-center">
                         <div className="flex items-center justify-around gap-2 relative">
-                          {s.departments.map((dep, i) => {
+                          {s.departments.length === 0 ? (
+                            <div className="flex flex-col items-center py-2 opacity-50">
+                               <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 shadow-inner">
+                                  ?
+                               </div>
+                               <span className="text-[9px] font-black uppercase text-gray-400 tracking-[0.2em]">TBA</span>
+                            </div>
+                          ) : s.departments.map((dep, i) => {
                             const dInfo = getDepartmentInfo(dep);
                             const isWinner = s.winner_id === dInfo.id && s.winner_id !== null;
                             const isH2H = s.departments.length === 2;
