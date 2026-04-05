@@ -246,7 +246,7 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                               <div className="flex items-center gap-2" title={winner.department_name || ''}>
                                  <span className="font-black text-[10px] text-gray-900 dark:text-gray-200 text-right uppercase tracking-tight truncate max-w-[120px]">{winner.department_name}</span>
                                 {winner.image_url ? (
-                                  <Image src={winner.image_url} alt={winner.department_name || ''} width={32} height={32} className={`w-8 h-8 object-cover rounded-full border-2 ${medalColor} shadow-sm group-hover:scale-105 transition-transform`} />
+                                  <Image src={winner.image_url} alt={winner.department_name || ''} width={32} height={32} className={`w-8 h-8 object-contain drop-shadow-sm group-hover:scale-110 transition-transform`} />
                                 ) : (
                                   <div className={`w-8 h-8 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center text-[9px] font-black text-gray-400 border-2 ${medalColor}`}>
                                     {winner.department_abbreviation?.slice(0,3)}

@@ -219,7 +219,7 @@ export default function AdminDashboardPage() {
                          {index + 1}
                       </div>
                       {team.imageUrl ? (
-                        <img src={team.imageUrl} className="w-8 h-8 rounded-full shadow-sm" alt={team.name} />
+                        <img src={team.imageUrl} className="w-8 h-8 object-contain drop-shadow-sm" alt={team.name} />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold shadow-sm">{team.name.slice(0,2)}</div>
                       )}

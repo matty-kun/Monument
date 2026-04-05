@@ -63,7 +63,11 @@ export default function DepartmentsPage() {
     const formData = new FormData();
     formData.append("file", file);
     const result = await uploadImageAction(formData, 'department-images', 'departments');
-    return result.success ? result.publicUrl || null : null;
+    if (!result.success) {
+      toast.error(`Upload failed: ${result.error}`);
+      return null;
+    }
+    return result.publicUrl || null;
   }
 
   async function handleAddOrUpdate(e: React.FormEvent) {
@@ -78,6 +82,7 @@ export default function DepartmentsPage() {
     try {
       const payload: any = { name, abbreviation: courses };
       if (imageUrl) payload.image_url = imageUrl;
+      else if (imagePreview && !selectedImage && imagePreview.startsWith('http')) payload.image_url = imagePreview;
       else if (photoRemoved) payload.image_url = null;
 
       if (editingId) {
@@ -147,19 +152,41 @@ export default function DepartmentsPage() {
               
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
                 <form onSubmit={handleAddOrUpdate} className="space-y-6 flex flex-col">
-                  <div className="flex flex-col items-center gap-4 bg-gray-50/50 dark:bg-gray-900/30 p-8 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 group relative">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-white dark:bg-gray-800 shadow-xl border-4 border-white dark:border-gray-700 flex items-center justify-center relative">
-                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-cover" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-200 dark:text-gray-700" />}
+                  <div className="flex flex-col items-center gap-4 bg-gray-50/50 dark:bg-gray-900/30 p-8 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 group relative w-full">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 absolute top-3 left-4">Logo Visual</label>
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-xl border-4 border-white dark:border-gray-700 flex items-center justify-center relative mt-2 group-hover:scale-105 transition-transform duration-500">
+                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-100 dark:text-gray-700 shadow-inner" />}
                         {imagePreview && (
-                            <button type="button" onClick={() => { setImagePreview(null); setSelectedImage(null); setPhotoRemoved(true); }} className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <FaTrash className="text-white" />
+                            <button type="button" onClick={() => { setImagePreview(null); setSelectedImage(null); setPhotoRemoved(true); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                               <FaTrash className="text-white scale-110" />
                             </button>
                         )}
                       </div>
-                      <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all text-gray-500">
-                        Upload Logo
-                        <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
-                      </label>
+                      <div className="flex flex-col gap-2 w-full mt-2">
+                        <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-gray-500 flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                          <FaPlus size={10} /> Choose PNG/JPG File
+                          <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                             <span className="text-[10px] font-bold">URL:</span>
+                          </div>
+                          <input 
+                            type="text" 
+                            placeholder="...or paste external image link" 
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-[10px] font-bold text-gray-600 dark:text-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
+                            value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
+                            onChange={(e) => {
+                               const val = e.target.value;
+                               setImagePreview(val);
+                               if (val) {
+                                  setSelectedImage(null);
+                                  setPhotoRemoved(false);
+                               }
+                            }}
+                          />
+                        </div>
+                      </div>
                   </div>
 
                   <div className="space-y-4">
@@ -220,7 +247,7 @@ export default function DepartmentsPage() {
                         ) : filteredDepartments.map((dept) => (
                           <tr key={dept.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group">
                             <td className="px-8 py-5">
-                              {dept.image_url ? <img src={dept.image_url} className="w-10 h-10 object-cover rounded-full border-2 border-white dark:border-gray-700 shadow-sm" /> : <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"><FaShieldAlt className="text-gray-300" /></div>}
+                              {dept.image_url ? <img src={dept.image_url} className="w-10 h-10 object-contain drop-shadow-sm border-2 border-white dark:border-gray-700 shadow-sm" /> : <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"><FaShieldAlt className="text-gray-300" /></div>}
                             </td>
                             <td className="px-8 py-5">
                               <span className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight">{dept.name}</span>
@@ -246,8 +273,8 @@ export default function DepartmentsPage() {
                     <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No teams found</div>
                   ) : filteredDepartments.map((dept) => (
                     <div key={dept.id} className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all group relative items-center text-center flex flex-col">
-                       <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-50 dark:bg-gray-900 mb-4 shadow-inner border-2 border-white dark:border-gray-700 flex items-center justify-center">
-                          {dept.image_url ? <img src={dept.image_url} className="w-full h-full object-cover" /> : <FaShieldAlt size={32} className="text-gray-200 dark:text-gray-700" />}
+                       <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-900 mb-4 shadow-inner border-2 border-white dark:border-gray-700 flex items-center justify-center">
+                          {dept.image_url ? <img src={dept.image_url} className="w-full h-full object-contain" /> : <FaShieldAlt size={32} className="text-gray-200 dark:text-gray-700" />}
                        </div>
                        <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight">{dept.name}</h4>
                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{dept.courses || 'No Courses Listed'}</p>

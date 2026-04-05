@@ -536,7 +536,7 @@ export default function AddResultPage() {
                                      ) : department ? (
                                        <div className="flex items-center gap-2 flex-1 min-w-0" title={department.name}>
                                          {department.image_url ? (
-                                           <Image src={department.image_url} alt="" width={24} height={24} className="rounded-full shrink-0" />
+                                           <Image src={department.image_url} alt="" width={24} height={24} className="object-contain drop-shadow-sm shrink-0" />
                                          ) : (
                                            <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500">
                                              {department.name?.substring(0, 2).toUpperCase() || "??"}
@@ -607,7 +607,7 @@ export default function AddResultPage() {
                                      ) : dept ? (
                                        <div className="flex items-center gap-1.5 overflow-hidden">
                                          {dept.image_url ? (
-                                           <Image src={dept.image_url} alt="" width={18} height={18} className="rounded-full shadow-sm shrink-0" />
+                                           <Image src={dept.image_url} alt="" width={18} height={18} className="object-contain drop-shadow-sm shrink-0" />
                                          ) : (
                                            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[7px] font-bold text-gray-500 shrink-0">
                                              {dept.name?.substring(0, 2).toUpperCase() || "??"}

@@ -140,13 +140,13 @@ export default function LeaderboardClientPage({ initialLeaderboard }: Leaderboar
                           {/* Department Info */}
                           <div className="flex items-center gap-4 mb-4">
                             {dept.image_url ? (
-                              <Image 
-                                src={dept.image_url} 
-                                alt={dept.name}
-                                width={48}
-                                height={48}
-                                className="w-12 h-12 object-cover rounded-full shadow-md border-2 border-white dark:border-gray-700"
-                              />
+                                <Image 
+                                  src={dept.image_url} 
+                                  alt={dept.name}
+                                  width={48}
+                                  height={48}
+                                  className="w-12 h-12 object-contain drop-shadow-sm"
+                                />
                             ) : (
                               <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
                                 <span className="text-2xl text-gray-400">🏫</span>

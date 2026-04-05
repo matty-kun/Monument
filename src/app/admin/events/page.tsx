@@ -84,7 +84,11 @@ export default function ManageEventsPage() {
     const formData = new FormData();
     formData.append("file", file);
     const result = await uploadImageAction(formData, 'event-images', 'events');
-    return result.success ? result.publicUrl || null : null;
+    if (!result.success) {
+      toast.error(`Upload failed: ${result.error}`);
+      return null;
+    }
+    return result.publicUrl || null;
   };
 
   async function handleAddOrUpdate(e: React.FormEvent) {
@@ -200,7 +204,7 @@ export default function ManageEventsPage() {
       </div>;
     }
     const isImage = icon.startsWith('http') || icon.startsWith('data:image');
-    if (isImage) return <img src={icon} className={className} alt="" onError={() => setIsError(true)} />;
+    if (isImage) return <img src={icon} className={`${className} object-contain`} alt="" onError={() => setIsError(true)} />;
     return <div className={`flex items-center justify-center ${className}`}><span className={emojiSize}>{icon}</span></div>;
   };
 
@@ -241,16 +245,36 @@ export default function ManageEventsPage() {
                     <div className="flex flex-col items-center gap-4 bg-gray-50/50 dark:bg-gray-900/20 p-6 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
                         <div className="relative group w-20 h-20">
                           {visualType === 'photo' ? (
-                            imagePreview ? <img src={imagePreview} className="w-full h-full object-cover rounded-2xl shadow-md border-2 border-white dark:border-gray-600" alt="Preview"/> :
+                            imagePreview ? <img src={imagePreview} className="w-full h-full object-contain rounded-2xl shadow-md border-2 border-white dark:border-gray-600" alt="Preview"/> :
                             <div className="w-full h-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl text-3xl">🖼️</div>
                           ) : <div className="w-full h-full flex items-center justify-center text-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-inner">{icon || '🏆'}</div>}
                         </div>
                         
                         {visualType === 'photo' ? (
-                          <label className="w-full cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-black uppercase tracking-widest text-center py-3 rounded-xl hover:border-monument-primary transition-colors text-gray-500">
-                            Upload Image
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
-                          </label>
+                          <div className="flex flex-col gap-2 w-full">
+                            <label className="w-full cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[10px] font-black uppercase tracking-widest text-center py-3 rounded-xl hover:border-monument-primary transition-colors text-gray-500 shadow-sm active:scale-95">
+                              Choose Image File
+                              <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
+                            </label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                                 <span className="text-[10px] font-bold uppercase">URL:</span>
+                              </div>
+                              <input 
+                                type="text" 
+                                placeholder="...or paste image link" 
+                                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-[10px] font-bold text-gray-600 dark:text-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
+                                value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
+                                onChange={(e) => {
+                                   const val = e.target.value;
+                                   setImagePreview(val);
+                                   if (val) {
+                                      setSelectedImage(null);
+                                   }
+                                }}
+                              />
+                            </div>
+                          </div>
                         ) : (
                           <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="w-full py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-[10px] font-black uppercase hover:bg-gray-50 transition-all text-gray-500">Pick Emoji</button>
                         )}

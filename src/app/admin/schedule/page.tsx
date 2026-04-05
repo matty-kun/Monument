@@ -464,9 +464,11 @@ export default function AdminSchedulePage() {
                                   )}
                                   <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 border-white dark:border-gray-800'}`}>
                                     {d?.image_url ? (
-                                      <img src={d.image_url} className="w-full h-full rounded-full object-cover" />
+                                      <img src={d.image_url} className="w-full h-full object-contain drop-shadow-sm" />
                                     ) : (
-                                      dName?.slice(0, 3).toUpperCase() || "??"
+                                      <div className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-white dark:border-gray-700">
+                                        {dName?.slice(0, 3).toUpperCase() || "??"}
+                                      </div>
                                     )}
                                   </div>
                                   <span className={`text-[10px] font-black uppercase tracking-widest ${isWinner ? 'text-yellow-600' : 'text-gray-400'}`}>
@@ -574,7 +576,7 @@ export default function AdminSchedulePage() {
                       const isSelected = selectedDepartments.includes(d.name);
                       return (
                         <button key={d.id} onClick={() => { setSelectedDepartments(prev => isSelected ? prev.filter(x => x !== d.name) : (prev.length < 3 ? [...prev, d.name] : prev)); }} className={`flex flex-col items-center p-2 rounded-2xl transition-all border-2 ${isSelected ? 'border-monument-primary bg-monument-primary/5 shadow-md scale-105' : selectedDepartments.length >= 3 ? 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-30 cursor-not-allowed' : 'border-transparent bg-gray-50 dark:bg-gray-900/50 grayscale opacity-60 hover:opacity-100'}`}>
-                          {d.image_url ? <img src={d.image_url} className="w-8 h-8 rounded-full mb-1" /> : <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full mb-1" />}
+                          {d.image_url ? <img src={d.image_url} className="w-8 h-8 object-contain drop-shadow-sm mb-1" /> : <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full mb-1" />}
                           <span className="text-[8px] font-black uppercase truncate w-full text-center">{d.name}</span>
                         </button>
                       );
@@ -709,7 +711,7 @@ export default function AdminSchedulePage() {
                                     }`}
                                   >
                                     {d.image_url ? (
-                                      <img src={d.image_url} className="w-6 h-6 rounded-full object-cover" />
+                                      <img src={d.image_url} className="w-6 h-6 object-contain" />
                                     ) : (
                                       <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[8px]">{d.abbreviation?.slice(0,2)}</div>
                                     )}
@@ -756,9 +758,9 @@ export default function AdminSchedulePage() {
                         const isSelected = winnerId === d?.id;
                         return (
                           <div key={i} className="flex flex-col items-center gap-4">
-                            <button onClick={() => d && setWinnerId(d.id)} className={`group relative w-24 h-24 rounded-full p-1 transition-all duration-500 ${isSelected ? 'ring-8 ring-monument-primary/20 scale-110' : 'ring-2 ring-gray-100 dark:ring-gray-700 grayscale opacity-60 hover:opacity-100 hover:grayscale-0'}`}>
-                              <div className={`w-full h-full rounded-full overflow-hidden border-4 shadow-xl ${isSelected ? 'border-monument-primary' : 'border-white dark:border-gray-800'}`}>
-                                {d?.image_url ? <img src={d.image_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center font-black text-xl">{dName.slice(0,2)}</div>}
+                            <button onClick={() => d && setWinnerId(d.id)} className={`group relative w-24 h-24 rounded-2xl p-1 transition-all duration-500 ${isSelected ? 'ring-8 ring-monument-primary/20 scale-110' : 'ring-2 ring-gray-100 dark:ring-gray-700 grayscale opacity-60 hover:opacity-100 hover:grayscale-0'}`}>
+                              <div className={`w-full h-full rounded-2xl overflow-hidden border-4 shadow-xl ${isSelected ? 'border-monument-primary' : 'border-white dark:border-gray-800'}`}>
+                                {d?.image_url ? <img src={d.image_url} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-gray-100 flex items-center justify-center font-black text-xl">{dName.slice(0,2)}</div>}
                               </div>
                               {isSelected && (
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 bg-monument-primary text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-4 border-white font-black">

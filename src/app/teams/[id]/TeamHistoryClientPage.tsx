@@ -108,7 +108,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                     src={team.image_url} 
                     alt={team.name} 
                     fill
-                    className="object-cover rounded-full border-4 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800/50 shadow-lg"
+                    className="object-contain drop-shadow-xl"
                   />
                 ) : (
                   <div className="w-full h-full bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center shadow-lg border-4 border-gray-200 dark:border-gray-700 text-4xl md:text-5xl font-bold text-slate-500 dark:text-slate-400">

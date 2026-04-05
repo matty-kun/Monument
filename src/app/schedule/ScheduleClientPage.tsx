@@ -325,8 +325,20 @@ export default function ScheduleClientPage({
                                         <FaTrophy className="text-yellow-400" />
                                     </motion.div>
                                   )}
-                                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl transition-all ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 scale-110 shadow-yellow-500/20' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-200 border-white dark:border-gray-500'}`}>
-                                    {dInfo.image_url ? <Image src={dInfo.image_url} alt={dInfo.name} width={56} height={56} className="rounded-full object-cover w-full h-full" /> : (dInfo.abbreviation || (dInfo.name?.slice(0, 2).toUpperCase() || "??"))}
+                                  <div className={`w-14 h-14 flex items-center justify-center transition-all ${isWinner ? 'scale-110' : ''}`}>
+                                    {dInfo.image_url ? (
+                                      <Image 
+                                        src={dInfo.image_url} 
+                                        alt={dInfo.name} 
+                                        width={56} 
+                                        height={56} 
+                                        className="object-contain w-full h-full drop-shadow-md" 
+                                      />
+                                    ) : (
+                                      <div className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 shadow-yellow-500/20' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-200 border-white dark:border-gray-500'}`}>
+                                        {dInfo.abbreviation || (dInfo.name?.slice(0, 2).toUpperCase() || "??")}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="flex flex-col mt-0.5">
                                      {isWinner && (
