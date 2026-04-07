@@ -125,7 +125,7 @@ export default function LeaderboardClientPage({ initialLeaderboard, initialMyste
               </div>
               <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white text-center">
                 Who will take{" "}
-                <br className="hidden sm:block" />
+                <br className="sm:hidden" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-monument-primary to-violet-500">
                   the Crown?
                 </span>
