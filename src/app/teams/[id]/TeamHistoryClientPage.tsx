@@ -22,9 +22,10 @@ interface TeamHistoryClientPageProps {
   };
   allCategories: any[];
   schedules?: any[];
+  mysteryMode?: boolean;
 }
 
-export default function TeamHistoryClientPage({ team, results, stats, allCategories, schedules = [] }: TeamHistoryClientPageProps) {
+export default function TeamHistoryClientPage({ team, results, stats, allCategories, schedules = [], mysteryMode }: TeamHistoryClientPageProps) {
   const [filter, setFilter] = useState<'all' | 'gold' | 'silver' | 'bronze' | 'upcoming'>('all');
 
   const getDynamicStatus = (schedule: any): 'upcoming' | 'ongoing' | 'finished' => {
@@ -132,7 +133,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
             <div className="flex flex-col items-center md:items-stretch w-full md:w-auto shrink-0 mt-4 md:mt-0 max-w-sm">
               <div className="bg-white dark:bg-[#1e1b4b]/60 border-2 border-gray-100 dark:border-indigo-900/50 rounded-3xl px-6 md:px-10 py-5 flex flex-col items-center mb-3 w-full text-center shadow-xl">
                 <span className="text-xs font-semibold text-gray-400 dark:text-indigo-300 mb-1 uppercase tracking-widest">Total Points</span>
-                <span className="text-6xl font-black text-monument-primary drop-shadow-sm">{stats.total_points}</span>
+                <span className="text-6xl font-black text-monument-primary drop-shadow-sm">{mysteryMode ? '???' : stats.total_points}</span>
               </div>
               
               <div className="grid grid-cols-3 gap-0 w-full mt-2">

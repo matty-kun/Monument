@@ -4,6 +4,8 @@ import TeamHistoryClientPage from "./TeamHistoryClientPage";
 import { calculateTotalPoints } from "@/utils/scoring";
 import type { Metadata } from "next";
 
+import { getMysteryMode } from "@/utils/settings/actions";
+
 export const metadata: Metadata = {
   title: "Team History | CITE FEST",
   description: "View the complete competition history and medal standings of this team.",
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function TeamHistoryPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const mysteryMode = await getMysteryMode();
   const supabase = await createClient();
   const resolvedParams = await Promise.resolve(params);
   const teamId = resolvedParams.id;
@@ -79,6 +82,7 @@ export default async function TeamHistoryPage({ params }: { params: Promise<{ id
       schedules={schedules || []}
       stats={{ ...myStat, total_points: totalPoints }}
       allCategories={allCategories || []}
+      mysteryMode={mysteryMode}
     />
   );
 }
