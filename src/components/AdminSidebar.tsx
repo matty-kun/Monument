@@ -12,6 +12,7 @@ import {
   Tags, 
   MapPin, 
   Users,
+  Settings,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
@@ -55,6 +56,7 @@ export default function AdminSidebar() {
     { href: "/admin/categories", label: "Categories", icon: Tags },
     { href: "/admin/venues", label: "Venues", icon: MapPin },
     { href: "/admin/users", label: "Users", icon: Users, role: "super_admin" },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
   ];
 
   const filteredItems = items.filter(item => !item.role || item.role === role);

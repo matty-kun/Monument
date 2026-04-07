@@ -1,6 +1,7 @@
 import { createReadOnlyClient } from "@/utils/supabase/server";
 import { calculateTotalPoints } from "@/utils/scoring";
 import LeaderboardClientPage from "./LeaderboardClientPage";
+import { getMysteryMode } from "@/utils/settings/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -59,11 +60,14 @@ export default async function ScoreboardPage() {
     return calculated;
   };
   
-  const leaderboard = await fetchLeaderboard();
+  const [leaderboard, mysteryMode] = await Promise.all([
+    fetchLeaderboard(),
+    getMysteryMode(),
+  ]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <LeaderboardClientPage initialLeaderboard={leaderboard} />
+      <LeaderboardClientPage initialLeaderboard={leaderboard} initialMysteryMode={mysteryMode} />
     </div>
   );
 }
