@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import EventsClientPage from "./EventsClientPage";
+import { getMysteryMode } from "@/utils/settings/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -69,7 +70,6 @@ export default async function EventResultsPage() {
     results: ProcessedResult[];
     categories: { id: string; name: string; icon?: string }[];
   }> => {
-    // FIXED: Fetch only medal results, removing match winners from the Events Hall of Fame
     const { data: resultsData, error: resultsError } = await supabase
       .from("results")
       .select(`
@@ -115,12 +115,16 @@ export default async function EventResultsPage() {
     return { results: processedResults, categories: processedCategories };
   };
 
-  const { results, categories } = await fetchEventData();
+  const [{ results, categories }, mysteryMode] = await Promise.all([
+    fetchEventData(),
+    getMysteryMode(),
+  ]);
 
   return (
     <EventsClientPage
       initialResults={results}
       initialCategories={categories}
+      mysteryMode={mysteryMode}
     />
   );
 }

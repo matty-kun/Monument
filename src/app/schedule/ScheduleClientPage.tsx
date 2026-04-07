@@ -68,6 +68,7 @@ interface ScheduleClientPageProps {
     initialVenues: Venue[];
     initialCategories: Category[];
     initialDepartments: Department[];
+    mysteryMode?: boolean;
 }
 
 export default function ScheduleClientPage({ 
@@ -75,8 +76,10 @@ export default function ScheduleClientPage({
     initialEvents, 
     initialVenues, 
     initialCategories,
-    initialDepartments
+    initialDepartments,
+    mysteryMode: initialMysteryMode
 }: ScheduleClientPageProps) {
+  const [mysteryMode, setMysteryMode] = useState(initialMysteryMode || false);
   const [schedules] = useState<Schedule[]>(initialSchedules);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(initialSchedules);
   const [allEvents] = useState<Event[]>(initialEvents);
@@ -102,8 +105,25 @@ export default function ScheduleClientPage({
       )
       .subscribe();
 
+    // 🔔 Subscribe to Mystery Mode changes in realtime
+    const mysterySub = supabase
+      .channel('app_settings_schedule')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'app_settings', filter: "key=eq.mystery_mode" },
+        (payload) => {
+          if (payload.new && (payload.new as any).key === 'mystery_mode') {
+            setMysteryMode((payload.new as any).value === 'true');
+          } else if (payload.eventType === 'DELETE') {
+            setMysteryMode(false);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(mysterySub);
     };
   }, [supabase]);
 
@@ -327,12 +347,12 @@ export default function ScheduleClientPage({
                             return (
                               <Fragment key={i}>
                                 <div className="flex flex-col items-center gap-2.5 relative">
-                                  {isWinner && (
+                                  {isWinner && !mysteryMode && (
                                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-1 z-10 w-6 h-6 flex items-center justify-center text-sm drop-shadow-md">
                                         <FaTrophy className="text-yellow-400" />
                                     </motion.div>
                                   )}
-                                  <div className={`w-14 h-14 flex items-center justify-center transition-all ${isWinner ? 'scale-110' : ''}`}>
+                                  <div className={`w-14 h-14 flex items-center justify-center transition-all ${isWinner && !mysteryMode ? 'scale-110' : ''}`}>
                                     {dInfo.image_url ? (
                                       <Image 
                                         src={dInfo.image_url} 
@@ -342,16 +362,16 @@ export default function ScheduleClientPage({
                                         className="object-contain w-full h-full drop-shadow-md" 
                                       />
                                     ) : (
-                                      <div className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl ${isWinner ? 'bg-yellow-400 text-yellow-900 border-yellow-500 shadow-yellow-500/20' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-200 border-white dark:border-gray-500'}`}>
+                                      <div className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-black border-4 shadow-xl ${isWinner && !mysteryMode ? 'bg-yellow-400 text-yellow-900 border-yellow-500 shadow-yellow-500/20' : 'bg-white dark:bg-gray-600 text-gray-600 dark:text-gray-200 border-white dark:border-gray-500'}`}>
                                         {dInfo.abbreviation || (dInfo.name?.slice(0, 2).toUpperCase() || "??")}
                                       </div>
                                     )}
                                   </div>
                                   <div className="flex flex-col mt-0.5">
-                                     {isWinner && (
+                                     {isWinner && !mysteryMode && (
                                         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[7px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Winner</motion.span>
                                      )}
-                                     <span className={`text-[9px] uppercase tracking-tight mt-0.5 leading-tight max-w-[80px] break-words line-clamp-2 transition-colors ${isWinner ? 'text-gray-900 dark:text-white font-black' : 'text-gray-600 dark:text-gray-300 font-bold'}`}>{dInfo.nickname || dInfo.name}</span>
+                                     <span className={`text-[9px] uppercase tracking-tight mt-0.5 leading-tight max-w-[80px] break-words line-clamp-2 transition-colors ${isWinner && !mysteryMode ? 'text-gray-900 dark:text-white font-black' : 'text-gray-600 dark:text-gray-300 font-bold'}`}>{dInfo.nickname || dInfo.name}</span>
                                   </div>
                                 </div>
                                 {i < s.departments.length - 1 && <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 italic opacity-60 self-center">vs</span>}
@@ -362,9 +382,15 @@ export default function ScheduleClientPage({
                         
                         {status === "finished" && s.departments.length === 2 && (Number(s.score_a) > 0 || Number(s.score_b) > 0) && (
                           <div className="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700/50 font-black text-2xl italic text-gray-900 dark:text-gray-100">
-                             <span className={s.winner_id === (typeof s.departments[0] === 'object' ? s.departments[0].id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_a || 0}</span>
-                             <span className="text-gray-300 dark:text-gray-600">—</span>
-                             <span className={s.winner_id === (typeof s.departments[1] === 'object' ? s.departments[1].id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_b || 0}</span>
+                             {mysteryMode ? (
+                               <span className="text-gray-400 opacity-40">??? — ???</span>
+                             ) : (
+                               <>
+                                 <span className={s.winner_id === (typeof s.departments[0] === 'object' ? (s.departments[0] as Department).id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_a || 0}</span>
+                                 <span className="text-gray-300 dark:text-gray-600">—</span>
+                                 <span className={s.winner_id === (typeof s.departments[1] === 'object' ? (s.departments[1] as Department).id : null) ? 'text-emerald-500 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}>{s.score_b || 0}</span>
+                               </>
+                             )}
                           </div>
                         )}
                       </div>

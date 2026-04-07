@@ -1,14 +1,15 @@
 "use server";
 
-import { createServiceClient } from "@/utils/supabase/server";
+import { createClient, createReadOnlyClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
 /**
  * Toggles the global mystery_mode setting in app_settings.
- * Uses an upsert so the row is created on first use.
+ * Uses the normal user client (which uses the ANON_KEY and respects RLS).
+ * Requires the user to be an authenticated admin as per the SQL policy.
  */
 export async function toggleMysteryMode(enabled: boolean): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServiceClient();
+  const supabase = await createClient(); // Use regular client with user session
 
   const { error } = await supabase
     .from("app_settings")
@@ -22,23 +23,31 @@ export async function toggleMysteryMode(enabled: boolean): Promise<{ success: bo
     return { success: false, error: error.message };
   }
 
-  // Revalidate the public leaderboard so the next SSR pick picks it up too
+  // Revalidate everything so all public pages pick up the change
   revalidatePath("/");
+  revalidatePath("/results");
+  revalidatePath("/schedule");
   return { success: true };
 }
 
 /**
  * Reads the current mystery_mode setting.
- * Returns false if the setting doesn't exist yet.
+ * Uses the read-only client (ANON_KEY). Returns false if not found.
  */
 export async function getMysteryMode(): Promise<boolean> {
-  const supabase = createServiceClient();
-  const { data, error } = await supabase
-    .from("app_settings")
-    .select("value")
-    .eq("key", "mystery_mode")
-    .single();
+  try {
+    const supabase = await createReadOnlyClient();
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "mystery_mode")
+      .single();
 
-  if (error || !data) return false;
-  return data.value === "true";
+    if (error || !data) return false;
+    return data.value === "true";
+  } catch (err) {
+    console.error("Critical error in getMysteryMode:", err);
+    return false;
+  }
 }
+

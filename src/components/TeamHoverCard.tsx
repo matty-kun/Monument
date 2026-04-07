@@ -24,44 +24,57 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<Result[]>([]);
+  const [mysteryMode, setMysteryMode] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    if (isVisible && history.length === 0 && !isLoading) {
-      const fetchHistory = async () => {
+    if (isVisible && !isLoading) {
+      const fetchData = async () => {
         setIsLoading(true);
         try {
-          const { data, error } = await supabase
-            .from("results")
-            .select(`
-              id, 
-              medal_type, 
-              events (
-                name, 
-                icon
-              )
-            `)
-            .eq("department_id", teamId)
-            .order("medal_type", { ascending: true })
-            .limit(10);
+          // Fetch both mystery mode and history in parallel
+          const [settingsRes, historyRes] = await Promise.all([
+            supabase.from("app_settings").select("value").eq("key", "mystery_mode").single(),
+            supabase
+              .from("results")
+              .select(`
+                id, 
+                medal_type, 
+                events (
+                  name, 
+                  icon
+                )
+              `)
+              .eq("department_id", teamId)
+              .order("medal_type", { ascending: true })
+              .limit(10)
+          ]);
           
-          if (data) {
+          if (settingsRes.data) {
+            setMysteryMode(settingsRes.data.value === 'true');
+          }
+
+          if (historyRes.data) {
             // Client-side sort to ensure Gold > Silver > Bronze
             const medalPriority = { gold: 1, silver: 2, bronze: 3 };
-            const sorted = [...data].sort((a: any, b: any) => 
+            const sorted = [...historyRes.data].sort((a: any, b: any) => 
               medalPriority[a.medal_type as keyof typeof medalPriority] - 
               medalPriority[b.medal_type as keyof typeof medalPriority]
             );
             setHistory(sorted as any);
           }
         } catch (err) {
-          console.error("Error fetching history:", err);
+          console.error("Error fetching hover card data:", err);
         } finally {
           setIsLoading(false);
         }
       };
-      fetchHistory();
+      
+      // Only fetch if history is empty OR if we need to re-check mystery mode
+      if (history.length === 0) {
+        fetchData();
+      }
     }
   }, [isVisible, teamId, history.length, isLoading, supabase]);
 
@@ -98,7 +111,14 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
               <h4 className="text-xs uppercase font-black text-gray-400 tracking-widest">Recent Medals</h4>
             </div>
 
-            {history.length > 0 ? (
+            {mysteryMode ? (
+              <div className="flex flex-col items-center py-6 space-y-2 opacity-60">
+                 <span className="text-3xl">🔮</span>
+                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center leading-relaxed px-4">
+                   Team achievements are hidden until the final reveal!
+                 </span>
+              </div>
+            ) : history.length > 0 ? (
               <div className="space-y-3">
                 {history.slice(0, 3).map((res) => (
                   <div key={res.id} className="flex items-center justify-between group">

@@ -40,9 +40,11 @@ interface GroupedResult {
 interface EventsClientPageProps {
   initialResults: ProcessedResult[];
   initialCategories: { id: string; name: string; icon?: string }[];
+  mysteryMode?: boolean;
 }
 
-export default function EventsClientPage({ initialResults, initialCategories }: EventsClientPageProps) {
+export default function EventsClientPage({ initialResults, initialCategories, mysteryMode: initialMysteryMode }: EventsClientPageProps) {
+  const [mysteryMode, setMysteryMode] = useState(initialMysteryMode || false);
   // Helper to generate initials from team name
   const getInitials = (name: string) => {
     return name
@@ -76,8 +78,25 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
       )
       .subscribe();
 
+    // 🔔 Subscribe to Mystery Mode changes in realtime
+    const mysterySub = supabase
+      .channel('app_settings_events')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'app_settings', filter: "key=eq.mystery_mode" },
+        (payload) => {
+          if (payload.new && (payload.new as any).key === 'mystery_mode') {
+            setMysteryMode((payload.new as any).value === 'true');
+          } else if (payload.eventType === 'DELETE') {
+            setMysteryMode(false);
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(mysterySub);
     };
   }, [supabase]);
 
@@ -242,7 +261,11 @@ export default function EventsClientPage({ initialResults, initialCategories }: 
                                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight leading-tight">{medalLabel}</span>
                               </div>
                             </div>
-                            {winner && winner.department_id ? (
+                            {mysteryMode ? (
+                              <div className="flex items-center gap-1.5 opacity-60">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">??? Hidden</span>
+                              </div>
+                            ) : winner && winner.department_id ? (
                               <div className="flex items-center gap-2" title={winner.department_name || ''}>
                                  <span className="font-black text-[10px] text-gray-900 dark:text-gray-200 text-right uppercase tracking-tight truncate max-w-[120px]">{winner.department_name}</span>
                                 {winner.image_url ? (

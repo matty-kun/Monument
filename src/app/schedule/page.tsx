@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import ScheduleClientPage from "./ScheduleClientPage";
+import { getMysteryMode } from "@/utils/settings/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -245,8 +246,12 @@ export default async function SchedulePage() {
     };
   };
 
-  const [schedules, { events, venues, categories, departments }] =
-    await Promise.all([fetchSchedules(), fetchFilterOptions()]);
+  const [schedules, { events, venues, categories, departments }, mysteryMode] =
+    await Promise.all([
+      fetchSchedules(), 
+      fetchFilterOptions(),
+      getMysteryMode()
+    ]);
 
   return (
     <ScheduleClientPage
@@ -255,6 +260,7 @@ export default async function SchedulePage() {
       initialVenues={venues}
       initialCategories={categories}
       initialDepartments={departments}
+      mysteryMode={mysteryMode}
     />
   );
 }

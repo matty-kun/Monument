@@ -81,16 +81,18 @@ export default function LeaderboardClientPage({ initialLeaderboard, initialMyste
       .on("postgres_changes", { event: "*", schema: "public", table: "departments" }, fetchLeaderboard)
       .subscribe();
 
-    // 🔮 Listen for mystery_mode changes so the public page reacts instantly
-    // when an admin flips the toggle without needing a page refresh.
+    // 🔮 Subscribe to Mystery Mode changes in realtime
     const settingsChannel = supabase
       .channel("settings-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "app_settings", filter: "key=eq.mystery_mode" },
         (payload: any) => {
-          const newValue = payload.new?.value === "true";
-          setMysteryMode(newValue);
+          if (payload.new && (payload.new as any).key === "mystery_mode") {
+            setMysteryMode((payload.new as any).value === "true");
+          } else if (payload.eventType === "DELETE") {
+            setMysteryMode(false);
+          }
         }
       )
       .subscribe();
