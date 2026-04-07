@@ -111,14 +111,7 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
               <h4 className="text-xs uppercase font-black text-gray-400 tracking-widest">Recent Medals</h4>
             </div>
 
-            {mysteryMode ? (
-              <div className="flex flex-col items-center py-6 space-y-2 opacity-60">
-                 <span className="text-3xl">🔮</span>
-                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center leading-relaxed px-4">
-                   Team achievements are hidden until the final reveal!
-                 </span>
-              </div>
-            ) : history.length > 0 ? (
+            {history.length > 0 ? (
               <div className="space-y-3">
                 {history.slice(0, 3).map((res) => (
                   <div key={res.id} className="flex items-center justify-between group">

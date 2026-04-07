@@ -261,11 +261,7 @@ export default function EventsClientPage({ initialResults, initialCategories, my
                                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight leading-tight">{medalLabel}</span>
                               </div>
                             </div>
-                            {mysteryMode ? (
-                              <div className="flex items-center gap-1.5 opacity-60">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">??? Hidden</span>
-                              </div>
-                            ) : winner && winner.department_id ? (
+                            {winner && winner.department_id ? (
                               <div className="flex items-center gap-2" title={winner.department_name || ''}>
                                  <span className="font-black text-[10px] text-gray-900 dark:text-gray-200 text-right uppercase tracking-tight truncate max-w-[120px]">{winner.department_name}</span>
                                 {winner.image_url ? (
