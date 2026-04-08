@@ -29,11 +29,25 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
   const [filter, setFilter] = useState<'all' | 'gold' | 'silver' | 'bronze' | 'upcoming'>('all');
 
   const getDynamicStatus = (schedule: any): 'upcoming' | 'ongoing' | 'finished' => {
-    if (!schedule.date || !schedule.start_time || !schedule.end_time) return 'upcoming';
     const now = new Date();
+
+    if (!schedule.date) return 'upcoming';
+
+    if (!schedule.start_time) {
+      // If no time info, treat entire date as finished if it's before today
+      const day = new Date(`${schedule.date}T00:00:00`);
+      return isNaN(day.getTime()) || now < day ? 'upcoming' : 'finished';
+    }
+
     const start = new Date(`${schedule.date}T${schedule.start_time}`);
-    const end = new Date(`${schedule.date}T${schedule.end_time}`);
-    if (isNaN(start.getTime()) || now < start) return 'upcoming';
+    if (isNaN(start.getTime())) return 'upcoming';
+    if (now < start) return 'upcoming';
+
+    // If end_time is missing, assume a 2-hour window from start
+    const end = schedule.end_time
+      ? new Date(`${schedule.date}T${schedule.end_time}`)
+      : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+
     if (now >= start && now <= end) return 'ongoing';
     return 'finished';
   };
