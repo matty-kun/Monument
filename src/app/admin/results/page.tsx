@@ -9,6 +9,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Ca
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
 
 interface Department {
@@ -209,7 +211,7 @@ export default function AddResultPage() {
 
   async function handleSubmit(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!eventId) return;
+    if (!eventId || !selectedTournament) return;
 
     setIsSubmitting(true);
     const loadingToast = toast.loading("Finalizing event results...");
@@ -328,6 +330,8 @@ export default function AddResultPage() {
     await fetchEventData(eventId);
   }
 
+  if (!selectedTournament) return <EmptyTournamentState />;
+
   return (
     <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
@@ -341,6 +345,7 @@ export default function AddResultPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
+        {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-fit flex flex-col pb-2">
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible transition-all hover:shadow-md flex flex-col">
               <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 z-10 backdrop-blur-sm rounded-t-3xl">
@@ -472,9 +477,10 @@ export default function AddResultPage() {
               </div>
             </div>
           </div>
+        )}
 
           {/* RIGHT COLUMN: History */}
-          <div className="lg:col-span-8 flex flex-col h-fit lg:max-h-[calc(100vh-180px)] overflow-hidden">
+          <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col h-fit lg:max-h-[calc(100vh-180px)] overflow-hidden`}>
             <div className="mb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0">
               <div>
                 <h3 className="text-xl font-black text-gray-800 dark:text-gray-100 uppercase tracking-tight">Results History</h3>
@@ -575,14 +581,16 @@ export default function AddResultPage() {
                           </div>
                         </div>
 
-                        <div className="p-3 border-t border-gray-50 dark:border-gray-700/50 flex justify-end gap-2 bg-gray-50/50 dark:bg-gray-800/30">
-                           <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
-                            ✏️ Edit
-                           </button>
-                           <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
-                            🗑️ Delete
-                           </button>
-                        </div>
+                        {!selectedTournament?.is_archived && (
+                          <div className="p-3 border-t border-gray-50 dark:border-gray-700/50 flex justify-end gap-2 bg-gray-50/50 dark:bg-gray-800/30">
+                             <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                              ✏️ Edit
+                             </button>
+                             <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                              🗑️ Delete
+                             </button>
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })}
@@ -597,7 +605,7 @@ export default function AddResultPage() {
                           <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥇 GOLD</th>
                           <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥈 SILVER</th>
                           <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥉 BRONZE</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+                          {!selectedTournament?.is_archived && <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
@@ -644,16 +652,18 @@ export default function AddResultPage() {
                                 </td>
                               );
                             })}
-                            <td className="px-3 py-2 text-right">
-                              <div className="flex items-center justify-end">
-                                <button onClick={() => handleEditByEvent(eventId)} className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-all" title="Edit">
-                                  <span className="text-xs">✏️</span>
-                                </button>
-                                <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all" title="Delete">
-                                  <span className="text-xs">🗑️</span>
-                                </button>
-                              </div>
-                            </td>
+                            {!selectedTournament?.is_archived && (
+                              <td className="px-3 py-2 text-right">
+                                <div className="flex items-center justify-end">
+                                  <button onClick={() => handleEditByEvent(eventId)} className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-all" title="Edit">
+                                    <span className="text-xs">✏️</span>
+                                  </button>
+                                  <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all" title="Delete">
+                                    <span className="text-xs">🗑️</span>
+                                  </button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

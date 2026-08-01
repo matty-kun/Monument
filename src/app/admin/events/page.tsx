@@ -11,8 +11,10 @@ import ConfirmModal from "../../../components/ConfirmModal";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
+import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaDownload } from "react-icons/fa";
 import { useTournament } from "@/components/AdminTournamentProvider";
+import ImportFromTournamentModal from "../../../components/ImportFromTournamentModal";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 
 interface Category {
   id: string;
@@ -42,6 +44,7 @@ export default function ManageEventsPage() {
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [searchQuery, setSearchQuery] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
   const [visualType, setVisualType] = useState<'emoji' | 'photo'>('emoji');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -49,7 +52,7 @@ export default function ManageEventsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { resolvedTheme } = useTheme();
   const supabase = createClient();
-  const { selectedTournament } = useTournament();
+  const { selectedTournament, loading } = useTournament();
 
   const fetchEvents = useCallback(async () => {
     if (!selectedTournament) return;
@@ -180,6 +183,61 @@ export default function ManageEventsPage() {
     setEventToDeleteId(null);
   }
 
+  async function handleImportEvents(sourceTournamentId: string) {
+    if (!selectedTournament) return;
+    
+    // 1. Fetch source events
+    const { data: sourceEvents, error: sourceError } = await supabase
+      .from("events")
+      .select("name, icon, category, gender, division")
+      .eq("tournament_id", sourceTournamentId);
+      
+    if (sourceError || !sourceEvents) {
+      toast.error("Failed to fetch events from source tournament.");
+      return;
+    }
+    
+    if (sourceEvents.length === 0) {
+      toast.error("No events found in the selected tournament.");
+      return;
+    }
+
+    // 2. Fetch current events to prevent duplicates
+    const { data: currentEvents } = await supabase
+      .from("events")
+      .select("name, category, gender, division")
+      .eq("tournament_id", selectedTournament.id);
+      
+    // Create a composite key for checking duplicates
+    const makeKey = (e: any) => `${e.name}-${e.category}-${e.gender || 'NA'}-${e.division || 'NA'}`.toLowerCase();
+    const currentKeys = new Set(currentEvents?.map(makeKey) || []);
+    
+    // 3. Filter out duplicates
+    const newEventsToInsert = sourceEvents
+      .filter(evt => !currentKeys.has(makeKey(evt)))
+      .map(evt => ({
+        ...evt,
+        tournament_id: selectedTournament.id
+      }));
+      
+    if (newEventsToInsert.length === 0) {
+      toast.error("All events from that tournament already exist here.");
+      return;
+    }
+    
+    // 4. Insert
+    const { error: insertError } = await supabase
+      .from("events")
+      .insert(newEventsToInsert);
+      
+    if (insertError) {
+      toast.error(`Error importing events: ${insertError.message}`);
+    } else {
+      toast.success(`Successfully imported ${newEventsToInsert.length} events!`);
+      fetchEvents();
+    }
+  }
+
   const formatEventName = useCallback((event: Event) => {
     const parts = [event.name];
     if (event.division && event.division !== "N/A") parts.push(`(${event.division})`);
@@ -222,6 +280,7 @@ export default function ManageEventsPage() {
     const q = searchQuery.toLowerCase();
     return events.filter((e) => formatEventName(e).toLowerCase().includes(q) || getCategoryName(e.category).toLowerCase().includes(q));
   }, [events, searchQuery, formatEventName, getCategoryName]);
+  if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
     <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
@@ -229,13 +288,24 @@ export default function ManageEventsPage() {
         <Breadcrumbs items={[{ href: "/admin/dashboard", label: "Dashboard" }, { label: "Manage Events" }]} />
       </div>
 
-      <div className="mb-4 shrink-0">
-        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingId ? 'Edit Event' : 'Manage Events'}</h1>
-        <p className="text-sm text-gray-500 font-medium">Configure competitions, sports, and technical events</p>
+      <div className="mb-4 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingId ? 'Edit Event' : 'Manage Events'}</h1>
+          <p className="text-sm text-gray-500 font-medium">Configure competitions, sports, and technical events</p>
+        </div>
+        {!selectedTournament?.is_archived && (
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-monument-primary hover:border-monument-primary dark:hover:text-violet-400 dark:hover:border-violet-500 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+          >
+            <FaDownload size={14} /> Import from Past
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
+        {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
             <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
               <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
@@ -331,9 +401,10 @@ export default function ManageEventsPage() {
               </div>
             </div>
         </div>
+        )}
 
         {/* RIGHT COLUMN: List */}
-        <div className="lg:col-span-8 h-full flex flex-col min-h-0 pb-2">
+        <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
             <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
                   <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -356,7 +427,7 @@ export default function ManageEventsPage() {
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Icon</th>
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Name</th>
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
-                          <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -373,16 +444,18 @@ export default function ManageEventsPage() {
                             <td className="px-8 py-5">
                               <span className="inline-flex px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase">{getCategoryName(event.category)}</span>
                             </td>
-                            <td className="px-8 py-5 text-right">
-                              <div className="flex justify-end gap-2">
-                                <button onClick={() => { 
-                                  setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
-                                  const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
-                                  window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                                }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
-                                <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
-                              </div>
-                            </td>
+                            {!selectedTournament?.is_archived && (
+                              <td className="px-8 py-5 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <button onClick={() => { 
+                                    setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
+                                    const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                                  }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
+                                  <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -397,14 +470,16 @@ export default function ManageEventsPage() {
                     <div key={event.id} className="bg-white dark:bg-gray-700 p-5 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-600 hover:shadow-xl transition-all group flex flex-col gap-3 relative">
                        <div className="flex items-center justify-between">
                           <PhotoOrEmoji icon={event.icon} className="w-12 h-12 object-cover rounded-2xl shadow-md border border-gray-100 dark:border-gray-600" />
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                             <button onClick={() => { 
-                                     setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
-                                     const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
-                                     window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                             }} className="p-2 bg-yellow-400 text-yellow-900 rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
-                             <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-red-500 text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
-                          </div>
+                          {!selectedTournament?.is_archived && (
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                               <button onClick={() => { 
+                                       setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
+                                       const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
+                                       window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                               }} className="p-2 bg-yellow-400 text-yellow-900 rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                               <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-red-500 text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
+                            </div>
+                          )}
                        </div>
                        <div className="flex-1">
                           <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight mb-2">{formatEventName(event)}</h4>
@@ -433,6 +508,15 @@ export default function ManageEventsPage() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to delete this event? This action cannot be undone."
+      />
+      
+      <ImportFromTournamentModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportEvents}
+        currentTournamentId={selectedTournament?.id || ""}
+        title="Clone Events"
+        description="Select a past tournament to instantly clone its entire list of sports and events into the current season. Duplicates will be skipped."
       />
 
       <Toaster />

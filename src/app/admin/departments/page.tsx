@@ -9,8 +9,11 @@ import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaShieldAlt } from "react-icons/fa";
+import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaShieldAlt, FaDownload } from "react-icons/fa";
+import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
+import ImportFromTournamentModal from "../../../components/ImportFromTournamentModal";
 
 interface Department {
   id: string;
@@ -32,6 +35,7 @@ export default function DepartmentsPage() {
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
   const [searchQuery, setSearchQuery] = useState("");
+  const [showImportModal, setShowImportModal] = useState(false);
   const { selectedTournament } = useTournament();
 
   const supabase = createClient();
@@ -144,11 +148,66 @@ export default function DepartmentsPage() {
     setDepartmentToDeleteId(null);
   }
 
+  async function handleImportTeams(sourceTournamentId: string) {
+    if (!selectedTournament) return;
+    
+    // 1. Fetch source teams
+    const { data: sourceTeams, error: sourceError } = await supabase
+      .from("tournament_departments")
+      .select("department_id, name, abbreviation, image_url")
+      .eq("tournament_id", sourceTournamentId);
+      
+    if (sourceError || !sourceTeams) {
+      toast.error("Failed to fetch teams from source tournament.");
+      return;
+    }
+    
+    if (sourceTeams.length === 0) {
+      toast.error("No teams found in the selected tournament.");
+      return;
+    }
+
+    // 2. Fetch current teams to prevent duplicates
+    const { data: currentTeams } = await supabase
+      .from("tournament_departments")
+      .select("department_id")
+      .eq("tournament_id", selectedTournament.id);
+      
+    const currentDeptIds = new Set(currentTeams?.map(t => t.department_id) || []);
+    
+    // 3. Filter out duplicates
+    const newTeamsToInsert = sourceTeams
+      .filter(team => !currentDeptIds.has(team.department_id))
+      .map(team => ({
+        ...team,
+        tournament_id: selectedTournament.id
+      }));
+      
+    if (newTeamsToInsert.length === 0) {
+      toast.error("All teams from that tournament already exist here.");
+      return;
+    }
+    
+    // 4. Insert
+    const { error: insertError } = await supabase
+      .from("tournament_departments")
+      .insert(newTeamsToInsert);
+      
+    if (insertError) {
+      toast.error(`Error importing teams: ${insertError.message}`);
+    } else {
+      toast.success(`Successfully imported ${newTeamsToInsert.length} teams!`);
+      fetchDepartments();
+    }
+  }
+
   const filteredDepartments = useMemo(() => {
     if (!searchQuery) return departments;
     const q = searchQuery.toLowerCase();
     return departments.filter(d => d.name.toLowerCase().includes(q) || d.courses?.toLowerCase().includes(q));
   }, [departments, searchQuery]);
+
+  if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
     <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
@@ -156,13 +215,24 @@ export default function DepartmentsPage() {
         <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Teams' }]} />
       </div>
 
-      <div className="mb-4 shrink-0">
-        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingId ? 'Edit Team' : 'Manage Teams'}</h1>
-        <p className="text-sm text-gray-500 font-medium">Manage departmental representatives and team profiles</p>
+      <div className="mb-4 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{editingId ? 'Edit Team' : 'Manage Teams'}</h1>
+          <p className="text-sm text-gray-500 font-medium">Manage departmental representatives and team profiles</p>
+        </div>
+        {!selectedTournament?.is_archived && (
+          <button 
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-monument-primary hover:border-monument-primary dark:hover:text-violet-400 dark:hover:border-violet-500 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+          >
+            <FaDownload size={14} /> Import from Past
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
+        {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
               <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
@@ -232,9 +302,10 @@ export default function DepartmentsPage() {
               </div>
             </div>
         </div>
+        )}
 
         {/* RIGHT COLUMN: List */}
-        <div className="lg:col-span-8 h-full flex flex-col min-h-0 pb-2">
+        <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
             <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
                   <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -257,7 +328,7 @@ export default function DepartmentsPage() {
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Logo</th>
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Team Name</th>
                           <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Abbr / Courses</th>
-                          <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
@@ -274,12 +345,14 @@ export default function DepartmentsPage() {
                             <td className="px-8 py-5">
                               <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{dept.courses || '--'}</span>
                             </td>
-                            <td className="px-8 py-5 text-right">
-                              <div className="flex justify-end gap-2">
-                                <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
-                                <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
-                              </div>
-                            </td>
+                            {!selectedTournament?.is_archived && (
+                              <td className="px-8 py-5 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
+                                  <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -298,10 +371,12 @@ export default function DepartmentsPage() {
                        <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight">{dept.name}</h4>
                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{dept.courses || 'No Courses Listed'}</p>
                        
-                       <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
-                          <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
-                       </div>
+                       {!selectedTournament?.is_archived && (
+                         <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                            <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
+                         </div>
+                       )}
                     </div>
                   ))}
                   </motion.div>
@@ -317,6 +392,14 @@ export default function DepartmentsPage() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to delete this team? This action cannot be undone."
+      />
+      <ImportFromTournamentModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportTeams}
+        currentTournamentId={selectedTournament?.id || ""}
+        title="Import Teams"
+        description="Select a past tournament to instantly copy all its participating teams into the current season. Duplicates will be skipped."
       />
       <Toaster />
     </div>

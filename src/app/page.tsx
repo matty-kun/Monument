@@ -30,9 +30,10 @@ interface LeaderboardRow {
 
 type LeaderboardRpcResponse = Omit<LeaderboardRow, 'total_points'>;
 
-export default async function ScoreboardPage({ searchParams }: { searchParams: { tournament?: string } }) {
+export default async function ScoreboardPage({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
   const supabase = await createReadOnlyClient();
-  const tSlug = searchParams?.tournament;
+  const resolvedParams = await searchParams;
+  const tSlug = resolvedParams?.tournament;
 
   // 1. Fetch tournament to resolve ID and name. If no slug, active tournament is used by default in RPC, but we want the name.
   let tournamentId: string | undefined;
@@ -53,6 +54,23 @@ export default async function ScoreboardPage({ searchParams }: { searchParams: {
       tournamentName = activeT.name;
       mysteryMode = activeT.mystery_mode;
     }
+  }
+
+  if (!tournamentId) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 animate-fadeIn">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-monument-primary blur-[100px] opacity-20 rounded-full"></div>
+          <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 to-gray-500 dark:from-white dark:to-gray-500 tracking-[0.1em] uppercase relative z-10">
+            MONUMENT
+          </h1>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-sm md:text-base max-w-lg leading-relaxed">
+          The season has concluded. <br/>
+          Check back later for upcoming intramurals, or explore the archives above.
+        </p>
+      </div>
+    );
   }
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {

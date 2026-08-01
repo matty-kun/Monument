@@ -6,7 +6,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { Trophy, Flag, CalendarDays, LayoutDashboard, History, ChevronDown } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function Navbar() {
   const supabase = createClient();
@@ -42,11 +42,14 @@ export default function Navbar() {
   }, [supabase, setMounted]);
 
 
+  const searchParams = useSearchParams();
+  const tournamentParam = searchParams?.get('tournament');
+
   const navLinks = useMemo(() => [
-    { href: "/", label: "Podium", icon: Trophy },
-    { href: "/results", label: "Results", icon: Flag },
-    { href: "/schedule", label: "Schedule", icon: CalendarDays },
-  ], []);
+    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Podium", icon: Trophy },
+    { href: tournamentParam ? `/results?tournament=${tournamentParam}` : "/results", label: "Results", icon: Flag },
+    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Schedule", icon: CalendarDays },
+  ], [tournamentParam]);
 
   const getLinkClass = (href: string, isMobile: boolean = false) => {
     const isActive = mounted && pathname === href;

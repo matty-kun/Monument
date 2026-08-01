@@ -7,6 +7,8 @@ import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { FaTable, FaThLarge, FaSearch, FaMapMarkerAlt, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { useTournament } from "@/components/AdminTournamentProvider";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 
 interface Venue {
   id: string;
@@ -15,6 +17,7 @@ interface Venue {
 
 export default function VenuesPage() {
   const supabase = createClient();
+  const { selectedTournament } = useTournament();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -70,6 +73,8 @@ export default function VenuesPage() {
     if (!searchQuery) return venues;
     return venues.filter(v => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [venues, searchQuery]);
+
+  if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
     <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">

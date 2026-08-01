@@ -7,6 +7,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaTag } from "react-icons/fa";
+import { useTournament } from "@/components/AdminTournamentProvider";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 
 interface Category {
   id: string;
@@ -15,6 +17,7 @@ interface Category {
 
 export default function CategoriesPage() {
   const supabase = createClient();
+  const { selectedTournament } = useTournament();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -70,6 +73,8 @@ export default function CategoriesPage() {
     if (!searchQuery) return categories;
     return categories.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [categories, searchQuery]);
+
+  if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
     <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">

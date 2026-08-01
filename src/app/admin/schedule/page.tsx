@@ -26,6 +26,7 @@ import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import DatePickerDropdown from "@/components/DatePickerDropdown";
 import TimePickerDropdown from "@/components/TimePickerDropdown";
 import { useTournament } from "@/components/AdminTournamentProvider";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 
 // --- Types ---
 interface Department {
@@ -394,6 +395,8 @@ export default function AdminSchedulePage() {
     return ev.name.length > 25 ? ev.name.substring(0, 25) + '...' : ev.name;
   };
 
+  if (!selectedTournament) return <EmptyTournamentState />;
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] overflow-hidden">
       <Toaster position="top-right" />
@@ -406,13 +409,15 @@ export default function AdminSchedulePage() {
             <p className="text-xs text-gray-500 uppercase font-bold tracking-widest mt-1">Schedules & Competition Management</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => { closeModal(); setShowFormModal(true); }}
-              className="flex items-center gap-2 px-6 py-3 bg-monument-primary hover:bg-monument-primary/95 text-white rounded-[1.2rem] shadow-xl shadow-monument-primary/20 transition-all text-xs font-black uppercase tracking-widest"
-            >
-              <Plus size={16} strokeWidth={3} />
-              <span>Create Schedule</span>
-            </button>
+            {!selectedTournament?.is_archived && (
+              <button
+                onClick={() => { closeModal(); setShowFormModal(true); }}
+                className="flex items-center gap-2 px-6 py-3 bg-monument-primary hover:bg-monument-primary/95 text-white rounded-[1.2rem] shadow-xl shadow-monument-primary/20 transition-all text-xs font-black uppercase tracking-widest"
+              >
+                <Plus size={16} strokeWidth={3} />
+                <span>Create Schedule</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -520,36 +525,38 @@ export default function AdminSchedulePage() {
                       </div>
                     </div>
 
-                    <div className="bg-gray-50/50 dark:bg-gray-900/40 px-8 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-end items-center gap-3">
-                       {dynStatus.status !== 'finished' ? (
-                         s.departments.length > 0 ? (
-                            <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
-                              <CheckCircle2 size={14} />
-                            </button>
+                    {!selectedTournament?.is_archived && (
+                      <div className="bg-gray-50/50 dark:bg-gray-900/40 px-8 py-3.5 border-t border-gray-100 dark:border-gray-700/50 flex justify-end items-center gap-3">
+                         {dynStatus.status !== 'finished' ? (
+                           s.departments.length > 0 ? (
+                              <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-emerald-100" title="Finish Match & Pick Winner">
+                                <CheckCircle2 size={14} />
+                              </button>
+                           ) : (
+                              <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams to finish match">
+                                 <CheckCircle2 size={14} />
+                              </div>
+                           )
                          ) : (
-                            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams to finish match">
-                               <CheckCircle2 size={14} />
-                            </div>
-                         )
-                       ) : (
-                         <button onClick={() => handleResetMatch(s.id)} className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Reset Match Status">
-                           <span className="text-sm">🔄</span>
-                         </button>
-                       )}
-                       {s.departments.length > 0 ? (
-                        <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
-                          <ClipboardEdit size={16} />
-                        </button>
-                       ) : (
-                        <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams first to manage results">
-                           <ClipboardEdit size={16} className="opacity-30" />
-                        </div>
-                       )}
-                       <button onClick={() => { 
-                         setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time?.substring(0,5) || "08:00"); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time?.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
-                       }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
-                       <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
-                    </div>
+                           <button onClick={() => handleResetMatch(s.id)} className="w-9 h-9 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Reset Match Status">
+                             <span className="text-sm">🔄</span>
+                           </button>
+                         )}
+                         {s.departments.length > 0 ? (
+                          <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-monument-primary/5 text-monument-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all" title="Manage Result">
+                            <ClipboardEdit size={16} />
+                          </button>
+                         ) : (
+                          <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 text-gray-300 rounded-full flex items-center justify-center border border-dashed border-gray-200 dark:border-gray-700 cursor-not-allowed" title="Assign teams first to manage results">
+                             <ClipboardEdit size={16} className="opacity-30" />
+                          </div>
+                         )}
+                         <button onClick={() => { 
+                           setEditingId(s.id); setEventId(s.event_id); setSelectedDepartments(s.departments); setVenueId(s.venue_id); setStartTime(s.start_time?.substring(0,5) || "08:00"); setEndTime(s.end_time ? s.end_time.substring(0,5) : ""); setIsWholeDay(Boolean(s.start_time?.startsWith("00:00") && s.end_time?.startsWith("23:59"))); setDate(s.date); if (s.end_date) setEndDate(s.end_date); setShowFormModal(true); 
+                         }} className="w-9 h-9 bg-amber-50 dark:bg-amber-900/20 text-yellow-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-yellow-100"><FaEdit /></button>
+                         <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all border border-rose-100"><FaTrash /></button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

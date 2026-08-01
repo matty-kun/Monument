@@ -41,6 +41,7 @@ interface LeaderboardClientPageProps {
 
 export default function LeaderboardClientPage({ initialLeaderboard, initialMysteryMode, tournamentId, tournamentName }: LeaderboardClientPageProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>(initialLeaderboard);
+  useEffect(() => setLeaderboard(initialLeaderboard), [initialLeaderboard]);
   // Initialised from SSR so there's no flash on first render
   const [mysteryMode, setMysteryMode] = useState<boolean>(initialMysteryMode);
   const supabase = createClient();

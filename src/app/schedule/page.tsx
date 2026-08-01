@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
 import ScheduleClientPage from "./ScheduleClientPage";
-import { getMysteryMode } from "@/utils/settings/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -117,18 +116,26 @@ const getDynamicStatus = (
   };
 };
 
-export default async function SchedulePage({ searchParams }: { searchParams: { tournament?: string } }) {
+export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
   const supabase = await createClient();
-  const tSlug = searchParams?.tournament;
+  const resolvedParams = await searchParams;
+  const tSlug = resolvedParams?.tournament;
 
   let tournamentId: string | undefined;
+  let mysteryMode = false;
 
   if (tSlug) {
-    const { data: tData } = await supabase.from('tournaments').select('id').eq('slug', tSlug).single();
-    if (tData) tournamentId = tData.id;
+    const { data: tData } = await supabase.from('tournaments').select('id, mystery_mode').eq('slug', tSlug).single();
+    if (tData) {
+      tournamentId = tData.id;
+      mysteryMode = tData.mystery_mode;
+    }
   } else {
-    const { data: activeT } = await supabase.from('tournaments').select('id').eq('is_active', true).single();
-    if (activeT) tournamentId = activeT.id;
+    const { data: activeT } = await supabase.from('tournaments').select('id, mystery_mode').eq('is_active', true).single();
+    if (activeT) {
+      tournamentId = activeT.id;
+      mysteryMode = activeT.mystery_mode;
+    }
   }
 
   // Fetch schedules
@@ -277,11 +284,27 @@ export default async function SchedulePage({ searchParams }: { searchParams: { t
     };
   };
 
-  const [schedules, { events, venues, categories, departments }, mysteryMode] =
+  if (!tournamentId) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 animate-fadeIn">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-monument-primary blur-[100px] opacity-20 rounded-full"></div>
+          <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 to-gray-500 dark:from-white dark:to-gray-500 tracking-[0.1em] uppercase relative z-10">
+            MONUMENT
+          </h1>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-sm md:text-base max-w-lg leading-relaxed">
+          The season has concluded. <br/>
+          Check back later for upcoming intramurals, or explore the archives above.
+        </p>
+      </div>
+    );
+  }
+
+  const [schedules, { events, venues, categories, departments }] =
     await Promise.all([
       fetchSchedules(), 
-      fetchFilterOptions(),
-      getMysteryMode()
+      fetchFilterOptions()
     ]);
 
   return (

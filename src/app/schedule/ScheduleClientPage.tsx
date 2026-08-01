@@ -80,12 +80,12 @@ export default function ScheduleClientPage({
     mysteryMode: initialMysteryMode
 }: ScheduleClientPageProps) {
   const [mysteryMode, setMysteryMode] = useState(initialMysteryMode || false);
-  const [schedules] = useState<Schedule[]>(initialSchedules);
+  const schedules = initialSchedules;
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(initialSchedules);
-  const [allEvents] = useState<Event[]>(initialEvents);
-  const [allVenues] = useState<Venue[]>(initialVenues);
-  const [allDepartments] = useState<Department[]>(initialDepartments);
-  const [allCategories] = useState<Category[]>(initialCategories);
+  const allEvents = initialEvents;
+  const allVenues = initialVenues;
+  const allDepartments = initialDepartments;
+  const allCategories = initialCategories;
   const [searchQuery, setSearchQuery] = useState("");
   const [statusTab, setStatusTab] = useState<'all' | 'ongoing' | 'upcoming' | 'finished'>('all');
   const [showRefresh, setShowRefresh] = useState(false);

@@ -8,6 +8,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Settings, LogOut, Medal, Flag, CalendarDays, Building2, Tags, MapPin, Users } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { useTournament } from "@/components/AdminTournamentProvider";
+import EmptyTournamentState from "@/components/EmptyTournamentState";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AdminDashboardPage() {
   const [recentSchedules, setRecentSchedules] = useState<any[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
   const [recentResults, setRecentResults] = useState<any[]>([]);
+  const [teamsData, setTeamsData] = useState<any[]>([]);
   const [stats, setStats] = useState({
     teams: 0,
     events: 0,
@@ -52,12 +54,14 @@ export default function AdminDashboardPage() {
         supabase.from("results").select("id, medal_type, department_id, events(name)").eq("tournament_id", selectedTournament.id).order("created_at", { ascending: false }).limit(5)
       ]);
 
-      const teamsData = teamsRes.data || [];
+      const fetchedTeamsData = teamsRes.data || [];
       const allResultsData = resultsRes.data || [];
+      
+      setTeamsData(fetchedTeamsData);
 
       // Calculate Standings
       const teamScores = new Map();
-      teamsData.forEach((t: any) => teamScores.set(t.department_id, { id: t.department_id, name: t.name, imageUrl: t.image_url, points: 0 }));
+      fetchedTeamsData.forEach((t: any) => teamScores.set(t.department_id, { id: t.department_id, name: t.name, imageUrl: t.image_url, points: 0 }));
 
       allResultsData.forEach((r: any) => {
         const deptId = r.department_id;
@@ -85,7 +89,7 @@ export default function AdminDashboardPage() {
       setRecentSchedules(upcoming);
 
       setStats({
-        teams: teamsData.length,
+        teams: fetchedTeamsData.length,
         events: eventsRes.count || 0,
         results: allResultsData.length,
         categories: categoriesRes.count || 0
@@ -107,7 +111,8 @@ export default function AdminDashboardPage() {
     if (!error) router.push("/");
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><BouncingBallsLoader /></div>;
+  if (loading) return <div className="flex justify-center items-center h-[60vh]"><BouncingBallsLoader /></div>;
+  if (!selectedTournament) return <EmptyTournamentState />;
 
   const StatCard = ({ label, value, icon, color }: { label: string, value: number, icon: any, color: string }) => {
     const Icon = icon;

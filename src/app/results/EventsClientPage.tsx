@@ -56,9 +56,9 @@ export default function EventsClientPage({ initialResults, initialCategories, my
       .substring(0, 3);
   };
 
-  const [results] = useState<ProcessedResult[]>(initialResults);
+  const results = initialResults;
+  const allCategories = initialCategories;
   const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>(initialResults);
-  const [allCategories] = useState(initialCategories);
   const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null; abbreviation?: string }[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");

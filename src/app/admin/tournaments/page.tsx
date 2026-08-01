@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useTournament, Tournament } from "@/components/AdminTournamentProvider";
-import { Trophy, Plus, Save, Trash2, CheckCircle } from "lucide-react";
+import { Trophy, Plus, Save, Trash2, CheckCircle, Archive } from "lucide-react";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function AdminTournamentsPage() {
   const supabase = createClient();
@@ -17,6 +18,10 @@ export default function AdminTournamentsPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
+  
+  // Archive Modal
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [tournamentToArchive, setTournamentToArchive] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTournaments();
@@ -74,6 +79,28 @@ export default function AdminTournamentsPage() {
     if (!error) {
       setLocalTournaments(localTournaments.map(t => t.id === id ? { ...t, mystery_mode: !currentValue } : t));
     }
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!tournamentToArchive) return;
+    setIsSaving(true);
+    
+    // Set is_archived = true and is_active = false
+    const { error } = await supabase
+      .from("tournaments")
+      .update({ is_archived: true, is_active: false })
+      .eq("id", tournamentToArchive);
+      
+    if (!error) {
+       localStorage.removeItem("selected_tournament_id");
+       window.location.reload();
+    } else {
+       alert("Failed to archive tournament.");
+    }
+    
+    setIsSaving(false);
+    setShowArchiveModal(false);
+    setTournamentToArchive(null);
   };
 
   if (loading) return <div className="flex justify-center items-center h-screen"><BouncingBallsLoader /></div>;
@@ -139,15 +166,20 @@ export default function AdminTournamentsPage() {
           <div key={tournament.id} className={`p-6 bg-white dark:bg-gray-800 rounded-2xl border-2 transition-all ${tournament.is_active ? 'border-monument-primary shadow-lg shadow-monument-primary/10' : 'border-gray-100 dark:border-gray-700'}`}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tournament.is_active ? 'bg-monument-primary/10 text-monument-primary' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}`}>
-                  <Trophy size={24} />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tournament.is_active ? 'bg-monument-primary/10 text-monument-primary' : tournament.is_archived ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}`}>
+                  {tournament.is_archived ? <Archive size={24} /> : <Trophy size={24} />}
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-black text-gray-800 dark:text-white">{tournament.name}</h3>
+                    <h3 className={`text-xl font-black ${tournament.is_archived ? 'text-gray-400 dark:text-gray-500 line-through decoration-2' : 'text-gray-800 dark:text-white'}`}>{tournament.name}</h3>
                     {tournament.is_active && (
                       <span className="bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md flex items-center gap-1">
                         <CheckCircle size={12} /> Active
+                      </span>
+                    )}
+                    {tournament.is_archived && (
+                      <span className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md flex items-center gap-1">
+                        <Archive size={12} /> Archived
                       </span>
                     )}
                   </div>
@@ -163,7 +195,7 @@ export default function AdminTournamentsPage() {
                   Mystery Mode: {tournament.mystery_mode ? 'ON' : 'OFF'}
                 </button>
                 
-                {!tournament.is_active && (
+                {!tournament.is_active && !tournament.is_archived && (
                   <button 
                     onClick={() => handleSetActive(tournament.id)}
                     disabled={isSaving}
@@ -172,11 +204,32 @@ export default function AdminTournamentsPage() {
                     Set Active
                   </button>
                 )}
+                
+                {!tournament.is_archived && (
+                  <button 
+                    onClick={() => {
+                      setTournamentToArchive(tournament.id);
+                      setShowArchiveModal(true);
+                    }}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-red-50 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-red-100"
+                  >
+                    Archive
+                  </button>
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
+      
+      <ConfirmModal 
+        isOpen={showArchiveModal}
+        onClose={() => setShowArchiveModal(false)}
+        onConfirm={handleConfirmArchive}
+        title="Archive Tournament"
+        message="Are you sure you want to archive this tournament? This will lock the tournament into Read-Only mode and it will no longer be active."
+      />
     </div>
   );
 }

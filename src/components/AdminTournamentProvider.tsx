@@ -9,6 +9,7 @@ export interface Tournament {
   slug: string;
   is_active: boolean;
   mystery_mode: boolean;
+  is_archived: boolean;
 }
 
 interface TournamentContextType {
@@ -45,8 +46,8 @@ export default function AdminTournamentProvider({ children }: { children: React.
 
       if (!error && data) {
         setTournaments(data);
-        const active = data.find(t => t.is_active) || data[0];
-        setActiveTournament(active || null);
+        const active = data.find(t => t.is_active) || null;
+        setActiveTournament(active);
 
         // Check local storage for previously selected
         const storedId = localStorage.getItem("selected_tournament_id");
@@ -55,10 +56,10 @@ export default function AdminTournamentProvider({ children }: { children: React.
           if (found) {
             setSelectedTournament(found);
           } else {
-            setSelectedTournament(active || null);
+            setSelectedTournament(active);
           }
         } else {
-          setSelectedTournament(active || null);
+          setSelectedTournament(active);
         }
       }
       setLoading(false);
