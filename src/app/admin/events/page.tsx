@@ -12,6 +12,7 @@ import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
+import { useTournament } from "@/components/AdminTournamentProvider";
 
 interface Category {
   id: string;
@@ -48,11 +49,13 @@ export default function ManageEventsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const { resolvedTheme } = useTheme();
   const supabase = createClient();
+  const { selectedTournament } = useTournament();
 
   const fetchEvents = useCallback(async () => {
-    const { data, error } = await supabase.from("events").select("id, name, icon, category, gender, division").order("name");
+    if (!selectedTournament) return;
+    const { data, error } = await supabase.from("events").select("id, name, icon, category, gender, division").eq("tournament_id", selectedTournament.id).order("name");
     if (!error) setEvents(data as Event[]);
-  }, [supabase]);
+  }, [supabase, selectedTournament]);
 
   const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase.from("categories").select("id, name").order("name");
@@ -60,14 +63,19 @@ export default function ManageEventsPage() {
   }, [supabase]);
 
   useEffect(() => {
-    fetchEvents();
-    fetchCategories();
-    document.title = "Manage Events | CITE FEST 2026";
-    const channel = supabase.channel('events-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => fetchEvents())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [fetchEvents, fetchCategories, supabase]);
+    if (selectedTournament) {
+      fetchEvents();
+      fetchCategories();
+      const channel = supabase.channel('events-db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => fetchEvents())
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [fetchEvents, fetchCategories, supabase, selectedTournament]);
+
+  useEffect(() => {
+     document.title = `Manage Events | ${selectedTournament?.name || "Admin"}`;
+  }, [selectedTournament]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,6 +122,7 @@ export default function ManageEventsPage() {
         gender: gender === "N/A" ? null : gender,
         division: division === "N/A" ? null : division,
         icon: finalIcon,
+        tournament_id: selectedTournament?.id,
       };
 
       if (editingId) {

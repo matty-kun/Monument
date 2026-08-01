@@ -16,11 +16,13 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
-  X
+  X,
+  Trophy
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTournament, Tournament } from "./AdminTournamentProvider";
 
 interface SidebarItem {
   href: string;
@@ -35,6 +37,7 @@ export default function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false); // Desktop
   const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
+  const { tournaments, selectedTournament, setSelectedTournament, activeTournament } = useTournament();
 
   useEffect(() => {
     async function fetchRole() {
@@ -49,6 +52,7 @@ export default function AdminSidebar() {
 
   const items: SidebarItem[] = [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, role: "super_admin" },
     { href: "/admin/results", label: "Results", icon: Medal },
     { href: "/admin/events", label: "Events", icon: Flag },
     { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
@@ -106,9 +110,28 @@ export default function AdminSidebar() {
                                 className="flex items-center gap-3"
                             >
                                 <Image src="/monument-logo.png" alt="Logo" width={40} height={40} className="rounded-lg" />
-                                <div className="flex flex-col whitespace-nowrap">
-                                    <span className="text-lg font-black text-monument-primary dark:text-violet-400 uppercase tracking-tighter leading-none whitespace-nowrap">CITE FEST 2026</span>
-                                    <span className="text-[0.6rem] font-bold text-gray-400 uppercase tracking-widest mt-1 whitespace-nowrap">Management</span>
+                                <div className="flex flex-col whitespace-nowrap overflow-hidden">
+                                    {tournaments.length > 0 ? (
+                                      <select 
+                                        value={selectedTournament?.id || ''} 
+                                        onChange={(e) => {
+                                          const t = tournaments.find(t => t.id === e.target.value);
+                                          if (t) setSelectedTournament(t);
+                                        }}
+                                        className="text-sm font-black text-monument-primary dark:text-violet-400 uppercase tracking-tighter leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer appearance-none outline-none hover:opacity-80 transition-opacity max-w-[150px] text-ellipsis"
+                                      >
+                                        {tournaments.map(t => (
+                                          <option key={t.id} value={t.id} className="bg-white dark:bg-gray-800 text-black dark:text-white text-sm">
+                                            {t.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <span className="text-lg font-black text-monument-primary dark:text-violet-400 uppercase tracking-tighter leading-none whitespace-nowrap">LOADING...</span>
+                                    )}
+                                    <span className="text-[0.6rem] font-bold text-gray-400 uppercase tracking-widest mt-1 whitespace-nowrap">
+                                      {selectedTournament?.is_active ? '● Active Season' : '○ Archived Season'}
+                                    </span>
                                 </div>
                             </motion.div>
                         )}

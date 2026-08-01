@@ -63,24 +63,40 @@ const getCategoryIcon = (categoryName: string | null): string => {
   return "🏆"; // Default icon
 };
 
-export default async function EventResultsPage() {
+export default async function EventResultsPage({ searchParams }: { searchParams: { tournament?: string } }) {
   const supabase = await createClient();
+  const tSlug = searchParams?.tournament;
+
+  let tournamentId: string | undefined;
+
+  if (tSlug) {
+    const { data: tData } = await supabase.from('tournaments').select('id').eq('slug', tSlug).single();
+    if (tData) tournamentId = tData.id;
+  } else {
+    const { data: activeT } = await supabase.from('tournaments').select('id').eq('is_active', true).single();
+    if (activeT) tournamentId = activeT.id;
+  }
 
   const fetchEventData = async (): Promise<{
     results: ProcessedResult[];
     categories: { id: string; name: string; icon?: string }[];
   }> => {
-    const { data: resultsData, error: resultsError } = await supabase
+    let query = supabase
       .from("results")
       .select(`
         id,
         created_at,
         department_id,
         medal_type,
-        events ( name, category, icon, division, gender ),
-        departments ( name, abbreviation, image_url )
-      `)
-      .order('created_at', { ascending: false });
+        events!inner ( name, category, icon, division, gender, tournament_id ),
+        tournament_departments ( name, abbreviation, image_url )
+      `);
+      
+    if (tournamentId) {
+       query = query.eq('tournament_id', tournamentId);
+    }
+    
+    const { data: resultsData, error: resultsError } = await query.order('created_at', { ascending: false });
 
     if (resultsError) {
       console.error("Error fetching event results:", resultsError);
@@ -95,9 +111,9 @@ export default async function EventResultsPage() {
       gender: r.events?.gender || null,
       event_icon: r.events?.icon || null,
       department_id: r.department_id || null,
-      department_name: r.departments?.name || null,
-      department_abbreviation: r.departments?.abbreviation || null,
-      department_image_url: r.departments?.image_url || undefined,
+      department_name: r.tournament_departments?.name || null,
+      department_abbreviation: r.tournament_departments?.abbreviation || null,
+      department_image_url: r.tournament_departments?.image_url || undefined,
       medal_type: r.medal_type,
       created_at: r.created_at,
     }));

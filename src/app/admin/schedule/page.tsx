@@ -25,6 +25,7 @@ import { formatTime } from "@/lib/utils";
 import SingleSelectDropdown from "@/components/SingleSelectDropdown";
 import DatePickerDropdown from "@/components/DatePickerDropdown";
 import TimePickerDropdown from "@/components/TimePickerDropdown";
+import { useTournament } from "@/components/AdminTournamentProvider";
 
 // --- Types ---
 interface Department {
@@ -113,8 +114,10 @@ export default function AdminSchedulePage() {
   const [scheduleToDeleteId, setScheduleToDeleteId] = useState<string | null>(null);
 
   const supabase = createClient();
+  const { selectedTournament } = useTournament();
 
   const fetchSchedules = useCallback(async () => {
+    if (!selectedTournament) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("schedules")
@@ -123,6 +126,7 @@ export default function AdminSchedulePage() {
         events (*),
         venues (*)
       `)
+      .eq("tournament_id", selectedTournament.id)
       .order("date", { ascending: true })
       .order("start_time", { ascending: true });
     
@@ -132,23 +136,27 @@ export default function AdminSchedulePage() {
   }, [supabase]);
 
   const fetchData = useCallback(async () => {
+    if (!selectedTournament) return;
     const [eventsRes, venuesRes, deptsRes, catRes] = await Promise.all([
-      supabase.from("events").select("*").order("name"),
+      supabase.from("events").select("*").eq("tournament_id", selectedTournament.id).order("name"),
       supabase.from("venues").select("*").order("name"),
-      supabase.from("departments").select("*").order("name"),
+      supabase.from("tournament_departments").select("id:department_id, name, abbreviation, image_url").eq("tournament_id", selectedTournament.id).order("name"),
       supabase.from("categories").select("id, name")
     ]);
 
     if (eventsRes.data) setEvents(eventsRes.data);
     if (venuesRes.data) setVenues(venuesRes.data);
-    if (deptsRes.data) setDepartments(deptsRes.data);
+    if (deptsRes.data) setDepartments(deptsRes.data as any[]);
     if (catRes.data) setCategories(catRes.data);
-  }, [supabase]);
+  }, [supabase, selectedTournament]);
 
   useEffect(() => {
-    fetchSchedules();
-    fetchData();
-  }, [fetchSchedules, fetchData]);
+    if (selectedTournament) {
+      fetchSchedules();
+      fetchData();
+      document.title = `Manage Schedule | ${selectedTournament.name}`;
+    }
+  }, [fetchSchedules, fetchData, selectedTournament]);
 
   const departmentMap = useMemo(() => new Map(departments.map(d => [d.name, d])), [departments]);
   const departmentIdMap = useMemo(() => new Map(departments.map(d => [d.id, d])), [departments]);
@@ -213,7 +221,8 @@ export default function AdminSchedulePage() {
       start_time: isWholeDay ? "00:00:00" : `${startTime}:00`,
       end_time: isWholeDay ? "23:59:59" : endTime ? `${endTime}:00` : null,
       departments: selectedDepartments,
-      status: 'scheduled' as const
+      status: 'scheduled' as const,
+      tournament_id: selectedTournament?.id
     };
 
     try {
@@ -285,10 +294,10 @@ export default function AdminSchedulePage() {
         // Auto-link: delete existing results for this event, then insert medals
         await supabase.from('results').delete().eq('event_id', resultMatch.event_id);
 
-        const resultsBatch: { event_id: string; department_id: string | null; medal_type: string; points: number }[] = [];
-        if (medalGoldId !== null && medalGoldId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalGoldId === '' ? null : medalGoldId, medal_type: 'gold', points: medalGoldId === '' ? 0 : 200 });
-        if (medalSilverId !== null && medalSilverId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalSilverId === '' ? null : medalSilverId, medal_type: 'silver', points: medalSilverId === '' ? 0 : 150 });
-        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalBronzeId === '' ? null : medalBronzeId, medal_type: 'bronze', points: medalBronzeId === '' ? 0 : 100 });
+        const resultsBatch: { event_id: string; department_id: string | null; medal_type: string; points: number, tournament_id: string }[] = [];
+        if (medalGoldId !== null && medalGoldId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalGoldId === '' ? null : medalGoldId, medal_type: 'gold', points: medalGoldId === '' ? 0 : 200, tournament_id: selectedTournament!.id });
+        if (medalSilverId !== null && medalSilverId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalSilverId === '' ? null : medalSilverId, medal_type: 'silver', points: medalSilverId === '' ? 0 : 150, tournament_id: selectedTournament!.id });
+        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalBronzeId === '' ? null : medalBronzeId, medal_type: 'bronze', points: medalBronzeId === '' ? 0 : 100, tournament_id: selectedTournament!.id });
 
         if (resultsBatch.length > 0) {
           const { error: resError } = await supabase.from('results').insert(resultsBatch);

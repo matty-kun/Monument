@@ -27,7 +27,7 @@ interface Event {
   name: string;
   abbreviation?: string;
   icon: string | null;
-  category: string | { name: string } | null; // Allow string for UUID
+  category: string | { name: string } | null;
   division: string | null;
   gender: string | null;
 }
@@ -61,7 +61,6 @@ interface Schedule {
 
 type ScheduleStatus = "live" | "scheduled" | "finished";
 
-// Type for the raw data from Supabase before normalization
 type RawScheduleFromSupabase = Omit<
   Schedule,
   "events" | "venues" | "departments"
@@ -118,12 +117,23 @@ const getDynamicStatus = (
   };
 };
 
-export default async function SchedulePage() {
+export default async function SchedulePage({ searchParams }: { searchParams: { tournament?: string } }) {
+  const supabase = await createClient();
+  const tSlug = searchParams?.tournament;
+
+  let tournamentId: string | undefined;
+
+  if (tSlug) {
+    const { data: tData } = await supabase.from('tournaments').select('id').eq('slug', tSlug).single();
+    if (tData) tournamentId = tData.id;
+  } else {
+    const { data: activeT } = await supabase.from('tournaments').select('id').eq('is_active', true).single();
+    if (activeT) tournamentId = activeT.id;
+  }
+
   // Fetch schedules
   const fetchSchedules = async () => {
-    const supabase = await createClient(); // FIXED: Added await
-
-    const { data, error } = await supabase
+    let query = supabase
       .from("schedules")
       .select(`
         id,
@@ -138,9 +148,15 @@ export default async function SchedulePage() {
         winner_id,
         score_a,
         score_b,
-        events ( id, name, icon, division, gender, category ),
+        events!inner ( id, name, icon, division, gender, category, tournament_id ),
         venues ( name )
-      `)
+      `);
+      
+    if (tournamentId) {
+      query = query.eq('tournament_id', tournamentId);
+    }
+    
+    const { data, error } = await query
       .order("date", { ascending: true })
       .order("start_time", { ascending: true });
 
@@ -166,10 +182,14 @@ export default async function SchedulePage() {
         return normalized as Schedule[];
       }
 
-      const { data: deptData, error: deptError } = await supabase
-        .from("departments")
-        .select("id, name, image_url, abbreviation")
-        .in("name", allDeptNames);
+      let deptQuery = supabase
+        .from("tournament_departments")
+        .select("id:department_id, name, image_url, abbreviation");
+        
+      if (tournamentId) {
+        deptQuery = deptQuery.eq("tournament_id", tournamentId);
+      }
+      const { data: deptData, error: deptError } = await deptQuery.in("name", allDeptNames);
 
       if (deptError) {
         console.warn("Error fetching departments:", deptError);
@@ -219,23 +239,34 @@ export default async function SchedulePage() {
     categories: Category[];
     departments: Department[];
   }> => {
-    const supabase = await createClient(); // FIXED: Added await
+    let eventsQuery = supabase
+      .from("events")
+      .select("id, name, icon, category, gender, division");
+      
+    if (tournamentId) {
+      eventsQuery = eventsQuery.eq("tournament_id", tournamentId);
+    }
+    eventsQuery = eventsQuery.order("category,name");
+
+    let deptQuery = supabase
+      .from("tournament_departments")
+      .select("id:department_id, name, image_url, abbreviation");
+      
+    if (tournamentId) {
+      deptQuery = deptQuery.eq("tournament_id", tournamentId);
+    }
+    deptQuery = deptQuery.order("name");
+
     const [
       { data: events },
       { data: venues },
       { data: categories },
       { data: departments },
     ] = await Promise.all([
-      supabase
-        .from("events")
-        .select("id, name, icon, category, gender, division")
-        .order("category,name"),
+      eventsQuery,
       supabase.from("venues").select("id, name").order("name"),
       supabase.from("categories").select("id, name").order("name"),
-      supabase
-        .from("departments")
-        .select("id, name, image_url, abbreviation")
-        .order("name"),
+      deptQuery,
     ]);
 
     return {

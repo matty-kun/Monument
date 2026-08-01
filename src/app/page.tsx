@@ -30,44 +30,74 @@ interface LeaderboardRow {
 
 type LeaderboardRpcResponse = Omit<LeaderboardRow, 'total_points'>;
 
-export default async function ScoreboardPage() {
+export default async function ScoreboardPage({ searchParams }: { searchParams: { tournament?: string } }) {
   const supabase = await createReadOnlyClient();
+  const tSlug = searchParams?.tournament;
+
+  // 1. Fetch tournament to resolve ID and name. If no slug, active tournament is used by default in RPC, but we want the name.
+  let tournamentId: string | undefined;
+  let tournamentName = "CITE FEST 2026";
+  let mysteryMode = false;
+
+  if (tSlug) {
+    const { data: tData } = await supabase.from('tournaments').select('id, name, mystery_mode').eq('slug', tSlug).single();
+    if (tData) {
+      tournamentId = tData.id;
+      tournamentName = tData.name;
+      mysteryMode = tData.mystery_mode;
+    }
+  } else {
+    const { data: activeT } = await supabase.from('tournaments').select('id, name, mystery_mode').eq('is_active', true).single();
+    if (activeT) {
+      tournamentId = activeT.id;
+      tournamentName = activeT.name;
+      mysteryMode = activeT.mystery_mode;
+    }
+  }
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {
-    // 1. Fetch the stats from the RPC
-    const { data: stats, error: statsError } = await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
+    // 1. Fetch the stats from the RPC (using specific ID if available)
+    const { data: stats, error: statsError } = tournamentId 
+      ? await supabase.rpc('get_leaderboard_by_tournament', { p_tournament_id: tournamentId }).returns<LeaderboardRpcResponse[]>()
+      : await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
+
     if (statsError || !stats) {
       console.error("Error fetching leaderboard stats:", statsError);
       return [];
     }
     
-    // 2. Fetch all departments to get abbreviations and mascots
-    const { data: departments, error: deptError } = await supabase.from('departments').select('id, abbreviation, mascot_url');
+    // 2. Fetch all tournament departments to get abbreviations, logos and mascots
+    const { data: departments, error: deptError } = await supabase.from('tournament_departments')
+      .select('department_id, abbreviation, image_url, mascot_url')
+      .eq('tournament_id', tournamentId);
     if (deptError) {
       console.error("Error fetching department abbreviations:", deptError);
     }
     
-    const deptMetaMap = new Map((departments as any[])?.map(d => [d.id, { abbr: d.abbreviation, mascot: d.mascot_url }]) || []);
+    const deptMetaMap = new Map((departments as any[])?.map(d => [d.department_id, { abbr: d.abbreviation, image: d.image_url, mascot: d.mascot_url }]) || []);
 
     if (!Array.isArray(stats)) return [];
 
     const calculated = stats.map((row: LeaderboardRpcResponse) => ({
       ...row,
       abbreviation: deptMetaMap.get(row.id)?.abbr || null,
+      image_url: deptMetaMap.get(row.id)?.image || row.image_url,
       mascot_url: deptMetaMap.get(row.id)?.mascot || null,
       total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
     }));
     return calculated;
   };
   
-  const [leaderboard, mysteryMode] = await Promise.all([
-    fetchLeaderboard(),
-    getMysteryMode(),
-  ]);
+  const leaderboard = await fetchLeaderboard();
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <LeaderboardClientPage initialLeaderboard={leaderboard} initialMysteryMode={mysteryMode} />
+      <LeaderboardClientPage 
+        initialLeaderboard={leaderboard} 
+        initialMysteryMode={mysteryMode} 
+        tournamentId={tournamentId} 
+        tournamentName={tournamentName}
+      />
     </div>
   );
 }

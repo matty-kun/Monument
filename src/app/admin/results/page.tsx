@@ -9,6 +9,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Ca
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
+import { useTournament } from "@/components/AdminTournamentProvider";
 
 interface Department {
   id: string;
@@ -55,16 +56,19 @@ export default function AddResultPage() {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { selectedTournament } = useTournament();
 
   const supabase = createClient();
 
   const fetchDropdownData = useCallback(async () => {
+    if (!selectedTournament) return;
+    
     const { data: deptData } = await supabase
-      .from("departments")
-      .select("id, name, image_url")
-      .not("name", "ilike", "No Team")
-      .not("name", "ilike", "No Participant");
-    const { data: eventData } = await supabase.from("events").select("id, name, icon, category").order("category,name");
+      .from("tournament_departments")
+      .select("id:department_id, name, image_url, abbreviation")
+      .eq("tournament_id", selectedTournament.id);
+      
+    const { data: eventData } = await supabase.from("events").select("id, name, icon, category").eq("tournament_id", selectedTournament.id).order("category,name");
     const { data: categoriesData } = await supabase.from("categories").select("id, name");
     if (deptData) setDepartments(deptData);
     if (eventData) setEvents(eventData);
@@ -73,17 +77,27 @@ export default function AddResultPage() {
     // Fetch recent results
     const { data: recentData } = await supabase
       .from('results')
-      .select('id, event_id, department_id, medal_type, departments (id, name, image_url, abbreviation)')
+      .select('id, event_id, department_id, medal_type, events!inner(tournament_id)')
+      .eq('tournament_id', selectedTournament.id)
       .order('created_at', { ascending: false })
       .limit(20);
-    
-    if (recentData) setRecentResults(recentData as ResultWithDepartment[]);
-  }, [supabase]);
+      
+    if (recentData) {
+      // Manually map department info since it's now in tournament_departments
+      const mappedData = recentData.map(r => ({
+        ...r,
+        departments: deptData?.find(d => d.id === r.department_id) || null
+      }));
+      setRecentResults(mappedData as any[]);
+    }
+  }, [supabase, selectedTournament]);
 
   useEffect(() => {
-    fetchDropdownData();
-    document.title = "Manage Results | CITE FEST 2026";
-  }, [fetchDropdownData]);
+    if (selectedTournament) {
+      fetchDropdownData();
+      document.title = `Manage Results | ${selectedTournament.name}`;
+    }
+  }, [fetchDropdownData, selectedTournament]);
 
   const fetchEventData = useCallback(async (currentEventId?: string) => {
     const idToFetch = currentEventId || eventId;
@@ -95,7 +109,7 @@ export default function AddResultPage() {
     // Fetch both schedule for competing depts and existing results for this event
     const [scheduleRes, resultsRes] = await Promise.all([
       supabase.from('schedules').select('departments').eq('event_id', idToFetch).single(),
-      supabase.from('results').select('id, event_id, department_id, medal_type, departments (id, name, image_url, abbreviation)').eq('event_id', idToFetch)
+      supabase.from('results').select('id, event_id, department_id, medal_type').eq('event_id', idToFetch)
     ]);
 
     const { data: schedule, error: scheduleError } = scheduleRes;
@@ -104,7 +118,12 @@ export default function AddResultPage() {
     if (resultsError) {
       console.error("Error fetching existing results:", resultsError);
     } else if (existingResults) {
-      setCurrentEventResults(existingResults as ResultWithDepartment[]);
+      // map departments
+      const mappedResults = existingResults.map(r => ({
+        ...r,
+        departments: departments.find(d => d.id === r.department_id) || null
+      }));
+      setCurrentEventResults(mappedResults as ResultWithDepartment[]);
       
       // Pre-fill podium from existing results
       const gold = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'gold');
@@ -153,7 +172,7 @@ export default function AddResultPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchEventData, fetchDropdownData, supabase]);
+  }, [fetchEventData, fetchDropdownData, supabase, selectedTournament]);
 
   const groupedRecentResults = useMemo(() => {
     // 1. Group the results by event_id
@@ -215,9 +234,9 @@ export default function AddResultPage() {
       // 2. Prepare the new results batch (Only the selected medals)
       const resultsBatch = [];
 
-      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? null : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200 });
-      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? null : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150 });
-      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? null : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100 });
+      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? null : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200, tournament_id: selectedTournament.id });
+      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? null : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150, tournament_id: selectedTournament.id });
+      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? null : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100, tournament_id: selectedTournament.id });
 
       // 3. Perform Bulk Insert
       if (resultsBatch.length > 0) {

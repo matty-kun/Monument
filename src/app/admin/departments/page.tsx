@@ -10,6 +10,7 @@ import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaShieldAlt } from "react-icons/fa";
+import { useTournament } from "@/components/AdminTournamentProvider";
 
 interface Department {
   id: string;
@@ -31,23 +32,26 @@ export default function DepartmentsPage() {
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
   const [searchQuery, setSearchQuery] = useState("");
+  const { selectedTournament } = useTournament();
 
   const supabase = createClient();
 
   const fetchDepartments = useCallback(async () => {
+    if (!selectedTournament) return;
     const { data, error } = await supabase
-      .from("departments")
-      .select("id, name, courses:abbreviation, image_url")
-      .not("name", "ilike", "No Team")
-      .not("name", "ilike", "No Participant")
+      .from("tournament_departments")
+      .select("id, department_id, name, courses:abbreviation, image_url")
+      .eq("tournament_id", selectedTournament.id)
       .order("name");
     if (!error && data) setDepartments(data);
-  }, [supabase]);
+  }, [supabase, selectedTournament]);
 
   useEffect(() => {
-    fetchDepartments();
-    document.title = "Manage Teams | CITE FEST 2026";
-  }, [fetchDepartments]);
+    if (selectedTournament) {
+      fetchDepartments();
+      document.title = `Manage Teams | ${selectedTournament.name}`;
+    }
+  }, [fetchDepartments, selectedTournament]);
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -86,13 +90,28 @@ export default function DepartmentsPage() {
       else if (photoRemoved) payload.image_url = null;
 
       if (editingId) {
-        const { error } = await supabase.from("departments").update(payload).eq("id", editingId);
+        // Update tournament_departments
+        const { error } = await supabase.from("tournament_departments").update(payload).eq("id", editingId);
         if (error) throw error;
-        toast.success("Team updated!");
+        toast.success("Team updated for this tournament!");
       } else {
-        const { error } = await supabase.from("departments").insert([payload]);
+        // Find or create in global departments
+        const { data: globalDept, error: globalError } = await supabase
+          .from("departments")
+          .upsert([{ name: payload.name, abbreviation: payload.abbreviation, image_url: payload.image_url }], { onConflict: 'name' })
+          .select()
+          .single();
+          
+        if (globalError) throw globalError;
+
+        // Insert into tournament_departments
+        const { error } = await supabase.from("tournament_departments").insert([{
+          ...payload,
+          tournament_id: selectedTournament?.id,
+          department_id: globalDept.id
+        }]);
         if (error) throw error;
-        toast.success("Team added!");
+        toast.success("Team added to tournament!");
       }
       resetForm();
       fetchDepartments();
@@ -116,9 +135,9 @@ export default function DepartmentsPage() {
         const urlParts = dept.image_url.split('/');
         await deleteImageAction('department-images', `departments/${urlParts[urlParts.length - 1]}`);
       }
-      const { error } = await supabase.from("departments").delete().eq("id", departmentToDeleteId);
+      const { error } = await supabase.from("tournament_departments").delete().eq("id", departmentToDeleteId);
       if (error) throw error;
-      toast.success("Team deleted!");
+      toast.success("Team removed from tournament!");
       fetchDepartments();
     } catch (error: any) { toast.error(error.message); }
     setShowConfirmModal(false);

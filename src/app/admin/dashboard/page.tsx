@@ -7,10 +7,12 @@ import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { Settings, LogOut, Medal, Flag, CalendarDays, Building2, Tags, MapPin, Users } from "lucide-react";
 import { formatTime } from "@/lib/utils";
+import { useTournament } from "@/components/AdminTournamentProvider";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { selectedTournament } = useTournament();
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -34,18 +36,20 @@ export default function AdminDashboardPage() {
         return;
       }
 
+      if (!selectedTournament) return;
+
       // Fetch Profile/Role
       const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
       setRole(profile?.role || "user");
 
       // Fetch Stats and Data for Views
       const [teamsRes, eventsRes, resultsRes, categoriesRes, schedulesData, recentResData] = await Promise.all([
-        supabase.from("departments").select("id, name, image_url"),
-        supabase.from("events").select("id", { count: 'exact', head: true }),
-        supabase.from("results").select("medal_type, departments(id, name, image_url), events(name)"),
+        supabase.from("tournament_departments").select("department_id, name, image_url").eq("tournament_id", selectedTournament.id),
+        supabase.from("events").select("id", { count: 'exact', head: true }).eq("tournament_id", selectedTournament.id),
+        supabase.from("results").select("medal_type, department_id, events(name)").eq("tournament_id", selectedTournament.id),
         supabase.from("categories").select("id", { count: 'exact', head: true }),
-        supabase.from("schedules").select("id, start_time, end_time, date, departments, events(icon, name), venues(name)").order("date", { ascending: true }),
-        supabase.from("results").select("id, medal_type, departments(name), events(name)").order("created_at", { ascending: false }).limit(5)
+        supabase.from("schedules").select("id, start_time, end_time, date, departments, events(icon, name), venues(name)").eq("tournament_id", selectedTournament.id).order("date", { ascending: true }),
+        supabase.from("results").select("id, medal_type, department_id, events(name)").eq("tournament_id", selectedTournament.id).order("created_at", { ascending: false }).limit(5)
       ]);
 
       const teamsData = teamsRes.data || [];
@@ -53,12 +57,12 @@ export default function AdminDashboardPage() {
 
       // Calculate Standings
       const teamScores = new Map();
-      teamsData.forEach((t: any) => teamScores.set(t.id, { id: t.id, name: t.name, imageUrl: t.image_url, points: 0 }));
+      teamsData.forEach((t: any) => teamScores.set(t.department_id, { id: t.department_id, name: t.name, imageUrl: t.image_url, points: 0 }));
 
       allResultsData.forEach((r: any) => {
-        const dept = Array.isArray(r.departments) ? r.departments[0] : r.departments;
-        if (dept) {
-          const existing = teamScores.get(dept.id);
+        const deptId = r.department_id;
+        if (deptId) {
+          const existing = teamScores.get(deptId);
           if (existing) {
             if (r.medal_type === 'gold') existing.points += 200;
             if (r.medal_type === 'silver') existing.points += 150;
@@ -90,8 +94,8 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
     fetchDashboardData();
-    document.title = "Dashboard | CITE FEST 2026 Management";
-  }, [router, supabase]);
+    document.title = "Dashboard | Admin Management";
+  }, [router, supabase, selectedTournament]);
 
   const handleCardClick = (href: string) => {
     setLoadingCard(href);
@@ -129,7 +133,7 @@ export default function AdminDashboardPage() {
             Dashboard
           </h1>
           <p className="text-sm text-gray-500 font-medium tracking-wide">
-            CITE FEST 2026 Management Control
+            {selectedTournament?.name || "Management Control"}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -239,9 +243,9 @@ export default function AdminDashboardPage() {
            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-6">Recent Results</h2>
            <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-96">
               {recentResults.length > 0 ? recentResults.map((r: any) => {
-                const dept = Array.isArray(r.departments) ? r.departments[0] : r.departments;
                 const isGold = r.medal_type === 'gold';
                 const isSilver = r.medal_type === 'silver';
+                const teamName = teamsData.find((t: any) => t.department_id === r.department_id)?.name || 'Unknown';
                 return (
                   <div key={r.id} className="p-4 bg-gray-50/50 dark:bg-gray-900/30 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-center gap-4">
                      <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-2xl ${isGold ? 'bg-yellow-400' : isSilver ? 'bg-gray-300' : 'bg-amber-600'}`}>
@@ -249,7 +253,7 @@ export default function AdminDashboardPage() {
                      </div>
                      <div className="flex-1">
                         <h4 className="text-sm font-black text-gray-800 dark:text-gray-100">{r.events?.name || 'Unknown Event'}</h4>
-                        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Won By {dept?.name || 'Unknown'}</p>
+                        <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">Won By {teamName}</p>
                      </div>
                   </div>
                 )
