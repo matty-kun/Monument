@@ -14,6 +14,10 @@ module.exports = {
         'monument-gold': '#d6b14e',
         'monument-dark': '#4c1d95',
         'monument-dark-uniform': '#111827',
+        'apple-light-bg': '#F2F2F7',
+        'apple-light-card': '#FFFFFF',
+        'apple-dark-bg': '#000000',
+        'apple-dark-card': '#1C1C1E',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

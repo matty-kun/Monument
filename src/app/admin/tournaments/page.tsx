@@ -1,107 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { useTournament, Tournament } from "@/components/AdminTournamentProvider";
 import { Trophy, Plus, Save, Trash2, CheckCircle, Archive } from "lucide-react";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useTournamentsViewModel } from "@/features/admin/tournaments/viewModels/useTournamentsViewModel";
 
 export default function AdminTournamentsPage() {
-  const supabase = createClient();
-  const { tournaments, setSelectedTournament } = useTournament();
-  const [localTournaments, setLocalTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // New tournament form
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newSlug, setNewSlug] = useState("");
-  
-  // Archive Modal
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [tournamentToArchive, setTournamentToArchive] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchTournaments();
-  }, []);
-
-  async function fetchTournaments() {
-    setLoading(true);
-    const { data, error } = await supabase.from("tournaments").select("*").order("created_at", { ascending: false });
-    if (!error && data) {
-      setLocalTournaments(data);
-    }
-    setLoading(false);
-  }
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    
-    // First tournament created shouldn't necessarily be active unless we want it to, but let's make it active if it's the first
-    const isFirst = localTournaments.length === 0;
-
-    const { data, error } = await supabase.from("tournaments").insert([
-      { name: newName, slug: newSlug, is_active: isFirst }
-    ]).select();
-
-    if (!error && data) {
-      setLocalTournaments([data[0], ...localTournaments]);
-      setNewName("");
-      setNewSlug("");
-      setShowNewForm(false);
-      
-      // We should probably redirect or reload to update the context, but window.location.reload is easiest for global state refresh
-      window.location.reload(); 
-    } else {
-      alert("Error creating tournament. Ensure slug is unique.");
-    }
-    setIsSaving(false);
-  };
-
-  const handleSetActive = async (id: string) => {
-    setIsSaving(true);
-    // Set all to false
-    await supabase.from("tournaments").update({ is_active: false }).neq("id", "00000000-0000-0000-0000-000000000000");
-    // Set selected to true
-    const { error } = await supabase.from("tournaments").update({ is_active: true }).eq("id", id);
-    
-    if (!error) {
-       window.location.reload();
-    }
-    setIsSaving(false);
-  };
-
-  const handleToggleMysteryMode = async (id: string, currentValue: boolean) => {
-    const { error } = await supabase.from("tournaments").update({ mystery_mode: !currentValue }).eq("id", id);
-    if (!error) {
-      setLocalTournaments(localTournaments.map(t => t.id === id ? { ...t, mystery_mode: !currentValue } : t));
-    }
-  };
-
-  const handleConfirmArchive = async () => {
-    if (!tournamentToArchive) return;
-    setIsSaving(true);
-    
-    // Set is_archived = true and is_active = false
-    const { error } = await supabase
-      .from("tournaments")
-      .update({ is_archived: true, is_active: false })
-      .eq("id", tournamentToArchive);
-      
-    if (!error) {
-       localStorage.removeItem("selected_tournament_id");
-       window.location.reload();
-    } else {
-       alert("Failed to archive tournament.");
-    }
-    
-    setIsSaving(false);
-    setShowArchiveModal(false);
-    setTournamentToArchive(null);
-  };
+  const {
+    localTournaments,
+    loading,
+    isSaving,
+    showNewForm,
+    setShowNewForm,
+    newName,
+    setNewName,
+    newSlug,
+    setNewSlug,
+    showArchiveModal,
+    setShowArchiveModal,
+    tournamentToArchive,
+    setTournamentToArchive,
+    handleCreate,
+    handleSetActive,
+    handleToggleMysteryMode,
+    handleConfirmArchive,
+  } = useTournamentsViewModel();
 
   if (loading) return <div className="flex justify-center items-center h-screen"><BouncingBallsLoader /></div>;
 

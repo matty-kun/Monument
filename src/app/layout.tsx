@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Suspense } from "react";
 
 export const metadata = {
   metadataBase: new URL("https://citefest.vercel.app"),
@@ -40,7 +41,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
         <ThemeProvider>
-          <Navbar />
+          <Suspense fallback={null}>
+            <Navbar />
+          </Suspense>
           <main className="flex-grow">
             {children}
           </main>

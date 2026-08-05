@@ -1,53 +1,11 @@
 'use client';
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { EyeOff, Eye, Wand2, ShieldAlert } from "lucide-react";
-import { toggleMysteryMode } from "@/utils/settings/actions";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSettingsViewModel } from "@/features/admin/settings/viewModels/useSettingsViewModel";
 
 export default function AdminSettingsPage() {
-  const supabase = createClient();
-  const [mysteryMode, setMysteryMode] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.title = "Settings | CITE FEST 2026 Management";
-    async function fetchSetting() {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "mystery_mode")
-        .single();
-
-      if (error) {
-        console.error("Error fetching mystery_mode:", error);
-        setMysteryMode(false);
-      } else {
-        setMysteryMode(data?.value === "true");
-      }
-      setLoading(false);
-    }
-    fetchSetting();
-  }, [supabase]);
-
-  const handleToggle = async () => {
-    if (mysteryMode === null) return;
-    setSaving(true);
-    setFeedback(null);
-    const nextValue = !mysteryMode;
-    const result = await toggleMysteryMode(nextValue);
-    if (result.success) {
-      setMysteryMode(nextValue);
-      setFeedback(nextValue ? "Mystery Mode is now ON. Standings are hidden from the public." : "Mystery Mode is now OFF. Standings are visible to everyone.");
-    } else {
-      setFeedback(`Error: ${result.error}`);
-    }
-    setSaving(false);
-    setTimeout(() => setFeedback(null), 5000);
-  };
+  const { mysteryMode, loading, saving, feedback, handleToggle } = useSettingsViewModel();
 
   return (
     <div className="space-y-10 animate-fadeIn">

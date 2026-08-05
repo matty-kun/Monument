@@ -1,119 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import Podium from "@/components/Podium";
 import TeamHoverCard from "@/components/TeamHoverCard";
 import Image from "next/image";
-import { calculateTotalPoints } from "@/utils/scoring";
 import { Trophy, Sparkles } from "lucide-react";
-
-interface LeaderboardRow {
-  id: string;
-  name: string;
-  abbreviation: string | null;
-  image_url?: string;
-  mascot_url?: string | null;
-  total_points: number;
-  golds: number;
-  silvers: number;
-  bronzes: number;
-}
-
-interface LeaderboardRPCData {
-  id: string;
-  name: string;
-  abbreviation: string | null;
-  image_url?: string;
-  mascot_url?: string | null;
-  golds: number;
-  silvers: number;
-  bronzes: number;
-}
-
-interface LeaderboardClientPageProps {
-  initialLeaderboard: LeaderboardRow[];
-  initialMysteryMode: boolean;
-  tournamentId?: string;
-  tournamentName: string;
-}
+import { useLeaderboardViewModel } from "@/features/leaderboard/viewModels/useLeaderboardViewModel";
+import { LeaderboardClientPageProps } from "@/features/leaderboard/models/leaderboardTypes";
 
 export default function LeaderboardClientPage({ initialLeaderboard, initialMysteryMode, tournamentId, tournamentName }: LeaderboardClientPageProps) {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>(initialLeaderboard);
-  useEffect(() => setLeaderboard(initialLeaderboard), [initialLeaderboard]);
-  // Initialised from SSR so there's no flash on first render
-  const [mysteryMode, setMysteryMode] = useState<boolean>(initialMysteryMode);
-  const supabase = createClient();
-
-  const fetchLeaderboard = useCallback(async () => {
-    const { data: stats, error: statsError } = tournamentId
-      ? await supabase.rpc("get_leaderboard_by_tournament", { p_tournament_id: tournamentId })
-      : await supabase.rpc("get_leaderboard");
-      
-    if (statsError || !stats) {
-      console.error("Error fetching leaderboard stats:", statsError);
-      return;
-    }
-
-    const { data: departments, error: deptError } = await supabase
-      .from('tournament_departments')
-      .select('department_id, abbreviation, image_url, mascot_url')
-      .eq('tournament_id', tournamentId);
-      
-    if (deptError) {
-      console.error("Error fetching abbreviations:", deptError);
-    }
-
-    const deptMetaMap = new Map((departments as any[])?.map(d => [d.department_id, { abbr: d.abbreviation, image: d.image_url, mascot: d.mascot_url }]) || []);
-
-    if (!Array.isArray(stats)) return;
-
-    const calculated = stats
-      .filter((row: LeaderboardRPCData) => row.name !== "No Team")
-      .map((row: LeaderboardRPCData) => ({
-        ...row,
-        abbreviation: deptMetaMap.get(row.id)?.abbr || null,
-        image_url: deptMetaMap.get(row.id)?.image || row.image_url,
-        mascot_url: deptMetaMap.get(row.id)?.mascot || null,
-        total_points: calculateTotalPoints(row.golds, row.silvers, row.bronzes),
-      }));
-    setLeaderboard(calculated);
-  }, [supabase]);
-
-  useEffect(() => {
-    const resultsChannel = supabase
-      .channel("results-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "results", filter: `tournament_id=eq.${tournamentId}` }, fetchLeaderboard)
-      .subscribe();
-
-    const departmentsChannel = supabase
-      .channel("departments-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tournament_departments", filter: `tournament_id=eq.${tournamentId}` }, fetchLeaderboard)
-      .subscribe();
-
-    // 🔮 Subscribe to Mystery Mode changes in realtime
-    const settingsChannel = supabase
-      .channel("settings-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tournaments", filter: `id=eq.${tournamentId}` },
-        (payload: any) => {
-          if (payload.new) {
-            setMysteryMode(payload.new.mystery_mode);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(resultsChannel);
-      supabase.removeChannel(departmentsChannel);
-      supabase.removeChannel(settingsChannel);
-    };
-  }, [fetchLeaderboard, supabase, tournamentId]);
-
-  const hasScores = leaderboard.some(dept => dept.total_points > 0);
+  const { leaderboard, mysteryMode, hasScores } = useLeaderboardViewModel({
+    initialLeaderboard,
+    initialMysteryMode,
+    tournamentId
+  });
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 text-black dark:text-gray-200">
@@ -290,68 +190,68 @@ export default function LeaderboardClientPage({ initialLeaderboard, initialMyste
                 </div>
 
                 {/* Leaderboard Cards (Rank 4+) */}
-                <div className="w-full max-w-5xl mx-auto px-4 py-8">
-                  <AnimatePresence>
-                    <motion.div 
-                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                      initial="hidden"
-                      animate="visible"
-                      variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-                    >
-                      {leaderboard.slice(3).map((dept, index) => (
-                        <motion.div
-                          key={dept.id}
-                          layout
-                          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-5 flex flex-col justify-between"
-                        >
-                          <TeamHoverCard teamId={dept.id}>
-                            <div className="w-full text-left group-hover:scale-[1.02] transition-transform duration-300">
-                              <div className="absolute -top-10 -left-0 text-[150px] font-black text-gray-100 dark:text-gray-700/50 z-0 select-none pointer-events-none">
-                                {index + 4}
-                              </div>
-
-                              <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex items-center gap-4 mb-4">
-                                  {dept.image_url ? (
-                                    <Image 
-                                      src={dept.image_url} 
-                                      alt={dept.name}
-                                      width={48}
-                                      height={48}
-                                      className="w-12 h-12 object-contain drop-shadow-sm"
-                                    />
-                                  ) : (
-                                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center shadow-md">
-                                      <span className="text-2xl text-gray-400">🏫</span>
-                                    </div>
-                                  )}
-                                  <div className="flex flex-col">
-                                    <span className="text-base font-bold text-black group-hover:text-monument-primary transition-colors dark:text-gray-100 leading-tight" title={dept.name}>
-                                      {dept.name}
-                                    </span>
-                                    {dept.abbreviation && (
-                                      <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
-                                        {dept.abbreviation}
-                                      </span>
+                <div className="w-full max-w-4xl mx-auto px-4 py-8">
+                  <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                    <AnimatePresence>
+                      <motion.div 
+                        className="flex flex-col"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                      >
+                        {leaderboard.slice(3).map((dept, index) => (
+                          <motion.div
+                            key={dept.id}
+                            layout
+                            variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className={`relative flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${index !== leaderboard.slice(3).length - 1 ? 'border-b border-gray-100 dark:border-gray-700/50' : ''}`}
+                          >
+                            <TeamHoverCard teamId={dept.id}>
+                              <div className="w-full flex items-center justify-between group">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-8 flex justify-center">
+                                    <span className="text-xl font-black text-gray-400 dark:text-gray-500">{index + 4}</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-3">
+                                    {dept.image_url ? (
+                                      <Image 
+                                        src={dept.image_url} 
+                                        alt={dept.name}
+                                        width={40}
+                                        height={40}
+                                        className="w-10 h-10 object-contain drop-shadow-sm"
+                                      />
+                                    ) : (
+                                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                                        <span className="text-sm font-black text-gray-400">{dept.abbreviation?.slice(0, 2) || "??"}</span>
+                                      </div>
                                     )}
+                                    <div className="flex flex-col">
+                                      <span className="text-base font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight group-hover:text-monument-primary transition-colors leading-tight" title={dept.name}>
+                                        {dept.abbreviation || dept.name}
+                                      </span>
+                                      <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 font-bold uppercase tracking-widest hidden sm:inline">
+                                        {dept.name}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
 
-                                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                  <div className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-lg font-bold px-3 py-1 rounded-full group-hover:bg-monument-primary group-hover:text-white transition-colors">
+                                <div className="flex items-center gap-2">
+                                  <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white tabular-nums text-lg font-black px-4 py-1.5 rounded-full group-hover:bg-monument-primary group-hover:text-white transition-colors">
                                     {dept.total_points}
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </TeamHoverCard>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
+                            </TeamHoverCard>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
                 </div>
               </>
             ) : (

@@ -1,163 +1,27 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
-import { createClient } from "@/utils/supabase/client";
-import { Trophy } from "lucide-react";
-
-// Types
-interface ProcessedResult {
-  event_name: string;
-  category: string | null;
-  division: string | null;
-  gender: string | null;
-  event_icon: string | null;
-  department_id: string | null;
-  department_name: string | null;
-  department_abbreviation: string | null;
-  department_image_url?: string;
-  medal_type: "gold" | "silver" | "bronze";
-  created_at?: string;
-}
-
-interface WinnerInfo {
-  department_id: string | null;
-  department_name: string | null;
-  department_abbreviation: string | null;
-  image_url?: string;
-}
-
-interface GroupedResult {
-  icon: string | null;
-  category: string | null;
-  division: string | null;
-  gender: string | null;
-  winners: Partial<Record<"gold" | "silver" | "bronze", WinnerInfo>>;
-}
-
-interface EventsClientPageProps {
-  initialResults: ProcessedResult[];
-  initialCategories: { id: string; name: string; icon?: string }[];
-  mysteryMode?: boolean;
-}
+import { Trophy, Medal, Search, RefreshCw } from "lucide-react";
+import { Toaster } from "react-hot-toast";
+import { stringToColor } from "@/utils/colors";
+import { useResultsViewModel } from "@/features/results/viewModels/useResultsViewModel";
+import { EventsClientPageProps } from "@/features/results/models/resultsTypes";
 
 export default function EventsClientPage({ initialResults, initialCategories, mysteryMode: initialMysteryMode }: EventsClientPageProps) {
-  const [mysteryMode, setMysteryMode] = useState(initialMysteryMode || false);
-  // Helper to generate initials from team name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .filter(w => !['of', 'and', 'the'].includes(w.toLowerCase()))
-      .map(w => w[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 3);
-  };
-
-  const results = initialResults;
-  const allCategories = initialCategories;
-  const [filteredResults, setFilteredResults] = useState<ProcessedResult[]>(initialResults);
-  const [allDepartments, setAllDepartments] = useState<{ name: string; image_url: string | null; abbreviation?: string }[]>([]);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showRefresh, setShowRefresh] = useState(false);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('public-events-page')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'results' },
-        () => {
-          setShowRefresh(true);
-        }
-      )
-      .subscribe();
-
-    // 🔔 Subscribe to Mystery Mode changes in realtime
-    const mysterySub = supabase
-      .channel('app_settings_events')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'app_settings', filter: "key=eq.mystery_mode" },
-        (payload) => {
-          if (payload.new && (payload.new as any).key === 'mystery_mode') {
-            setMysteryMode((payload.new as any).value === 'true');
-          } else if (payload.eventType === 'DELETE') {
-            setMysteryMode(false);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(mysterySub);
-    };
-  }, [supabase]);
-
-  const getCategoryName = useCallback((categoryId: string | null) => {
-    if (!categoryId) return null;
-    return allCategories.find(c => c.id === categoryId)?.name || categoryId;
-  }, [allCategories]);
-
-  useEffect(() => {
-    let processed = [...results];
-
-    if (searchQuery) {
-      const lowercasedQuery = searchQuery.toLowerCase();
-      processed = processed.filter(r =>
-        r.event_name.toLowerCase().includes(lowercasedQuery) ||
-        (r.department_name || '').toLowerCase().includes(lowercasedQuery) ||
-        (r.department_abbreviation || '').toLowerCase().includes(lowercasedQuery) ||
-        (getCategoryName(r.category) || '').toLowerCase().includes(lowercasedQuery)
-      );
-    }
-
-    if (allDepartments.length === 0 && processed.length > 0) {
-      const departmentMap = new Map<string, { name: string; image_url: string | null; abbreviation: string }>();
-      results.forEach(r => {
-        if (r.department_name && !departmentMap.has(r.department_name)) {
-          departmentMap.set(r.department_name, {
-            name: r.department_name,
-            image_url: r.department_image_url || null,
-            abbreviation: r.department_abbreviation || "",
-          });
-        }
-      });
-      setAllDepartments(Array.from(departmentMap.values()));
-    }
-
-    setFilteredResults(processed);
-  }, [results, searchQuery, allDepartments.length, getCategoryName]);
-
-  const grouped = useMemo(() => {
-    return filteredResults.reduce((acc, result) => {
-      const eventCategoryName = getCategoryName(result.category);
-      if (!acc[result.event_name]) {
-        acc[result.event_name] = {
-          icon: result.event_icon,
-          category: eventCategoryName,
-          division: result.division,
-          gender: result.gender,
-          winners: {},
-        };
-      }
-      if (result.medal_type) {
-        acc[result.event_name].winners[result.medal_type] = {
-          department_id: result.department_id,
-          department_name: result.department_name,
-          department_abbreviation: result.department_abbreviation,
-          image_url: result.department_image_url,
-        };
-      }
-      return acc;
-    }, {} as Record<string, GroupedResult>);
-  }, [filteredResults, getCategoryName]);
+  const {
+    mysteryMode,
+    searchQuery,
+    setSearchQuery,
+    showRefresh,
+    refreshPage,
+    grouped,
+    getInitials,
+  } = useResultsViewModel({
+    initialResults,
+    initialCategories,
+    initialMysteryMode
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -218,35 +82,48 @@ export default function EventsClientPage({ initialResults, initialCategories, my
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {Object.entries(grouped).map(([eventName, data]) => {
+              const goldWinner = data.winners['gold'];
+              const goldColor = goldWinner && goldWinner.department_id ? stringToColor(goldWinner.department_abbreviation || goldWinner.department_name || "") : 'rgba(150,150,150,0.1)';
+
               return (
-                <div key={eventName} className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <div key={eventName} className="relative bg-apple-light-card dark:bg-apple-dark-card rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl transition-all duration-300">
                   
-                  <div className="flex items-start gap-4 p-5 pb-3">
-                    <span className="text-4xl mt-1 drop-shadow-sm">{data.icon || '🏅'}</span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-black text-xl text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">{eventName}</h3>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
-                        {data.category && (
-                          <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full dark:bg-blue-900/30 dark:text-blue-300 text-[9px] font-black uppercase tracking-widest leading-none">
-                            {data.category}
-                          </span>
-                        )}
-                        {data.division && data.division !== 'N/A' && (
-                          <span className="bg-purple-50 text-purple-600 px-3 py-1 rounded-full dark:bg-purple-900/30 dark:text-purple-300 text-[9px] font-black uppercase tracking-widest leading-none">
-                            {data.division}
-                          </span>
-                        )}
-                        {data.gender && data.gender !== 'N/A' && (
-                          <span className="bg-pink-50 text-pink-600 px-3 py-1 rounded-full dark:bg-pink-900/30 dark:text-pink-300 text-[9px] font-black uppercase tracking-widest leading-none">
-                            {data.gender}
-                          </span>
-                        )}
+                  {/* Background Wash Gradient for Gold Winner */}
+                  <div 
+                    className="absolute inset-0 opacity-10 dark:opacity-20 pointer-events-none mix-blend-multiply dark:mix-blend-screen"
+                    style={{
+                      background: goldWinner && goldWinner.department_id 
+                        ? `radial-gradient(circle at top right, ${goldColor} 0%, transparent 60%)` 
+                        : 'transparent'
+                    }}
+                  />
+
+                  <div className="relative z-10 flex flex-col h-full p-5 space-y-4">
+                    <div className="flex items-start gap-4">
+                      <span className="text-4xl mt-1 drop-shadow-sm">{data.icon || '🏅'}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-black text-xl text-gray-900 dark:text-white uppercase tracking-tight truncate">{eventName}</h3>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                          {data.category && (
+                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full dark:bg-blue-900/30 dark:text-blue-300 text-[9px] font-black uppercase tracking-widest leading-none">
+                              {data.category}
+                            </span>
+                          )}
+                          {data.division && data.division !== 'N/A' && (
+                            <span className="bg-purple-50 text-purple-600 px-3 py-1 rounded-full dark:bg-purple-900/30 dark:text-purple-300 text-[9px] font-black uppercase tracking-widest leading-none">
+                              {data.division}
+                            </span>
+                          )}
+                          {data.gender && data.gender !== 'N/A' && (
+                            <span className="bg-pink-50 text-pink-600 px-3 py-1 rounded-full dark:bg-pink-900/30 dark:text-pink-300 text-[9px] font-black uppercase tracking-widest leading-none">
+                              {data.gender}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-5 space-y-4">
-                    <div className="space-y-3">
+                    <div className="flex-1 space-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                       {(["gold", "silver", "bronze"] as const).map((medal) => {
                         const winner = data.winners[medal];
                         const medalIcon = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : '🥉';
@@ -258,16 +135,16 @@ export default function EventsClientPage({ initialResults, initialCategories, my
                             <div className="flex items-center gap-3">
                               <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{medalIcon}</span>
                               <div className="flex items-center">
-                                 <span className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight leading-tight">{medalLabel}</span>
+                                 <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{medalLabel}</span>
                               </div>
                             </div>
                             {winner && winner.department_id ? (
                               <div className="flex items-center gap-2" title={winner.department_name || ''}>
-                                 <span className="font-black text-[10px] text-gray-900 dark:text-gray-200 text-right uppercase tracking-tight truncate max-w-[120px]">{winner.department_name}</span>
+                                 <span className="font-black text-sm text-gray-900 dark:text-white text-right uppercase tracking-tight truncate max-w-[140px]">{winner.department_name}</span>
                                 {winner.image_url ? (
                                   <Image src={winner.image_url} alt={winner.department_name || ''} width={32} height={32} className={`w-8 h-8 object-contain drop-shadow-sm group-hover:scale-110 transition-transform`} />
                                 ) : (
-                                  <div className={`w-8 h-8 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center text-[9px] font-black text-gray-400 border-2 ${medalColor}`}>
+                                  <div className={`w-8 h-8 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[9px] font-black text-gray-400 border-2 ${medalColor}`}>
                                     {winner.department_abbreviation?.slice(0,3)}
                                   </div>
                                 )}
@@ -277,8 +154,8 @@ export default function EventsClientPage({ initialResults, initialCategories, my
                                 <span>✖️</span> No Team
                               </span>
                             ) : (
-                              <span className="text-[10px] font-black italic text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
-                                 <div className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse" />
+                              <span className="text-[10px] font-black italic text-gray-400 dark:text-gray-600 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                                 <div className="w-1 h-1 bg-gray-400 dark:bg-gray-600 rounded-full animate-pulse" />
                                  Awaiting...
                               </span>
                             )}

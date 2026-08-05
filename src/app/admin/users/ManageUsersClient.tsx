@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
-import {
-  updateUserRole,
-  deleteUser,
-  createUser,
-  UserProfile,
-} from "../../../utils/actions";
+import { Toaster } from "react-hot-toast";
+import { UserProfile } from "../../../utils/actions";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import ConfirmModal from "@/components/ConfirmModal";
 import { FiShield, FiUser } from "react-icons/fi";
 import { FaEye, FaEyeSlash, FaSearch, FaUserPlus, FaTrash, FaShieldAlt } from "react-icons/fa";
+import { useUsersViewModel } from "@/features/admin/users/viewModels/useUsersViewModel";
 
 interface ManageUsersClientProps {
   initialUsers: UserProfile[];
@@ -24,62 +19,27 @@ export default function ManageUsersClient({
   initialUsers,
   currentUserId,
 }: ManageUsersClientProps) {
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers || []);
-  const [isLoading] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("admin");
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const capitalizeWords = (str: string): string =>
-    str.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery) return users;
-    const q = searchQuery.toLowerCase();
-    return users.filter(u => u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q));
-  }, [users, searchQuery]);
-
-  const handleRoleChange = async (userId: string, newRole: string) => {
-    const original = [...users];
-    setUsers(u => u.map(user => (user.id === userId ? { ...user, role: newRole } : user)));
-    const toastId = toast.loading("Updating role...");
-    const result = await updateUserRole(userId, newRole);
-    if (result.success) toast.success(result.message, { id: toastId });
-    else { toast.error(`Failed: ${result.message}`, { id: toastId }); setUsers(original); }
-  };
-
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmail || !newPassword) return;
-    const toastId = toast.loading("Creating user account...");
-    const result = await createUser(newEmail, newPassword, newRole);
-    if (result.success && result.user) {
-      toast.success(result.message, { id: toastId });
-      setUsers(prev => [result.user!, ...prev]);
-      setNewEmail(""); setNewPassword("");
-    } else toast.error(`Failed: ${result.message}`, { id: toastId });
-  };
-
-  const handleDeleteClick = (user: UserProfile) => {
-    setUserToDelete(user);
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!userToDelete) return;
-    const toastId = toast.loading(`Deleting account...`);
-    const result = await deleteUser(userToDelete.id);
-    if (result.success) {
-      toast.success(result.message, { id: toastId });
-      setUsers(u => u.filter(user => user.id !== userToDelete.id));
-    } else toast.error(`Failed: ${result.message}`, { id: toastId });
-    setShowConfirmModal(false); setUserToDelete(null);
-  };
+  const {
+    isLoading,
+    showConfirmModal,
+    setShowConfirmModal,
+    userToDelete,
+    newEmail,
+    setNewEmail,
+    newPassword,
+    setNewPassword,
+    newRole,
+    setNewRole,
+    showNewPassword,
+    setShowNewPassword,
+    searchQuery,
+    setSearchQuery,
+    filteredUsers,
+    handleRoleChange,
+    handleCreateUser,
+    handleDeleteClick,
+    handleConfirmDelete,
+  } = useUsersViewModel({ initialUsers, currentUserId });
 
   if (isLoading) return <div className="flex justify-center items-center h-64"><BouncingBallsLoader /></div>;
 

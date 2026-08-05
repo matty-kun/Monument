@@ -1,334 +1,46 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/utils/supabase/client";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import Image from "next/image";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
-
-interface Department {
-  id: string;
-  name: string;
-  abbreviation?: string | null;
-  image_url?: string;
-}
-interface Event {
-  id: string;
-  name: string;
-  icon?: string;
-  category?: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface ResultWithDepartment {
-  id: string;
-  event_id: string;
-  department_id: string;
-  medal_type: 'gold' | 'silver' | 'bronze' | 'none';
-  departments: Department | Department[] | null;
-}
+import { useResultsViewModel } from "@/features/admin/results/viewModels/useResultsViewModel";
 
 export default function AddResultPage() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [competingDepartments, setCompetingDepartments] = useState<Department[]>([]);
-  const [eventId, setEventId] = useState("");
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [goldId, setGoldId] = useState("");
-  const [silverId, setSilverId] = useState("");
-  const [bronzeId, setBronzeId] = useState("");
-  const [currentEventResults, setCurrentEventResults] = useState<ResultWithDepartment[]>([]);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [resultToDeleteId, setResultToDeleteId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingResultId, setEditingResultId] = useState<string | null>(null);
-  const [recentResults, setRecentResults] = useState<ResultWithDepartment[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { selectedTournament } = useTournament();
 
-  const supabase = createClient();
-
-  const fetchDropdownData = useCallback(async () => {
-    if (!selectedTournament) return;
-    
-    const { data: deptData } = await supabase
-      .from("tournament_departments")
-      .select("id:department_id, name, image_url, abbreviation")
-      .eq("tournament_id", selectedTournament.id);
-      
-    const { data: eventData } = await supabase.from("events").select("id, name, icon, category").eq("tournament_id", selectedTournament.id).order("category,name");
-    const { data: categoriesData } = await supabase.from("categories").select("id, name");
-    if (deptData) setDepartments(deptData);
-    if (eventData) setEvents(eventData);
-    if (categoriesData) setAllCategories(categoriesData);
-
-    // Fetch recent results
-    const { data: recentData } = await supabase
-      .from('results')
-      .select('id, event_id, department_id, medal_type, events!inner(tournament_id)')
-      .eq('tournament_id', selectedTournament.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-      
-    if (recentData) {
-      // Manually map department info since it's now in tournament_departments
-      const mappedData = recentData.map(r => ({
-        ...r,
-        departments: deptData?.find(d => d.id === r.department_id) || null
-      }));
-      setRecentResults(mappedData as any[]);
-    }
-  }, [supabase, selectedTournament]);
-
-  useEffect(() => {
-    if (selectedTournament) {
-      fetchDropdownData();
-      document.title = `Manage Results | ${selectedTournament.name}`;
-    }
-  }, [fetchDropdownData, selectedTournament]);
-
-  const fetchEventData = useCallback(async (currentEventId?: string) => {
-    const idToFetch = currentEventId || eventId;
-    if (!idToFetch) {
-      setCurrentEventResults([]);
-      return;
-    }
-
-    // Fetch both schedule for competing depts and existing results for this event
-    const [scheduleRes, resultsRes] = await Promise.all([
-      supabase.from('schedules').select('departments').eq('event_id', idToFetch).single(),
-      supabase.from('results').select('id, event_id, department_id, medal_type').eq('event_id', idToFetch)
-    ]);
-
-    const { data: schedule, error: scheduleError } = scheduleRes;
-    const { data: existingResults, error: resultsError } = resultsRes;
-
-    if (resultsError) {
-      console.error("Error fetching existing results:", resultsError);
-    } else if (existingResults) {
-      // map departments
-      const mappedResults = existingResults.map(r => ({
-        ...r,
-        departments: departments.find(d => d.id === r.department_id) || null
-      }));
-      setCurrentEventResults(mappedResults as ResultWithDepartment[]);
-      
-      // Pre-fill podium from existing results
-      const gold = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'gold');
-      const silver = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'silver');
-      const bronze = (existingResults as ResultWithDepartment[]).find(r => r.medal_type === 'bronze');
-      
-      setGoldId(gold ? (gold.department_id || "") : "awaiting");
-      setSilverId(silver ? (silver.department_id || "") : "awaiting");
-      setBronzeId(bronze ? (bronze.department_id || "") : "awaiting");
-    }
-
-    const awardedDeptIds = new Set((existingResults || []).map(r => r.department_id));
-
-    let availableDepts: Department[];
-    if (scheduleError || !schedule || !schedule.departments) {
-      console.warn(`No schedule found for event ID: ${idToFetch}. Showing all departments.`);
-      availableDepts = departments;
-      setCompetingDepartments(availableDepts);
-    } else {
-      const competingDeptNames = schedule.departments as string[];
-      availableDepts = departments.filter(dept => competingDeptNames.includes(dept.name));
-      setCompetingDepartments(availableDepts);
-    }
-  }, [supabase, eventId, departments]);
-
-  useEffect(() => {
-    fetchEventData();
-
-    // ✅ Set up Realtime Subscription
-    const channel = supabase
-      .channel('results-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'results',
-        },
-        () => {
-          fetchEventData(); 
-          fetchDropdownData(); // Also refresh history
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchEventData, fetchDropdownData, supabase, selectedTournament]);
-
-  const groupedRecentResults = useMemo(() => {
-    // 1. Group the results by event_id
-    const groups: Record<string, ResultWithDepartment[]> = {};
-    recentResults.forEach(r => {
-      if (!groups[r.event_id]) groups[r.event_id] = [];
-      groups[r.event_id].push(r);
-    });
-
-    // 2. Sort results within each group (gold, silver, bronze)
-    const medalOrder = ['gold', 'silver', 'bronze', 'none'];
-    Object.values(groups).forEach(group => {
-      group.sort((a, b) => medalOrder.indexOf(a.medal_type) - medalOrder.indexOf(b.medal_type));
-    });
-
-    // 3. Convert to array and filter by search query
-    const resultsArray = Object.entries(groups).map(([eventId, items]) => ({
-      eventId,
-      items,
-      event: events.find(e => e.id === eventId)
-    }));
-
-    if (!searchQuery) return resultsArray;
-    const q = searchQuery.toLowerCase();
-    return resultsArray.filter(({ event, items }) => {
-      const eventMatch = (event?.name || '').toLowerCase().includes(q);
-      const teamMatch = items.some(item => {
-        const dept = Array.isArray(item.departments) ? item.departments[0] : item.departments;
-        return (dept?.name || '').toLowerCase().includes(q) || (dept?.abbreviation || '').toLowerCase().includes(q);
-      });
-      return eventMatch || teamMatch;
-    });
-  }, [recentResults, searchQuery, events]);
-
-  async function handleSubmit(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (!eventId || !selectedTournament) return;
-
-    setIsSubmitting(true);
-    const loadingToast = toast.loading("Finalizing event results...");
-
-    try {
-      // 1. Validation: Prevent duplicate medals for the same team
-      const selectedIds = [goldId, silverId, bronzeId].filter(id => id !== "" && id !== "awaiting");
-      const uniqueIds = new Set(selectedIds);
-      if (uniqueIds.size !== selectedIds.length) {
-        toast.error("A team cannot win more than one medal in the same event!", { id: loadingToast });
-        return;
-      }
-
-      // 2. Remove any existing results for this event
-      const { error: deleteError } = await supabase
-        .from('results')
-        .delete()
-        .eq('event_id', eventId);
-
-      if (deleteError) throw deleteError;
-
-      // 2. Prepare the new results batch (Only the selected medals)
-      const resultsBatch = [];
-
-      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? null : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200, tournament_id: selectedTournament.id });
-      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? null : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150, tournament_id: selectedTournament.id });
-      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? null : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100, tournament_id: selectedTournament.id });
-
-      // 3. Perform Bulk Insert
-      if (resultsBatch.length > 0) {
-        const { error: insertError } = await supabase.from('results').insert(resultsBatch);
-        if (insertError) throw insertError;
-      }
-
-      toast.success("Event results finalized successfully!", { id: loadingToast });
-      setEventId("");
-      setGoldId("awaiting");
-      setSilverId("awaiting");
-      setBronzeId("awaiting");
-      setCurrentEventResults([]);
-      setIsEditing(false);
-      fetchDropdownData();
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`, { id: loadingToast });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  const groupedEvents = useMemo(() => {
-    if (!events.length || !allCategories.length) return [];
-
-    const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
-
-    const groups: { [key: string]: Event[] } = events.reduce((acc, event) => {
-      const categoryName = event.category ? categoryMap.get(event.category) || "Uncategorized" : "Uncategorized";
-      if (!acc[categoryName]) {
-        acc[categoryName] = [];
-      }
-      acc[categoryName].push(event);
-      return acc;
-    }, {} as { [key: string]: Event[] });
-
-    return Object.entries(groups).map(([category, events]) => ({
-      label: category, options: events
-    }));
-  }, [events, allCategories]);
-  
-  const getMedalStyles = (medal: string) => {
-    switch (medal) {
-      case 'gold':
-        return { icon: '🥇', color: 'border-yellow-400', shadow: 'shadow-yellow-300/50' };
-      case 'silver':
-        return { icon: '🥈', color: 'border-gray-400', shadow: 'shadow-gray-400/50' };
-      case 'bronze':
-        return { icon: '🥉', color: 'border-orange-400', shadow: 'shadow-orange-400/50' };
-      case 'none':
-        return { icon: '🏃', color: 'border-gray-200', shadow: '' };
-      default:
-        return { icon: '🏅', color: 'border-gray-300', shadow: '' };
-    }
-  };
-
-  function handleDeleteEventResults(eventId: string) {
-    setResultToDeleteId(eventId);
-    setShowConfirmModal(true);
-  }
-
-  async function handleConfirmDelete() {
-    if (!resultToDeleteId) return;
-    setIsDeleting(true);
-
-    try {
-      const { error } = await supabase
-        .from("results")
-        .delete()
-        .eq("event_id", resultToDeleteId);
-
-      if (error) {
-        toast.error(`Error deleting results: ${error.message}`);
-      } else {
-        toast.success("Event results deleted.");
-        fetchEventData();
-      }
-    } finally {
-      setIsDeleting(false);
-    }
-    setShowConfirmModal(false);
-    setResultToDeleteId(null);
-  }
-
-  async function handleEditByEvent(eventId: string) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setIsEditing(true);
-    setEventId(eventId);
-    await fetchEventData(eventId);
-  }
+  const {
+    competingDepartments,
+    eventId,
+    setEventId,
+    goldId,
+    setGoldId,
+    silverId,
+    setSilverId,
+    bronzeId,
+    setBronzeId,
+    showConfirmModal,
+    setShowConfirmModal,
+    isEditing,
+    setIsEditing,
+    searchQuery,
+    setSearchQuery,
+    viewMode,
+    setViewMode,
+    isDeleting,
+    isSubmitting,
+    groupedRecentResults,
+    groupedEvents,
+    handleSubmit,
+    handleConfirmDelete,
+    handleDeleteEventResults,
+    handleEditByEvent,
+    getMedalStyles,
+  } = useResultsViewModel({ selectedTournament });
 
   if (!selectedTournament) return <EmptyTournamentState />;
 
