@@ -1,17 +1,13 @@
 "use client";
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from "framer-motion";
-import { calculateTotalPoints } from "@/utils/scoring";
-import TeamHoverCard from "./TeamHoverCard";
-import { stringToColor } from "@/utils/colors";
 
 interface LeaderboardRow {
   id: string;
   name: string;
-  // Add abbreviation from the database if available
-  abbreviation: string | null; 
+  abbreviation: string | null;
   image_url?: string;
-  mascot_url?: string | null;
   total_points: number;
   golds: number;
   silvers: number;
@@ -19,200 +15,146 @@ interface LeaderboardRow {
 }
 
 interface PodiumProps {
-  // Allow for null entries in case of missing data
-  leaderboard: (LeaderboardRow | null)[];
+  leaderboard: LeaderboardRow[];
+  mysteryMode?: boolean;
 }
 
-const getAbbreviation = (name: string, dbAbbreviation: string | null) => {
-  // 1. Prioritize the abbreviation from the database
-  if (dbAbbreviation) return dbAbbreviation;
-  // 2. Add a special exception for College of Education
-  if (name === "College of Education") return "CED";
-  // 3. Fallback to generating from the name
-  return name
-    .split(' ')
-    .filter(w => !['of', 'and', 'the'].includes(w.toLowerCase()))
-    .map(w => w[0])
-    .join('')
-    .toUpperCase();
-};
+// Maps podium order: [2nd, 1st, 3rd]
+const PODIUM_ORDER = [1, 0, 2];
+const PODIUM_HEIGHT = ['h-20', 'h-32', 'h-14'];         // platform heights
+const PODIUM_LOGO   = ['w-16 h-16', 'w-24 h-24', 'w-14 h-14'];  // logo sizes
+const PODIUM_MEDAL  = ['🥈', '🥇', '🥉'];
+const PODIUM_LABEL  = ['2', '1', '3'];
+const PODIUM_COLOR  = [
+  'bg-gradient-to-b from-gray-400 to-gray-600',   // silver
+  'bg-gradient-to-b from-yellow-400 to-yellow-600', // gold
+  'bg-gradient-to-b from-orange-400 to-orange-600', // bronze
+];
 
-export default function Podium({ leaderboard }: PodiumProps) {
-  // Ensure we always have at least empty objects for podium positions
-  const topThree = [
-    leaderboard[1] || null, // 2nd place
-    leaderboard[0] || null, // 1st place
-    leaderboard[2] || null, // 3rd place
-  ];
+export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
+  const top3 = PODIUM_ORDER.map(i => leaderboard[i] ?? null);
+  const rest  = leaderboard.slice(3);
 
-  // Empty podium slot component
-  const EmptyPodiumSlot = ({ position, medal }: { position: string; medal: string }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: position === "1st" ? 0 : position === "2nd" ? 0.2 : 0.4 }}
-      className="flex flex-col items-center"
-    >
-      <div className="text-3xl md:text-4xl mb-4">{medal}</div>
-      <div className={`relative ${position === "1st" ? "w-32 h-32 md:w-52 md:h-52" : position === "2nd" ? "w-24 h-24 md:w-40 md:h-40" : "w-20 h-20 md:w-36 md:h-36"} mb-4 md:mb-6 flex items-center justify-center text-center`}>
-        <span className="text-4xl md:text-6xl opacity-20 leading-none">🏆</span>
-      </div>
-      <div className="text-center mb-4">
-        <div className="text-lg md:text-xl font-semibold text-gray-400 dark:text-gray-500">Awaiting Champion</div>
-        <div className="text-sm md:text-base text-gray-400 dark:text-gray-500">
-          —
-        </div>
-        <div className="text-base md:text-lg font-bold mt-1 text-gray-400 dark:text-gray-500">- pts</div>
-      </div>
-      <div className={`${position === "1st" ? "w-32 md:w-52" : position === "2nd" ? "w-24 md:w-40" : "w-20 md:w-36"} rounded-t-[2rem] ${position === "1st" ? "bg-gray-100 dark:bg-gray-800 h-40 md:h-64" : position === "2nd" ? "bg-gray-100 dark:bg-gray-800 h-24 md:h-32" : "bg-gray-100 dark:bg-gray-800 h-20 md:h-28"} border-x border-t border-gray-200 dark:border-gray-700 flex items-center justify-center ${position === "1st" ? "text-6xl md:text-8xl" : position === "2nd" ? "text-4xl md:text-6xl" : "text-3xl md:text-5xl"} font-black text-gray-300 dark:text-gray-700`}>{position === "1st" ? "1" : position === "2nd" ? "2" : "3"}</div>
-    </motion.div>
-  );
-
-  // Podium layout: grid for clarity, vertical alignment, and spacing
   return (
-    <div className="grid grid-cols-3 gap-4 md:gap-12 justify-items-center items-end w-full max-w-5xl mx-auto pt-24 pb-12">
-      {/* 2nd place - left */}
-      {topThree[0] ? (
-        <motion.div
-          key={topThree[0].id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="flex flex-col items-center"
-        >
-          <div className="text-3xl md:text-4xl mb-4">🥈</div>
-          <TeamHoverCard teamId={topThree[0].id}>
-            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-24 h-24 md:w-40 md:h-40 mb-4 md:mb-6 flex items-center justify-center">
-                {topThree[0].image_url ? (
-                  <Image src={topThree[0].image_url} alt={topThree[0].name} fill sizes="(max-width: 768px) 96px, 160px" priority className="object-contain drop-shadow-lg" />
+    <div className="w-full">
+      {/* ── Podium ── */}
+      <div className="flex items-end justify-center gap-3 px-4 pt-6 pb-0">
+        {top3.map((team, col) => {
+          const rank = PODIUM_ORDER[col]; // 0-based rank index
+          return (
+            <motion.div
+              key={team?.id ?? col}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: col === 1 ? 0 : 0.15 }}
+              className="flex flex-col items-center flex-1"
+            >
+              {/* Medal emoji */}
+              <div className="text-2xl mb-1">{PODIUM_MEDAL[col]}</div>
+
+              {/* Logo */}
+              <div className={`relative ${PODIUM_LOGO[col]} mb-2`}>
+                {team?.image_url ? (
+                  <Image
+                    src={team.image_url}
+                    alt={team.name}
+                    fill
+                    sizes="96px"
+                    className="object-contain drop-shadow-lg"
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
-                    <span className="text-4xl md:text-6xl font-black text-gray-500 dark:text-gray-600 leading-none tracking-tighter">
-                      {getAbbreviation(topThree[0].name, topThree[0].abbreviation)}
-                    </span>
+                  <div className="w-full h-full flex items-center justify-center bg-white/10 rounded-full text-[10px] font-black text-gray-400">
+                    {team?.abbreviation?.slice(0, 3) ?? '?'}
                   </div>
                 )}
               </div>
-              <div className="text-center mb-4">
-                <div className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">
-                  {topThree[0].name}
+
+              {/* Name */}
+              {team ? (
+                <Link href={`/teams/${team.id}`} className="block text-center mb-2 group">
+                  <div className="text-[11px] font-black text-white truncate max-w-[80px] group-hover:text-[#0A84FF] transition-colors">
+                    {team.abbreviation ?? team.name}
+                  </div>
+                  <div className={`text-[13px] font-black tabular-nums ${col === 1 ? 'text-white' : 'text-gray-300'}`}>
+                    {mysteryMode ? '???' : team.total_points}
+                    <span className="text-[9px] font-medium text-gray-500 ml-0.5">pts</span>
+                  </div>
+                </Link>
+              ) : (
+                <div className="text-center mb-2">
+                  <div className="text-[11px] text-gray-600 font-semibold">TBD</div>
+                  <div className="text-[13px] text-gray-700 font-black">—</div>
                 </div>
-                {topThree[0].abbreviation && (
-                  <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase tracking-widest">
-                    {topThree[0].abbreviation}
-                  </div>
-                )}
+              )}
 
-                <div className="text-base md:text-xl font-black mt-1 text-gray-900 dark:text-white tabular-nums">{calculateTotalPoints(topThree[0].golds, topThree[0].silvers, topThree[0].bronzes)} pts</div>
+              {/* Platform block */}
+              <div className={`w-full rounded-t-xl ${PODIUM_HEIGHT[col]} ${PODIUM_COLOR[col]} flex items-center justify-center shadow-lg`}>
+                <span className="text-white/40 font-black text-2xl select-none">{PODIUM_LABEL[col]}</span>
               </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* ── Remaining table ── */}
+      {rest.length > 0 && (
+        <div className="px-4 mt-4">
+          {/* Column headers */}
+          <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-1">
+            <div className="w-6 text-center">#</div>
+            <div className="flex-1 ml-3">Team</div>
+            <div className="flex gap-3 shrink-0">
+              <div className="w-5 text-center">G</div>
+              <div className="w-5 text-center">S</div>
+              <div className="w-5 text-center">B</div>
+              <div className="w-10 text-right">PTS</div>
             </div>
-          </TeamHoverCard>
-          <div 
-            className="w-24 md:w-40 rounded-t-[2rem] shadow-xl h-24 md:h-32 flex items-center justify-center text-4xl md:text-6xl font-black text-white mix-blend-multiply dark:mix-blend-screen opacity-90"
-            style={{ background: `linear-gradient(to bottom right, ${stringToColor(topThree[0].abbreviation || topThree[0].name)}, rgba(150,150,150,0.5))` }}
-          >
-            2
           </div>
-        </motion.div>
-      ) : (
-        <EmptyPodiumSlot position="2nd" medal="🥈" />
-      )}
 
-      {/* 1st place - center */}
-      {topThree[1] ? (
-        <motion.div
-          key={topThree[1].id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0 }}
-          className="flex flex-col items-center"
-        >
-          <div className="text-3xl md:text-4xl mb-4">🥇</div>
-          <TeamHoverCard teamId={topThree[1].id}>
-            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-32 h-32 md:w-52 md:h-52 mb-4 md:mb-6 flex items-center justify-center">
-                {topThree[1].image_url ? (
-                  <Image src={topThree[1].image_url} alt={topThree[1].name} fill sizes="(max-width: 768px) 128px, 208px" priority className="object-contain drop-shadow-lg" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
-                    <span className="text-4xl md:text-6xl font-black text-gray-400 dark:text-gray-500 leading-none tracking-tighter">
-                      {getAbbreviation(topThree[1].name, topThree[1].abbreviation)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="text-center mb-4">
-                <div className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">
-                  {topThree[1].name}
-                </div>
-                {topThree[1].abbreviation && (
-                  <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase tracking-widest">
-                    {topThree[1].abbreviation}
-                  </div>
-                )}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/5">
+            {rest.map((dept, i) => (
+              <motion.div
+                key={dept.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 * i }}
+              >
+                <Link
+                  href={`/teams/${dept.id}`}
+                  className={`flex items-center px-3 py-2.5 ${i !== rest.length - 1 ? 'border-b border-white/5' : ''} hover:bg-white/5 transition-colors`}
+                >
+                  <div className="w-6 text-center font-black text-gray-500 text-[13px]">{i + 4}</div>
 
-                <div className="text-base md:text-xl font-black mt-1 text-gray-900 dark:text-white tabular-nums">{calculateTotalPoints(topThree[1].golds, topThree[1].silvers, topThree[1].bronzes)} pts</div>
-              </div>
-            </div>
-          </TeamHoverCard>
-          <div 
-            className="w-32 md:w-52 rounded-t-[2rem] shadow-xl h-40 md:h-64 flex items-center justify-center text-6xl md:text-8xl font-black text-white mix-blend-multiply dark:mix-blend-screen opacity-90"
-            style={{ background: `linear-gradient(to bottom right, ${stringToColor(topThree[1].abbreviation || topThree[1].name)}, rgba(150,150,150,0.5))` }}
-          >
-            1
+                  <div className="w-7 h-7 mx-2.5 relative shrink-0">
+                    {dept.image_url ? (
+                      <Image src={dept.image_url} alt={dept.name} fill sizes="28px" className="object-contain" />
+                    ) : (
+                      <div className="w-full h-full bg-white/10 rounded-full flex items-center justify-center text-[9px] font-bold text-gray-400">
+                        {dept.abbreviation?.slice(0, 2) ?? '??'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 pr-2">
+                    <div className="font-bold text-white truncate text-[14px] tracking-tight">{dept.name}</div>
+                    {dept.abbreviation && (
+                      <div className="text-[9px] font-medium text-gray-600 uppercase tracking-widest">{dept.abbreviation}</div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 text-[13px] tabular-nums shrink-0">
+                    <div className="w-5 text-center font-medium text-yellow-500">{dept.golds}</div>
+                    <div className="w-5 text-center font-medium text-gray-400">{dept.silvers}</div>
+                    <div className="w-5 text-center font-medium text-orange-500">{dept.bronzes}</div>
+                    <div className="w-10 text-right font-black text-gray-300">
+                      {mysteryMode ? '???' : dept.total_points}
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
-      ) : (
-        <EmptyPodiumSlot position="1st" medal="🥇" />
-      )}
-
-      {/* 3rd place - right */}
-      {topThree[2] ? (
-        <motion.div
-          key={topThree[2].id}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex flex-col items-center"
-        >
-          <div className="text-3xl md:text-4xl mb-4">🥉</div>
-          <TeamHoverCard teamId={topThree[2].id}>
-            <div className="flex flex-col items-center group-hover:scale-105 transition-transform duration-300">
-              <div className="relative w-20 h-20 md:w-36 md:h-36 mb-4 md:mb-6 flex items-center justify-center">
-                {topThree[2].image_url ? (
-                  <Image src={topThree[2].image_url} alt={topThree[2].name} fill sizes="(max-width: 768px) 80px, 144px" priority className="object-contain drop-shadow-lg" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale opacity-30 text-center">
-                    <span className="text-3xl md:text-5xl font-black text-gray-500 dark:text-gray-600 leading-none tracking-tighter">
-                      {getAbbreviation(topThree[2].name, topThree[2].abbreviation)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="text-center mb-4">
-                <div className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">
-                  {topThree[2].name}
-                </div>
-                {topThree[2].abbreviation && (
-                  <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mb-2 font-bold uppercase tracking-widest">
-                    {topThree[2].abbreviation}
-                  </div>
-                )}
-
-                <div className="text-base md:text-xl font-black mt-1 text-gray-900 dark:text-white tabular-nums">{calculateTotalPoints(topThree[2].golds, topThree[2].silvers, topThree[2].bronzes)} pts</div>
-              </div>
-            </div>
-          </TeamHoverCard>
-          <div 
-            className="w-20 md:w-36 rounded-t-[2rem] shadow-xl h-20 md:h-28 flex items-center justify-center text-3xl md:text-5xl font-black text-white mix-blend-multiply dark:mix-blend-screen opacity-90"
-            style={{ background: `linear-gradient(to bottom right, ${stringToColor(topThree[2].abbreviation || topThree[2].name)}, rgba(150,150,150,0.5))` }}
-          >
-            3
-          </div>
-        </motion.div>
-      ) : (
-        <EmptyPodiumSlot position="3rd" medal="🥉" />
+        </div>
       )}
     </div>
   );

@@ -14,6 +14,7 @@ export interface Event {
   category: string | { name: string } | null;
   division: string | null;
   gender: string | null;
+  results?: { department_id: string; medal_type: string }[];
 }
 
 export interface Category {

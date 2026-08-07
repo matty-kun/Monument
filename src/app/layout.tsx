@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "../components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Suspense } from "react";
+import MobileOnlyWrapper from "@/components/MobileOnlyWrapper";
 
 export const metadata = {
   metadataBase: new URL("https://citefest.vercel.app"),
@@ -39,14 +40,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 md:pb-0">
+      <body className="flex flex-col min-h-screen bg-black pb-20 md:pb-0">
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <Navbar />
-          </Suspense>
-          <main className="flex-grow">
-            {children}
-          </main>
+          <MobileOnlyWrapper>
+            <Suspense fallback={null}>
+              <Navbar />
+            </Suspense>
+            <main className="flex-grow">
+              {children}
+            </main>
+          </MobileOnlyWrapper>
         </ThemeProvider>
       </body>
     </html>

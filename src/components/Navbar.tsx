@@ -1,37 +1,38 @@
-'use client';
+"use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { ThemeSwitcher } from "./ThemeSwitcher"; 
-import { Trophy, Flag, CalendarDays, LayoutDashboard, History, ChevronDown } from "lucide-react";
+import { Trophy, CalendarDays, List, MoreHorizontal, LayoutDashboard, History } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const supabase = createClient();
   const [role, setRole] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [tournaments, setTournaments] = useState<{ id: string; name: string; slug: string; is_active: boolean }[]>([]);
-  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.add('dark');
+    }
+
     const fetchRole = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", user.id)
           .single();
-        if (!error && profile) setRole(profile.role);
+        if (profile) setRole(profile.role);
       }
     };
-    
+
     const fetchTournaments = async () => {
       const { data } = await supabase.from('tournaments').select('id, name, slug, is_active').order('start_date', { ascending: false });
       if (data) setTournaments(data);
@@ -39,165 +40,130 @@ export default function Navbar() {
 
     fetchRole();
     fetchTournaments();
-  }, [supabase, setMounted]);
-
+  }, [supabase]);
 
   const searchParams = useSearchParams();
   const tournamentParam = searchParams?.get('tournament');
 
   const navLinks = useMemo(() => [
-    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Podium", icon: Trophy },
-    { href: tournamentParam ? `/results?tournament=${tournamentParam}` : "/results", label: "Results", icon: Flag },
-    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Schedule", icon: CalendarDays },
+    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Standings", icon: Trophy },
+    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Scores", icon: CalendarDays },
   ], [tournamentParam]);
 
-  const getLinkClass = (href: string, isMobile: boolean = false) => {
-    const isActive = mounted && pathname === href;
-    const baseClasses = isMobile 
-      ? "block px-3 py-2 rounded-md text-base font-medium" 
-      : "px-4 py-2 rounded-lg text-sm font-medium transition-colors";
-
-    if (isActive) {
-      return `${baseClasses} bg-monument-primary/10 text-monument-primary dark:bg-violet-900/20 dark:text-violet-400`;
-    }
-    return `${baseClasses} text-gray-700 hover:bg-gray-100 hover:text-monument-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-violet-400`;
-  };
-
-  const getBottomNavLinkClass = (href: string) => {
-    const isActive = mounted && (pathname === href || (href === "/admin/dashboard" && pathname.startsWith("/admin")));
-    const baseClasses = "flex flex-col items-center justify-center flex-1 text-center py-2 px-1 transition-colors";
-
-    if (isActive) {
-      return `${baseClasses} text-monument-primary dark:text-violet-400`;
-    }
-    return `${baseClasses} text-gray-500 hover:text-monument-primary dark:text-gray-400 dark:hover:text-violet-400`;
-  };
   const isMainAdminPath = pathname?.startsWith('/admin');
-
   if (isMainAdminPath) return null;
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-100 dark:border-gray-700 sticky top-0 z-50">
-      <div className="container mx-auto px-6 py-2.5 flex justify-between items-center max-w-7xl">
-        <div className="flex items-center">
-          <Link href="/" className="flex items-center text-2xl font-bold text-monument-green hover:text-green-700 dark:hover:text-green-500 transition-colors no-underline">
-            <Image
-              src="/monument-logo.png"
-              alt="Monument Logo"
-              width={42}
-              height={42}
-              className="mr-2"
-              priority
-            />
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-monument-primary dark:text-violet-400 uppercase tracking-wider leading-none mt-1 md:mt-4">CITE FEST 2026</span>
-              <span className="hidden md:block text-[0.6rem] font-medium text-gray-500 dark:text-gray-400 mt-[-1px] uppercase tracking-wide whitespace-nowrap transition-all duration-300">
-                Empowering Digital Innovators for a Smarter and Sustainable Future
-              </span>
-            </div>
-          </Link>
-        </div>
-        <div className="hidden md:flex items-center space-x-4">
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map(({ href, label, icon: Icon }) => (
-              <Link key={href} href={href} className={`${getLinkClass(href)} flex items-center gap-2`}>
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            ))}
-            
-            {/* Archive Dropdown (Desktop) */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsArchiveOpen(!isArchiveOpen)}
-                onBlur={() => setTimeout(() => setIsArchiveOpen(false), 200)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100 hover:text-monument-primary dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-violet-400"
+    <>
+      {/* Bottom Navigation — Floating Pill Design */}
+      <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[360px] z-50">
+        <nav className="bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const isActive = mounted && pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
+                  isActive ? 'bg-white/10' : 'hover:bg-white/5'
+                }`}
               >
-                <History className="w-4 h-4" />
-                Archive
-                <ChevronDown className="w-4 h-4 opacity-70" />
-              </button>
-              
-              {isArchiveOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
-                  <div className="py-1">
-                    {tournaments.map(t => (
-                      <Link 
-                        key={t.id} 
-                        href={`/?tournament=${t.slug}`}
-                        className={`block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 ${t.is_active ? 'font-bold' : ''}`}
-                      >
-                        {t.name} {t.is_active && <span className="text-xs ml-2 text-monument-primary">(Active)</span>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {(role === "admin" || role === "super_admin") && (
-              <Link href="/admin/dashboard" className={`px-4 py-2 flex items-center gap-2 rounded-lg text-sm font-medium !text-white bg-monument-primary hover:bg-monument-dark dark:bg-violet-600 dark:hover:bg-violet-700 transition-all shadow-sm ${pathname.startsWith('/admin') ? 'ring-2 ring-offset-2 ring-violet-500 dark:ring-offset-gray-800' : ''}`}>
-                <LayoutDashboard className="w-4 h-4" /> Dashboard
+                <Icon
+                  className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
+                    isActive ? 'text-[#0A84FF]' : 'text-white'
+                  }`}
+                  strokeWidth={isActive ? 2.5 : 2}
+                  fill={isActive ? 'currentColor' : 'none'}
+                />
+                <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
+                  isActive ? 'text-[#0A84FF]' : 'text-white'
+                }`}>
+                  {label}
+                </span>
               </Link>
-            )}
-            <ThemeSwitcher mounted={mounted} />
-          </div>
-        </div>
-        {mounted && (
-          <div className="md:hidden">
-            <ThemeSwitcher mounted={mounted} />
-          </div>
-        )}
+            );
+          })}
+
+          {/* 4th tab: More */}
+          <button
+            onClick={() => setIsMoreOpen(true)}
+            className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-white/5"
+          >
+            <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-white" strokeWidth={2} />
+            <span className="text-[10px] font-bold tracking-wide text-white">More</span>
+          </button>
+        </nav>
       </div>
 
-      {/* Bottom Navigation for Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden">
-        <div className="flex justify-around items-center h-16">
-          {navLinks.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={getBottomNavLinkClass(href)}>
-              <Icon className="w-5 h-5 mb-1" />
-              <span className="text-xs">{label}</span>
-            </Link>
-          ))}
-          {(role === "admin" || role === "super_admin") && (
-            <Link href="/admin/dashboard" className={getBottomNavLinkClass("/admin/dashboard")}>
-              <LayoutDashboard className="w-5 h-5 mb-1" />
-              <span className="text-xs">Dashboard</span>
-            </Link>
-          )}
-          {/* Simple Archive Button for Mobile */}
-          <button 
-            onClick={() => setIsArchiveOpen(!isArchiveOpen)}
-            className="flex flex-col items-center justify-center flex-1 text-center py-2 px-1 transition-colors text-gray-500 hover:text-monument-primary dark:text-gray-400 dark:hover:text-violet-400"
-          >
-            <History className="w-5 h-5 mb-1" />
-            <span className="text-xs">Archive</span>
-          </button>
-        </div>
-      </div>
-      
-      {/* Mobile Archive Menu overlay */}
-      {isArchiveOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden flex items-end" onClick={() => setIsArchiveOpen(false)}>
-          <div className="bg-white dark:bg-gray-800 w-full rounded-t-2xl p-4 pb-20 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4 text-gray-800 dark:text-white">Past Tournaments</h3>
-            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto">
-              {tournaments.map(t => (
-                <Link 
-                  key={t.id} 
-                  href={`/?tournament=${t.slug}`}
-                  onClick={() => setIsArchiveOpen(false)}
-                  className={`p-3 rounded-lg border ${t.is_active ? 'border-monument-primary bg-monument-primary/5 dark:bg-violet-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+      {/* More Sheet */}
+      <AnimatePresence>
+        {isMoreOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsMoreOpen(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 220 }}
+              className="fixed bottom-0 left-0 right-0 z-50 bg-[#1c1c1e] rounded-t-3xl pt-5 px-4 pb-28 shadow-2xl border-t border-white/5"
+            >
+              {/* Drag handle */}
+              <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-5 opacity-40" />
+
+              {/* Admin link (if applicable) */}
+              {(role === "admin" || role === "super_admin") && (
+                <Link
+                  href="/admin/dashboard"
+                  onClick={() => setIsMoreOpen(false)}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all mb-3"
                 >
-                  <div className="font-medium text-gray-800 dark:text-gray-200">{t.name}</div>
-                  {t.is_active && <div className="text-xs text-monument-primary font-bold mt-1">Current Event</div>}
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
+                    <LayoutDashboard className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-[15px] text-white">Admin Dashboard</div>
+                    <div className="text-[11px] text-gray-500">Manage events, results & more</div>
+                  </div>
                 </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
+              )}
+
+              {/* Archive section */}
+              <div className="text-[11px] font-bold text-gray-500 uppercase tracking-widest px-1 mb-3 mt-4 flex items-center gap-2">
+                <History className="w-3.5 h-3.5" />
+                Past Tournaments
+              </div>
+
+              <div className="flex flex-col gap-2 max-h-[45vh] overflow-y-auto no-scrollbar">
+                {tournaments.map(t => (
+                  <Link
+                    key={t.id}
+                    href={`/?tournament=${t.slug}`}
+                    onClick={() => setIsMoreOpen(false)}
+                    className={`p-4 rounded-2xl flex items-center justify-between transition-all ${
+                      t.is_active
+                        ? 'bg-[#0A84FF] text-white'
+                        : 'bg-white/5 text-gray-200 hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="font-semibold text-[15px]">{t.name}</div>
+                    {t.is_active && (
+                      <div className="text-[10px] uppercase tracking-wider font-black px-2 py-1 bg-white/20 rounded-md">
+                        Current
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

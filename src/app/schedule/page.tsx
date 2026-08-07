@@ -155,7 +155,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         winner_id,
         score_a,
         score_b,
-        events!inner ( id, name, icon, division, gender, category, tournament_id ),
+        events!inner ( id, name, icon, division, gender, category, tournament_id, results ( department_id, medal_type ) ),
         venues ( name )
       `);
       
@@ -286,16 +286,14 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   if (!tournamentId) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 animate-fadeIn">
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-monument-primary blur-[100px] opacity-20 rounded-full"></div>
-          <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 to-gray-500 dark:from-white dark:to-gray-500 tracking-[0.1em] uppercase relative z-10">
-            MONUMENT
-          </h1>
+      <div className="h-screen bg-black flex flex-col items-center justify-center text-center px-6">
+        <div className="w-16 h-16 mb-6 opacity-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/monument-logo.png" alt="Monument" className="w-full h-full object-contain grayscale" />
         </div>
-        <p className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-sm md:text-base max-w-lg leading-relaxed">
-          The season has concluded. <br/>
-          Check back later for upcoming intramurals, or explore the archives above.
+        <div className="text-2xl font-black text-white tracking-tight mb-3">No Active Tournament</div>
+        <p className="text-gray-500 font-medium text-sm max-w-xs leading-relaxed">
+          The season has concluded. Check back later for upcoming intramurals.
         </p>
       </div>
     );

@@ -15,6 +15,9 @@ export interface Schedule {
   winner_id?: string | null;
   score_a?: number | null;
   score_b?: number | null;
+  stream_url?: string | null;
+  stage?: string | null;
+  context?: string | null;
 }
 
 export type ScheduleStatus = "live" | "scheduled" | "finished";
