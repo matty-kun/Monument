@@ -5,10 +5,10 @@ import { headers } from "next/headers";
 import crypto from "crypto";
 
 export async function votePrediction(scheduleId: string, departmentId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Get IP address from headers
-  const headersList = headers();
+  const headersList = await headers();
   const forwardedFor = headersList.get("x-forwarded-for");
   const realIp = headersList.get("x-real-ip");
   
