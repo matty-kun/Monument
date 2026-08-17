@@ -33,7 +33,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="admin-layout flex flex-col md:flex-row md:h-screen md:overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className="admin-layout flex flex-col md:flex-row md:h-screen md:overflow-hidden bg-[#0a0a0c] text-white selection:bg-[#0A84FF]/30">
       <AdminTournamentProvider>
         <AdminSidebar />
         <div className="flex-1 min-w-0 px-4 sm:px-8 py-4 sm:py-8 md:overflow-y-auto custom-scrollbar flex flex-col relative">

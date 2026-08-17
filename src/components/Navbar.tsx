@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trophy, CalendarDays, List, MoreHorizontal, LayoutDashboard, History } from "lucide-react";
+import { Trophy, CalendarDays, List, MoreHorizontal, LayoutDashboard, History, Swords } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -17,9 +17,6 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('dark');
-    }
 
     const fetchRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,37 +43,42 @@ export default function Navbar() {
   const tournamentParam = searchParams?.get('tournament');
 
   const navLinks = useMemo(() => [
-    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Standings", icon: Trophy },
-    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Scores", icon: CalendarDays },
+    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Podium", icon: Trophy },
+    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Scores", icon: Swords },
   ], [tournamentParam]);
 
   const isMainAdminPath = pathname?.startsWith('/admin');
   if (isMainAdminPath) return null;
 
+  // Third tab logic: History if non-admin (or loading), More if admin
+  const isHistoryActive = mounted && pathname === "/history";
+
   return (
     <>
       {/* Bottom Navigation — Floating Pill Design */}
       <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[360px] z-50">
-        <nav className="bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
+        <nav className="bg-white/80 dark:bg-[#1c1c1e]/95 backdrop-blur-3xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
           {navLinks.map(({ href, label, icon: Icon }) => {
-            const isActive = mounted && pathname === href;
+            // ... (keep exact same map logic)
+            // Wait, need to render history here or separately? I will render separately.
+            const isActive = mounted && pathname === href.split('?')[0]; // simple path check
             return (
               <Link
                 key={href}
                 href={href}
                 className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
-                  isActive ? 'bg-white/10' : 'hover:bg-white/5'
+                  isActive ? 'bg-gray-100 dark:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
                 <Icon
                   className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                    isActive ? 'text-[#0A84FF]' : 'text-white'
+                    isActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
                   fill={isActive ? 'currentColor' : 'none'}
                 />
                 <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                  isActive ? 'text-[#0A84FF]' : 'text-white'
+                  isActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
                 }`}>
                   {label}
                 </span>
@@ -84,14 +86,36 @@ export default function Navbar() {
             );
           })}
 
-          {/* 4th tab: More */}
-          <button
-            onClick={() => setIsMoreOpen(true)}
-            className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-white/5"
-          >
-            <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-white" strokeWidth={2} />
-            <span className="text-[10px] font-bold tracking-wide text-white">More</span>
-          </button>
+          {/* Conditional 3rd Tab */}
+          {role === 'admin' ? (
+            <button
+              onClick={() => setIsMoreOpen(true)}
+              className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-gray-400 dark:text-white" strokeWidth={2} />
+              <span className="text-[10px] font-bold tracking-wide text-gray-400 dark:text-white">More</span>
+            </button>
+          ) : (
+            <Link
+              href="/history"
+              className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
+                isHistoryActive ? 'bg-gray-100 dark:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+              }`}
+            >
+              <History
+                className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
+                  isHistoryActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+                }`}
+                strokeWidth={isHistoryActive ? 2.5 : 2}
+                fill="none"
+              />
+              <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
+                isHistoryActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+              }`}>
+                History
+              </span>
+            </Link>
+          )}
         </nav>
       </div>
 
@@ -111,23 +135,23 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[#1c1c1e] rounded-t-3xl pt-5 px-4 pb-28 shadow-2xl border-t border-white/5"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-[#F5F5F7] dark:bg-[#1c1c1e] rounded-t-3xl pt-5 px-4 pb-28 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl border-t border-gray-200 dark:border-white/5"
             >
               {/* Drag handle */}
-              <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-5 opacity-40" />
+              <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-5 dark:opacity-40" />
 
               {/* Admin link (if applicable) */}
               {(role === "admin" || role === "super_admin") && (
                 <Link
                   href="/admin/dashboard"
                   onClick={() => setIsMoreOpen(false)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all mb-3"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all mb-3 border border-gray-100 dark:border-transparent"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
                     <LayoutDashboard className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-bold text-[15px] text-white">Admin Dashboard</div>
+                    <div className="font-bold text-[15px] text-gray-900 dark:text-white">Admin Dashboard</div>
                     <div className="text-[11px] text-gray-500">Manage events, results & more</div>
                   </div>
                 </Link>
@@ -145,10 +169,10 @@ export default function Navbar() {
                     key={t.id}
                     href={`/?tournament=${t.slug}`}
                     onClick={() => setIsMoreOpen(false)}
-                    className={`p-4 rounded-2xl flex items-center justify-between transition-all ${
+                    className={`p-4 rounded-2xl flex items-center justify-between transition-all border ${
                       t.is_active
-                        ? 'bg-[#0A84FF] text-white'
-                        : 'bg-white/5 text-gray-200 hover:bg-white/10'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md dark:bg-[#0A84FF] dark:border-transparent dark:shadow-none'
+                        : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-transparent shadow-sm dark:shadow-none'
                     }`}
                   >
                     <div className="font-semibold text-[15px]">{t.name}</div>

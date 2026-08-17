@@ -32,10 +32,10 @@ export default async function ManageUsersPage() {
         />
 
         <div className="mb-6">
-          <h1 className="flex items-center gap-3 text-3xl md:text-4xl font-bold text-monument-primary mb-2 leading-none">
-            👥 Manage Users
+          <h1 className="flex items-center gap-3 text-[32px] font-black text-white tracking-tight leading-none mb-2">
+            Manage Users
           </h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+          <p className="text-[15px] text-white/50 font-semibold tracking-wide">
             Create new accounts and assign roles securely.
           </p>
         </div>

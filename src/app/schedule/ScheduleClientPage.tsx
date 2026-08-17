@@ -139,7 +139,7 @@ export default function ScheduleClientPage({
   };
 
   return (
-    <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
+    <div className="bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
       {/* Top gradient wash */}
       <div
         className="absolute left-0 right-0 top-0 h-72 pointer-events-none z-0"
@@ -147,11 +147,11 @@ export default function ScheduleClientPage({
       />
 
       {/* Top Header */}
-      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-black/80 backdrop-blur-xl border-b border-white/5">
-        <h1 className="text-3xl font-black text-white tracking-tight mb-4">Matches</h1>
+      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
+        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-4">Matches</h1>
 
         {/* Segmented Control */}
-        <div className="flex p-1 bg-white/10 backdrop-blur-sm rounded-xl border border-white/5">
+        <div className="flex p-1 bg-gray-200/50 dark:bg-white/10 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 shadow-inner">
           {(['all', 'ongoing', 'upcoming', 'finished'] as const).map(tab => {
             const isActive = statusTab === tab;
             let label = "All";
@@ -163,7 +163,7 @@ export default function ScheduleClientPage({
               <button
                 key={tab}
                 onClick={() => setStatusTab(tab)}
-                className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${isActive ? 'bg-white/20 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${isActive ? 'bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-white/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
               >
                 {label}
               </button>
@@ -183,7 +183,7 @@ export default function ScheduleClientPage({
           >
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center gap-2 bg-white text-black shadow-xl rounded-full px-5 py-2 hover:bg-gray-100 active:scale-95 transition-all pointer-events-auto text-sm font-bold tracking-wide"
+              className="flex items-center gap-2 bg-white dark:bg-[#1c1c1e] text-black dark:text-white shadow-xl rounded-full px-5 py-2 hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-all pointer-events-auto text-sm font-bold tracking-wide"
             >
               <span>Refresh Matches</span>
             </button>
@@ -194,7 +194,7 @@ export default function ScheduleClientPage({
       <div className="relative z-10 px-4 mt-4">
         {/* Search Bar */}
         <div className="relative mb-6">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
           <input
@@ -202,7 +202,7 @@ export default function ScheduleClientPage({
             placeholder="Search teams or events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/10 text-white placeholder-gray-500 rounded-xl pl-9 pr-4 py-2.5 text-[15px] focus:outline-none focus:ring-1 focus:ring-white/20 transition-shadow backdrop-blur-sm border border-white/5"
+            className="w-full bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl pl-9 pr-4 py-2.5 text-[15px] focus:outline-none focus:ring-1 focus:ring-gray-200 dark:focus:ring-white/20 transition-shadow backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm"
           />
         </div>
 
@@ -211,15 +211,15 @@ export default function ScheduleClientPage({
           {Object.keys(groupedSchedules).length > 0 ? (
             Object.entries(groupedSchedules).map(([dateStr, daySchedules]) => (
               <div key={dateStr} className="space-y-3">
-                <h2 className="text-[14px] font-bold text-gray-400 uppercase tracking-wider pl-1">
+                <h2 className="text-[14px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-1">
                   {formatDateLabel(dateStr)}
                 </h2>
-                <div className="flex flex-col bg-[#1c1c1e]/40 backdrop-blur-md border border-white/5 rounded-[32px] overflow-hidden">
+                <div className="flex flex-col bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 rounded-[32px] overflow-hidden shadow-sm">
                   {daySchedules.map((s, index) => {
                     const globalIndex = filteredSchedules.findIndex(fs => fs.id === s.id);
                     const isLast = index === daySchedules.length - 1;
                     return (
-                      <div key={s.id} className={isLast ? "" : "border-b border-white/5"}>
+                      <div key={s.id} className={isLast ? "" : "border-b border-gray-100 dark:border-white/5"}>
                         <CompactMatchCard
                           schedule={s}
                           getDepartmentInfo={getDepartmentInfo}
@@ -235,7 +235,7 @@ export default function ScheduleClientPage({
           ) : (
             <div className="w-full flex flex-col items-center justify-center text-center h-[30vh]">
               <span className="text-5xl opacity-20 mb-3">📅</span>
-              <p className="text-gray-500 font-medium">No matches found.</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">No matches found.</p>
             </div>
           )}
         </div>
@@ -263,18 +263,18 @@ export default function ScheduleClientPage({
             className="fixed inset-0 z-[70] flex flex-col pt-safe"
           >
             {/* Background gradient behind cards inside modal */}
-            <div className="absolute inset-0 bg-black" />
+            <div className="absolute inset-0 bg-[#F5F5F7] dark:bg-black" />
             
             {/* Modal Header: Date and Close Button */}
             <div className="relative flex justify-center items-center mt-4 mb-4 shrink-0">
-              <div className="text-center font-bold text-white/90 text-[15px] sm:text-[17px] tracking-wide">
+              <div className="text-center font-bold text-gray-900 dark:text-white text-[15px] sm:text-[17px] tracking-wide">
                 {formatFullDate(filteredSchedules[activeSwiperIndex]?.date)}
               </div>
               <button 
                 onClick={() => setSelectedMatchIndex(null)}
-                className="absolute right-4 z-50 w-8 h-8 sm:w-10 sm:h-10 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/10 flex items-center justify-center rounded-full transition-colors"
+                className="absolute right-4 z-50 w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 shadow-sm flex items-center justify-center rounded-full transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-900 dark:text-white">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Schedule } from "@/features/schedule/models/scheduleTypes";
 import { stringToColor } from "@/utils/colors";
-import { MapPin, Clock, Users, Trophy, Share, ChevronRight, Download } from "lucide-react";
+import { MapPin, Clock, Users, Trophy, ChevronRight, Download } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { Department } from "@/shared/models/tournamentTypes";
 import { useRef, useState, useEffect } from "react";
@@ -21,8 +21,14 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [predictions, setPredictions] = useState<Record<string, number>>({});
-  const [hasVoted, setHasVoted] = useState(false);
+  const [votedTeamId, setVotedTeamId] = useState<string | null>(null);
+  const [isVoting, setIsVoting] = useState(false);
   const supabase = createClient();
+
+  useEffect(() => {
+    const savedVote = localStorage.getItem(`vote_${schedule.id}`);
+    if (savedVote) setVotedTeamId(savedVote);
+  }, [schedule.id]);
 
   useEffect(() => {
     const fetchPredictions = async () => {
@@ -39,17 +45,48 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   }, [schedule.id, supabase]);
 
   const handleVote = async (deptId: string) => {
-    if (hasVoted) return;
-    setHasVoted(true);
-    // Optimistic UI update
-    setPredictions(prev => ({...prev, [deptId]: (prev[deptId] || 0) + 1}));
+    if (isVoting) return;
+    setIsVoting(true);
     
-    // Dynamic import of server action to avoid bundling issues
+    // Optimistic UI updates based on current voted state
+    const prevVoted = votedTeamId;
+    const prevPredictions = { ...predictions };
+    
+    if (prevVoted === deptId) {
+      // Toggling off
+      setVotedTeamId(null);
+      setPredictions(prev => ({...prev, [deptId]: Math.max(0, (prev[deptId] || 1) - 1)}));
+    } else {
+      // Changing vote or new vote
+      setVotedTeamId(deptId);
+      setPredictions(prev => {
+        const next = { ...prev };
+        if (prevVoted) next[prevVoted] = Math.max(0, (next[prevVoted] || 1) - 1);
+        next[deptId] = (next[deptId] || 0) + 1;
+        return next;
+      });
+    }
+    
     const { votePrediction } = await import('@/features/schedule/actions/votePrediction');
     const res = await votePrediction(schedule.id, deptId);
+    
     if (!res.success) {
-      alert(res.error);
+      // Revert on failure
+      setVotedTeamId(prevVoted);
+      setPredictions(prevPredictions);
+      alert(res.error || "Failed to vote");
+    } else if (res.counts) {
+      // Sync exact counts from server
+      setPredictions(res.counts);
+      setVotedTeamId(res.userVote || null);
+      if (res.userVote) {
+        localStorage.setItem(`vote_${schedule.id}`, res.userVote);
+      } else {
+        localStorage.removeItem(`vote_${schedule.id}`);
+      }
     }
+    
+    setIsVoting(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -82,22 +119,8 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   // Show teams in list format (bottom) if > 2 teams
   const showTeamsInList = departments.length > 2;
 
-  let backgroundStyle = {};
-  if (departments.length === 0) {
-    backgroundStyle = { background: 'linear-gradient(to bottom, #1a1a2e, #0f0f1a)' };
-  } else if (departments.length === 1) {
-    const c = stringToColor(departments[0].abbreviation || departments[0].name);
-    backgroundStyle = { background: `linear-gradient(to bottom, ${c}, #0f0f1a)` };
-  } else if (departments.length === 2) {
-    const c1 = stringToColor(departments[0].abbreviation || departments[0].name);
-    const c2 = stringToColor(departments[1].abbreviation || departments[1].name);
-    backgroundStyle = { background: `linear-gradient(to right, ${c1} 0%, ${c2} 100%)` };
-  } else {
-    // For 3+ teams, use the first two colors to create a nice blend
-    const c1 = stringToColor(departments[0].abbreviation || departments[0].name);
-    const c2 = stringToColor(departments[1].abbreviation || departments[1].name);
-    backgroundStyle = { background: `linear-gradient(to right, ${c1}, ${c2})` };
-  }
+  // Removed dynamic background to favor clean white aesthetic
+  const backgroundStyle = { backgroundColor: '#ffffff' };
 
   const getMedal = (deptId: string) => {
     if (status !== 'finished' || !(schedule.events as any)?.results) return null;
@@ -110,6 +133,8 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const totalVotes = d1Votes + d2Votes;
   const d1Percentage = totalVotes > 0 ? (d1Votes / totalVotes) * 100 : 50;
   const d2Percentage = totalVotes > 0 ? (d2Votes / totalVotes) * 100 : 50;
+  
+  const totalMultiVotes = Object.values(predictions).reduce((a, b) => a + b, 0);
 
   const renderTeamHero = (d: Department, index: number, isWinner: boolean = false, score?: number | null) => {
     const medal = getMedal(d.id);
@@ -124,18 +149,18 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
             </div>
           )}
           {d.image_url ? (
-            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-xl" />
+            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" />
           ) : (
-            <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-xl backdrop-blur-sm border border-white/10">
+            <div className="w-full h-full rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 shadow-sm border border-gray-200 dark:border-white/10">
               {d.abbreviation || d.name.slice(0, 3)}
             </div>
           )}
         </div>
-      <div className={`text-center font-bold text-[14px] sm:text-[16px] text-white tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis`}>
+      <div className={`text-center font-bold text-[14px] sm:text-[16px] tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis ${isWinner ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>
         {d.name}
       </div>
       {score !== undefined && score !== null && !showTeamsInList && (
-        <div className={`mt-0.5 text-[15px] font-semibold tracking-wide ${isWinner ? 'text-white' : 'text-white/60'}`}>
+        <div className={`mt-0.5 text-[22px] font-black tracking-tight ${isWinner ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
           {score}
         </div>
       )}
@@ -154,27 +179,15 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
       const shareBtn = cardRef.current.querySelector('#share-btn') as HTMLElement;
       if (shareBtn) shareBtn.style.display = 'none';
 
-      // Capture DOM
       const dataUrl = await htmlToImage.toJpeg(cardRef.current, { quality: 0.95, backgroundColor: '#000' });
       
       if (shareBtn) shareBtn.style.display = 'flex';
 
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `match-${schedule.id}.jpg`, { type: 'image/jpeg' });
-      
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: schedule.events?.name,
-          text: `Check out this match!`
-        });
-      } else {
-        // Fallback to download
-        const link = document.createElement('a');
-        link.download = `match-${schedule.id}.jpg`;
-        link.href = dataUrl;
-        link.click();
-      }
+      // Force download photo
+      const link = document.createElement('a');
+      link.download = `match-${schedule.id}.jpg`;
+      link.href = dataUrl;
+      link.click();
     } catch (err) {
       console.error('Error sharing image', err);
       alert('Failed to generate image. Please try again.');
@@ -187,37 +200,46 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
     <div className="w-full h-full flex flex-col pt-2 pb-4">
       <div 
         ref={cardRef}
-        className="w-full flex-1 bg-[#0a0a0c] rounded-[40px] overflow-hidden flex flex-col relative border border-white/10" 
-        style={backgroundStyle}
+        className="w-full flex-1 bg-white dark:bg-[#1c1c1e]/90 rounded-[40px] overflow-hidden flex flex-col relative border border-gray-200 dark:border-white/10 shadow-xl" 
       >
-        {/* Dark overlay for contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#0a0a0c]/80 to-[#0a0a0c]" />
+        {/* Subtle top gradient for contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 dark:from-white/5 to-white/90 dark:to-transparent pointer-events-none" />
         
+        {/* Fixed Download Button at bottom */}
+        <button 
+          id="share-btn"
+          onClick={handleShare}
+          disabled={isExporting}
+          className="absolute bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-white dark:bg-[#2c2c2e] flex items-center justify-center border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-[#3c3c3e] transition-all disabled:opacity-50 shadow-lg"
+        >
+          {isExporting ? <Clock size={20} className="text-gray-900 dark:text-white animate-spin" /> : <Download size={20} className="text-gray-900 dark:text-white" />}
+        </button>
+
         {/* Scrollable Content */}
-        <div className="relative z-10 w-full h-full overflow-y-auto hide-scrollbar flex flex-col">
+        <div className="relative z-10 w-full h-full overflow-y-auto hide-scrollbar flex flex-col pb-24">
           
           {/* Top Sheet Handle (Visual only) */}
-          <div className="w-10 h-1.5 bg-white/30 rounded-full mx-auto mt-3" />
+          <div className="w-10 h-1.5 bg-gray-300 dark:bg-white/20 rounded-full mx-auto mt-3" />
 
           {/* Top Bar: Event Name and Share */}
           <div className="flex justify-center items-center relative mt-3 mb-6">
-            <span className="text-[13px] font-bold text-white/70 uppercase tracking-widest text-center px-12">
+            <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center px-12">
               {schedule.events?.name}
             </span>
-            <button 
-              id="share-btn"
-              onClick={handleShare}
-              disabled={isExporting}
-              className="absolute right-4 w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
-            >
-              {isExporting ? <Clock size={16} className="text-white animate-spin" /> : <Share size={16} className="text-white -ml-0.5" />}
-            </button>
+            <div className="absolute top-0 right-5 flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full shadow-sm ${status === 'finished' ? 'bg-[#FF5F56]' : status === 'live' ? 'bg-[#27C93F]' : 'bg-[#FFBD2E]'}`} />
+              {status !== 'finished' && (
+                <span className={`text-[10px] font-bold ${status === 'live' ? 'text-[#27C93F]' : 'text-gray-400 dark:text-gray-500'}`}>
+                  {status === 'live' ? 'LIVE' : (schedule.start_time.startsWith("00:00") ? "TBA" : formatTime(schedule.start_time))}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Teams & Score/Time Hero Section */}
           <div className="px-2 sm:px-6 mb-8">
             {departments.length === 0 ? (
-              <div className="text-center text-white/50 py-10 font-bold">Teams TBA</div>
+              <div className="text-center text-gray-400 dark:text-gray-500 py-10 font-bold">Teams TBA</div>
             ) : showTeamsInList ? (
               // If more than 2 teams, show the clustered teams in the center instead of a single icon
               <div className="flex flex-col items-center justify-center py-2">
@@ -227,25 +249,12 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                      return renderTeamHero(d, i, schedule.winner_id === d.id);
                    })}
                  </div>
-                 <div className="text-[18px] sm:text-[20px] font-bold text-white tracking-widest uppercase">
-                  {status === 'live' ? 'LIVE' : status === 'finished' ? 'FINAL' : (schedule.start_time.startsWith("00:00") ? "TBA" : formatTime(schedule.start_time))}
-                 </div>
               </div>
             ) : (
               <div className="flex justify-between items-center px-1 sm:px-2 gap-2">
                 {renderTeamHero(departments[0], 0, schedule.winner_id === departments[0].id, schedule.score_a)}
                 
-                <div className="flex flex-col items-center justify-center shrink-0 min-w-[70px] max-w-[90px]">
-                  {status === 'live' ? (
-                    <div className="text-[15px] sm:text-[18px] font-bold text-white tracking-wide">LIVE</div>
-                  ) : status === 'finished' ? (
-                    <div className="text-[15px] sm:text-[18px] font-bold text-white tracking-wide">FINAL</div>
-                  ) : (
-                    <div className="text-[15px] sm:text-[18px] font-bold text-white tracking-wide">
-                      {schedule.start_time.startsWith("00:00") ? "TBA" : formatTime(schedule.start_time)}
-                    </div>
-                  )}
-                </div>
+                <div className="flex flex-col items-center justify-center shrink-0 min-w-[30px]" />
 
                 {renderTeamHero(departments[1], 1, schedule.winner_id === departments[1].id, schedule.score_b)}
               </div>
@@ -266,39 +275,39 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
           <div className="px-4 flex-1 space-y-4 pb-8">
             
             {/* Match Details Card */}
-            <div className="bg-[#1c1c1e]/60 backdrop-blur-xl border border-white/5 rounded-[24px] p-5">
-              <div className="text-center text-[15px] font-bold text-white mb-5">
+            <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
+              <div className="text-center text-[15px] font-bold text-gray-900 dark:text-white mb-5">
                 Match Details
               </div>
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-[15px] text-gray-400">Date</span>
-                  <span className="text-[15px] font-medium text-white">{formatDate(schedule.date)}</span>
+                  <span className="text-[15px] text-gray-500 dark:text-gray-400">Date</span>
+                  <span className="text-[15px] font-medium text-gray-900 dark:text-gray-200">{formatDate(schedule.date)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[15px] text-gray-400">Time</span>
-                  <span className="text-[15px] font-medium text-white">
+                  <span className="text-[15px] text-gray-500 dark:text-gray-400">Time</span>
+                  <span className="text-[15px] font-medium text-gray-900 dark:text-gray-200">
                     {schedule.start_time.startsWith("00:00") ? "TBA" : formatTime(schedule.start_time)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[15px] text-gray-400">Venue</span>
-                  <span className="text-[15px] font-medium text-white text-right max-w-[150px] truncate">{schedule.venues?.name || 'TBA'}</span>
+                  <span className="text-[15px] text-gray-500 dark:text-gray-400">Venue</span>
+                  <span className="text-[15px] font-medium text-gray-900 dark:text-gray-200 text-right max-w-[150px] truncate">{schedule.venues?.name || 'TBA'}</span>
                 </div>
                 
                 {schedule.events?.category && (
                   <div className="flex justify-between items-center gap-4">
-                    <span className="text-[15px] text-gray-400 shrink-0">Category</span>
-                    <span className="text-[15px] font-medium text-white max-w-[180px] text-right truncate">
+                    <span className="text-[15px] text-gray-500 dark:text-gray-400 shrink-0">Category</span>
+                    <span className="text-[15px] font-medium text-gray-900 dark:text-gray-200 max-w-[180px] text-right truncate">
                       {getCategoryName ? getCategoryName(schedule.events.category) : (typeof schedule.events.category === 'object' ? schedule.events.category.name : schedule.events.category)}
                     </span>
                   </div>
                 )}
                 {schedule.events?.gender && (
                   <div className="flex justify-between items-center">
-                    <span className="text-[15px] text-gray-400">Division</span>
-                    <span className="text-[15px] font-medium text-white capitalize">{schedule.events.gender} {schedule.events.division ? `(${schedule.events.division})` : ''}</span>
+                    <span className="text-[15px] text-gray-500 dark:text-gray-400">Division</span>
+                    <span className="text-[15px] font-medium text-gray-900 dark:text-gray-200 capitalize">{schedule.events.gender} {schedule.events.division ? `(${schedule.events.division})` : ''}</span>
                   </div>
                 )}
               </div>
@@ -322,15 +331,15 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
 
             {/* Fan Predictions */}
             {departments.length === 2 && (
-              <div className="bg-[#1c1c1e]/60 backdrop-blur-xl border border-white/5 rounded-[24px] p-5">
+              <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-[15px] font-bold text-white">Fan Predictions</div>
-                  <div className="text-[11px] font-bold text-white/40 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-md">Who will win?</div>
+                  <div className="text-[15px] font-bold text-gray-900 dark:text-white">Fan Predictions</div>
+                  <div className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-black/30 px-2 py-1 rounded-md">Who will win?</div>
                 </div>
                 
-                <div className="flex w-full h-3 rounded-full overflow-hidden mb-3 bg-white/10">
+                <div className="flex w-full h-3 rounded-full overflow-hidden mb-3 bg-gray-100 dark:bg-white/10">
                    {totalVotes === 0 ? (
-                     <div className="w-full bg-white/10" />
+                     <div className="w-full bg-gray-100 dark:bg-white/10" />
                    ) : (
                      <>
                        <div className="bg-[#00e5ff] transition-all duration-500" style={{ width: `${d1Percentage}%` }} />
@@ -340,47 +349,90 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                 </div>
                 
                 <div className="flex justify-between items-center mb-4">
-                   <span className="text-[13px] font-bold text-[#00e5ff]">{d1Percentage.toFixed(0)}% <span className="text-white/60 font-medium ml-1">{departments[0]?.abbreviation}</span></span>
-                   <span className="text-[13px] font-bold text-[#ff3366]"><span className="text-white/60 font-medium mr-1">{departments[1]?.abbreviation}</span> {d2Percentage.toFixed(0)}%</span>
+                   <span className="text-[13px] font-bold text-[#00b8cc]">{d1Percentage.toFixed(0)}% <span className="text-gray-500 dark:text-gray-400 font-medium ml-1">{departments[0]?.abbreviation}</span></span>
+                   <span className="text-[13px] font-bold text-[#e62e5c]"><span className="text-gray-500 dark:text-gray-400 font-medium mr-1">{departments[1]?.abbreviation}</span> {d2Percentage.toFixed(0)}%</span>
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={() => handleVote(departments[0]?.id as string)} disabled={hasVoted} className="flex-1 bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-colors">
-                    Vote {departments[0]?.abbreviation}
+                  <button onClick={() => handleVote(departments[0]?.id as string)} disabled={isVoting} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[0]?.id ? 'bg-[#00e5ff]/10 text-[#00b8cc] border-[#00b8cc]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
+                    {votedTeamId === departments[0]?.id ? 'Voted' : `Vote ${departments[0]?.abbreviation}`}
                   </button>
-                  <button onClick={() => handleVote(departments[1]?.id as string)} disabled={hasVoted} className="flex-1 bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/5 py-2.5 rounded-xl text-[13px] font-bold text-white transition-colors">
-                    Vote {departments[1]?.abbreviation}
+                  <button onClick={() => handleVote(departments[1]?.id as string)} disabled={isVoting} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[1]?.id ? 'bg-[#ff3366]/10 text-[#e62e5c] border-[#e62e5c]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
+                    {votedTeamId === departments[1]?.id ? 'Voted' : `Vote ${departments[1]?.abbreviation}`}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Fan Predictions for Multi-Team */}
+            {departments.length >= 3 && (
+              <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-[15px] font-bold text-gray-900 dark:text-white">Fan Predictions</div>
+                  <div className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-black/30 px-2 py-1 rounded-md">Who will win?</div>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                  {departments.slice(0, 5).map(d => {
+                    const dVotes = predictions[d.id] || 0;
+                    const dPercentage = totalMultiVotes > 0 ? (dVotes / totalMultiVotes) * 100 : 0;
+                    
+                    return (
+                      <button 
+                        key={d.id} 
+                        onClick={() => handleVote(d.id)} 
+                        disabled={isVoting} 
+                        className={`relative w-full overflow-hidden border py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors group shadow-sm ${votedTeamId === d.id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10 disabled:opacity-90'}`}
+                      >
+                         <div className={`absolute left-0 top-0 bottom-0 transition-all duration-500 z-0 ${votedTeamId === d.id ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-white/5'}`} style={{ width: `${votedTeamId || totalMultiVotes > 0 ? dPercentage : 0}%` }} />
+                         
+                         <div className="flex items-center gap-3 z-10">
+                           <div className="w-5 h-5 relative">
+                             {d.image_url ? <Image src={d.image_url} alt="" fill sizes="20px" className="object-contain" /> : <div className="w-full h-full bg-gray-200 dark:bg-white/20 rounded-full" />}
+                           </div>
+                           <span className={`text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-900 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{d.name}</span>
+                         </div>
+                         <div className={`z-10 text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                           {votedTeamId === d.id ? 'Voted' : (votedTeamId || totalMultiVotes > 0 ? `${dPercentage.toFixed(0)}%` : 'Vote')}
+                         </div>
+                      </button>
+                    );
+                  })}
+                  {departments.length > 5 && (
+                     <div className="text-center text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase mt-2">
+                       Voting limited to Top 5
+                     </div>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Head-to-Head History (Mocked Placeholder for aesthetics) */}
             {departments.length === 2 && (
-              <div className="bg-[#1c1c1e]/60 backdrop-blur-xl border border-white/5 rounded-[24px] p-5">
-                <div className="text-[15px] font-bold text-white mb-4">Head-to-Head History</div>
-                <div className="flex items-center justify-between px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+              <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
+                <div className="text-[15px] font-bold text-gray-900 dark:text-white mb-4">Head-to-Head History</div>
+                <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/5">
                   <div className="flex flex-col items-center">
-                    <span className="text-[20px] font-black text-white">3</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase">{departments[0]?.abbreviation} WINS</span>
+                    <span className="text-[20px] font-black text-gray-900 dark:text-white">3</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">{departments[0]?.abbreviation} WINS</span>
                   </div>
-                  <div className="text-[12px] text-gray-500 font-bold">VS</div>
+                  <div className="text-[12px] text-gray-400 dark:text-gray-500 font-bold">VS</div>
                   <div className="flex flex-col items-center">
-                    <span className="text-[20px] font-black text-white">1</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase">{departments[1]?.abbreviation} WINS</span>
+                    <span className="text-[20px] font-black text-gray-900 dark:text-white">1</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">{departments[1]?.abbreviation} WINS</span>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Standings Context */}
-            <div className="bg-gradient-to-br from-purple-900/40 to-[#1c1c1e]/60 backdrop-blur-xl border border-purple-500/20 rounded-[24px] p-5 flex items-start gap-4">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center shrink-0">
-                <Trophy size={18} className="text-purple-300" />
+            <div className="bg-gradient-to-br from-purple-50/80 dark:from-purple-900/20 to-white/90 dark:to-[#1c1c1e] backdrop-blur-xl border border-purple-100 dark:border-purple-500/20 rounded-[24px] p-5 flex items-start gap-4 shadow-sm">
+              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center shrink-0">
+                <Trophy size={18} className="text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-[14px] font-bold text-white mb-1">Championship Implications</div>
-                <div className="text-[13px] text-purple-200/70 leading-relaxed">
+                <div className="text-[14px] font-bold text-purple-900 dark:text-purple-300 mb-1">Championship Implications</div>
+                <div className="text-[13px] text-purple-800/80 dark:text-purple-200/70 leading-relaxed">
                   {schedule.context || "This match is critical for the overall standings. A win here secures a massive point advantage for the tournament leaderboard."}
                 </div>
               </div>

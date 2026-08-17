@@ -286,13 +286,13 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   if (!tournamentId) {
     return (
-      <div className="h-screen bg-black flex flex-col items-center justify-center text-center px-6">
-        <div className="w-16 h-16 mb-6 opacity-50">
+      <div className="h-screen bg-[#F5F5F7] dark:bg-black flex flex-col items-center justify-center text-center px-6 transition-colors">
+        <div className="w-16 h-16 mb-6 drop-shadow-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/monument-logo.png" alt="Monument" className="w-full h-full object-contain grayscale" />
+          <img src="/monument-logo.png" alt="Monument" className="w-full h-full object-contain" />
         </div>
-        <div className="text-2xl font-black text-white tracking-tight mb-3">No Active Tournament</div>
-        <p className="text-gray-500 font-medium text-sm max-w-xs leading-relaxed">
+        <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-3">No Active Tournament</div>
+        <p className="text-gray-500 dark:text-gray-400 font-medium text-sm max-w-xs leading-relaxed">
           The season has concluded. Check back later for upcoming intramurals.
         </p>
       </div>

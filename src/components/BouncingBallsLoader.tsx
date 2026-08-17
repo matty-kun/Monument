@@ -33,13 +33,8 @@ export default function BouncingBallsLoader({
         className="flex flex-col items-center"
       >
         <div className={`${maintextSize} font-black bg-clip-text text-transparent bg-gradient-to-r from-monument-primary via-purple-600 to-monument-primary bg-[length:200%_auto] animate-shimmer tracking-tighter`}>
-          CITE FEST
+          MONUMENT
         </div>
-        {!isSmall && (
-          <div className={`${subtextSize} font-bold text-gray-400 tracking-[0.2em] mt-1`}>
-            2026
-          </div>
-        )}
       </motion.div>
       {showDots && (
         <div className="flex gap-1">

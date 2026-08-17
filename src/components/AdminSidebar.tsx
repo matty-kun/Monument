@@ -35,6 +35,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false); // Mobile
   const [isCollapsed, setIsCollapsed] = useState(false); // Desktop
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
   const { tournaments, selectedTournament, setSelectedTournament, activeTournament } = useTournament();
@@ -72,7 +73,7 @@ export default function AdminSidebar() {
 
       {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden" onClick={() => setIsOpen(false)}></div>}
 
-      <aside className={`fixed top-0 left-0 bottom-0 z-[60] bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 transition-all duration-500 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} ${isCollapsed ? 'md:w-20' : 'md:w-72'} md:sticky md:h-screen md:shrink-0`}>
+      <aside className={`fixed top-0 left-0 bottom-0 z-[60] bg-[#1c1c1e]/90 backdrop-blur-xl border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} ${isCollapsed ? 'md:w-20' : 'md:w-72'} md:sticky md:h-screen md:shrink-0`}>
         <div className="flex flex-col h-full py-6">
           <div className={`px-4 mb-10 flex items-center group/sidebar-header ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             <div className="relative flex items-center gap-3">
@@ -94,7 +95,7 @@ export default function AdminSidebar() {
                                     <Image src="/monument-logo.png" alt="Logo" width={32} height={32} className="rounded-lg" />
                                 </div>
                                 <div 
-                                    className="absolute inset-0 flex items-center justify-center opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 text-monument-primary"
+                                    className="absolute inset-0 flex items-center justify-center opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 text-white"
                                     onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); }}
                                 >
                                     <PanelLeftOpen size={24} />
@@ -109,27 +110,59 @@ export default function AdminSidebar() {
                                 className="flex items-center gap-3"
                             >
                                 <Image src="/monument-logo.png" alt="Logo" width={40} height={40} className="rounded-lg" />
-                                <div className="flex flex-col whitespace-nowrap overflow-hidden">
+                                <div className="flex flex-col whitespace-nowrap overflow-visible">
                                     {tournaments.length > 0 ? (
-                                      <select 
-                                        value={selectedTournament?.id || ''} 
-                                        onChange={(e) => {
-                                          const t = tournaments.find(t => t.id === e.target.value);
-                                          if (t) setSelectedTournament(t);
-                                        }}
-                                        className="text-sm font-black text-monument-primary dark:text-violet-400 uppercase tracking-tighter leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer appearance-none outline-none hover:opacity-80 transition-opacity max-w-[150px] text-ellipsis"
-                                      >
-                                        {tournaments.map(t => (
-                                          <option key={t.id} value={t.id} className="bg-white dark:bg-gray-800 text-black dark:text-white text-sm">
-                                            {t.name}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      <div className="relative">
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
+                                          className="flex items-center gap-2 text-[17px] font-black text-white tracking-tight leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:opacity-80 transition-opacity"
+                                        >
+                                          <span className="max-w-[150px] truncate">
+                                            {selectedTournament ? selectedTournament.name : 'Platform Overview'}
+                                          </span>
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </button>
+                                        
+                                        <AnimatePresence>
+                                          {isDropdownOpen && (
+                                            <>
+                                              <div className="fixed inset-0 z-[80]" onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); }} />
+                                              <motion.div 
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="absolute top-full left-0 mt-3 w-64 bg-[#2c2c2e] border border-white/10 rounded-[16px] shadow-2xl z-[90] overflow-hidden flex flex-col py-2"
+                                              >
+                                                <button
+                                                  onClick={(e) => { e.stopPropagation(); setSelectedTournament(null); setIsDropdownOpen(false); }}
+                                                  className={`text-left px-4 py-2.5 text-[14px] font-semibold transition-colors ${!selectedTournament ? 'bg-[#0A84FF] text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                                                >
+                                                  Platform Overview
+                                                </button>
+                                                <div className="h-px w-full bg-white/10 my-1" />
+                                                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                  {tournaments.map(t => (
+                                                    <button
+                                                      key={t.id}
+                                                      onClick={(e) => { e.stopPropagation(); setSelectedTournament(t); setIsDropdownOpen(false); }}
+                                                      className={`w-full text-left px-4 py-2.5 text-[14px] font-semibold transition-colors flex items-center justify-between ${selectedTournament?.id === t.id ? 'bg-[#0A84FF]/20 text-[#0A84FF]' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                                                    >
+                                                      <span className="truncate">{t.name}</span>
+                                                      {selectedTournament?.id === t.id && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </motion.div>
+                                            </>
+                                          )}
+                                        </AnimatePresence>
+                                      </div>
                                     ) : (
-                                      <span className="text-lg font-black text-monument-primary dark:text-violet-400 uppercase tracking-tighter leading-none whitespace-nowrap">LOADING...</span>
+                                      <span className="text-[17px] font-semibold text-white tracking-tight leading-none whitespace-nowrap">LOADING...</span>
                                     )}
-                                    <span className="text-[0.6rem] font-bold text-gray-400 uppercase tracking-widest mt-1 whitespace-nowrap">
-                                      {selectedTournament?.is_active ? '● Active Season' : '○ Archived Season'}
+                                      <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mt-1 whitespace-nowrap">
+                                      {selectedTournament ? (selectedTournament.is_active ? '● Active Season' : '○ Archived Season') : '● Global Platform'}
                                     </span>
                                 </div>
                             </motion.div>
@@ -140,7 +173,7 @@ export default function AdminSidebar() {
             </div>
 
             {!isCollapsed && !isOpen && (
-              <button onClick={() => setIsCollapsed(true)} className="p-2 text-gray-300 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition-all">
+              <button onClick={() => setIsCollapsed(true)} className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all">
                 <PanelLeftClose size={20} />
               </button>
             )}
@@ -152,13 +185,13 @@ export default function AdminSidebar() {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} 
-                      className={`flex items-center group relative ${isCollapsed ? 'justify-center py-4' : 'px-4 py-3 justify-between'} rounded-2xl transition-all duration-300 ${isActive ? 'bg-monument-primary text-white dark:text-white shadow-xl shadow-violet-500/30' : 'text-gray-400 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-monument-primary dark:hover:text-white'}`}>
+                      className={`flex items-center group relative ${isCollapsed ? 'justify-center py-4' : 'px-4 py-3 justify-between'} rounded-[20px] transition-all duration-300 ${isActive ? 'bg-[#0A84FF] text-white shadow-lg shadow-[#0A84FF]/20' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
                   <div className="flex items-center gap-4">
-                    <Icon size={isCollapsed ? 26 : 20} className={isActive ? 'text-white dark:text-white' : 'transition-transform group-hover:scale-110 duration-300'} />
-                    {!isCollapsed && <span className={`text-sm font-black uppercase tracking-widest ${isActive ? 'text-white dark:text-white' : ''}`}>{item.label}</span>}
+                    <Icon size={isCollapsed ? 26 : 20} className={isActive ? 'text-white' : 'transition-transform group-hover:scale-110 duration-300'} />
+                    {!isCollapsed && <span className={`text-[14px] font-semibold tracking-wide ${isActive ? 'text-white' : ''}`}>{item.label}</span>}
                   </div>
                   {isCollapsed && (
-                    <div className="fixed left-24 bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-[100] shadow-2xl">
+                    <div className="fixed left-24 bg-[#1c1c1e] border border-white/10 text-white text-[12px] font-semibold tracking-wide px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-[100] shadow-2xl">
                       {item.label}
                     </div>
                   )}
@@ -167,15 +200,16 @@ export default function AdminSidebar() {
             })}
           </nav>
 
-          <div className="mt-auto px-3 pt-6 border-t border-gray-50 dark:border-gray-700/50">
-             <div className={`bg-gray-50/50 dark:bg-gray-900/30 rounded-[2rem] p-5 flex items-center gap-4 transition-all ${isCollapsed ? 'justify-center p-4' : ''}`}>
-                <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center border border-gray-100 dark:border-gray-700 shrink-0">
-                  <Users className="text-monument-primary" size={20} />
+          <div className="mt-auto px-4 pt-6 pb-6">
+             <div className={`group bg-[#1c1c1e] hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-white/5 shadow-sm hover:border-white/10 cursor-default ${isCollapsed ? 'justify-center p-3' : ''}`}>
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0A84FF] to-[#0051a8] shadow-inner flex items-center justify-center shrink-0 relative">
+                  <Users className="text-white drop-shadow-md" size={18} strokeWidth={2.5} />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#1c1c1e] rounded-full"></div>
                 </div>
                 {!isCollapsed && (
-                  <div className="overflow-hidden">
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Authenticated</p>
-                    <p className="text-xs font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight truncate">{role?.replace('_', ' ') || 'Developer'}</p>
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-[10px] font-semibold text-white/40 tracking-widest uppercase mb-0.5">Account</p>
+                    <p className="text-[14px] font-bold text-white tracking-wide truncate capitalize">{role?.replace('_', ' ') || 'Developer'}</p>
                   </div>
                 )}
              </div>

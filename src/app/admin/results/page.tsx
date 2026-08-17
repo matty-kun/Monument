@@ -45,23 +45,33 @@ export default function AddResultPage() {
   if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
-    <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
+    <div className="w-full h-full text-white flex flex-col overflow-hidden max-w-[1400px]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
         <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
       </div>
 
       <div className="mb-4 shrink-0">
-        <h1 className="text-4xl font-black text-monument-primary uppercase tracking-tight">{isEditing ? 'Edit Result' : 'Add Results'}</h1>
-        <p className="text-sm text-gray-500 font-medium">{isEditing ? 'Modify medal standings for this event' : 'Record competition winners and points'}</p>
+        <h1 className="text-[32px] font-black text-white tracking-tight leading-none mb-2">{isEditing ? 'Edit Result' : 'Add Results'}</h1>
+        <p className="text-[15px] text-white/50 font-semibold tracking-wide">{isEditing ? 'Modify medal standings for this event' : 'Record competition winners and points'}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
-        {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-fit flex flex-col pb-2">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible transition-all hover:shadow-md flex flex-col">
-              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 z-10 backdrop-blur-sm rounded-t-3xl">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">{isEditing ? 'Edit Result' : 'Medal Entry Form'}</h2>
+          {selectedTournament?.is_archived ? (
+            <div className="bg-[#1c1c1e] rounded-[24px] shadow-sm border border-white/5 overflow-hidden flex flex-col items-center justify-center p-12 text-center h-[400px]">
+              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
+                <span className="text-2xl opacity-50">🔒</span>
+              </div>
+              <h2 className="text-[18px] font-bold text-white mb-2">Season Archived</h2>
+              <p className="text-[14px] text-white/50 font-semibold tracking-wide max-w-[250px] leading-relaxed">
+                This tournament has been archived. Results can no longer be modified.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-[#1c1c1e] rounded-[24px] shadow-sm border border-white/5 overflow-visible transition-all flex flex-col">
+              <div className="p-6 border-b border-white/5 bg-[#1c1c1e] shrink-0 z-10 rounded-t-[24px]">
+                <h2 className="text-[12px] font-bold uppercase tracking-widest text-white/40">{isEditing ? 'Edit Result' : 'Medal Entry Form'}</h2>
               </div>
               
               <div className="p-6 relative flex flex-col pt-4">
@@ -164,10 +174,10 @@ export default function AddResultPage() {
                     <button
                       onClick={handleSubmit}
                       disabled={isSubmitting || !eventId || (!goldId && !silverId && !bronzeId)}
-                      className={`w-full font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3 ${
+                      className={`w-full font-bold py-4 rounded-[20px] transition-all shadow-lg text-[13px] tracking-wide active:scale-95 flex items-center justify-center gap-3 ${
                         (isSubmitting || !eventId || (!goldId && !silverId && !bronzeId))
-                        ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed shadow-none"
-                        : "bg-monument-primary hover:bg-monument-dark text-white shadow-violet-500/20"
+                        ? "bg-white/5 text-white/40 cursor-not-allowed shadow-none"
+                        : "bg-[#0A84FF] hover:bg-[#0070e0] text-white"
                       }`}
                     >
                       {isSubmitting ? (
@@ -177,7 +187,7 @@ export default function AddResultPage() {
                         </>
                       ) : isEditing ? 'UPDATE RESULTS' : 'RECORD EVENT RESULTS'}
                     </button>
-                    <p className="text-[10px] text-center text-gray-400 font-medium italic leading-tight">
+                    <p className="text-[12px] text-center text-white/40 font-medium leading-tight">
                       {!eventId 
                         ? 'Select an event to enable result recording.' 
                         : (!goldId && !silverId && !bronzeId)
@@ -188,35 +198,35 @@ export default function AddResultPage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-          {/* RIGHT COLUMN: History */}
-          <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col h-fit lg:max-h-[calc(100vh-180px)] overflow-hidden`}>
+        {/* RIGHT COLUMN: History */}
+          <div className="lg:col-span-8 flex flex-col h-fit lg:max-h-[calc(100vh-180px)] overflow-hidden">
             <div className="mb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0">
               <div>
-                <h3 className="text-xl font-black text-gray-800 dark:text-gray-100 uppercase tracking-tight">Results History</h3>
-                <p className="text-xs text-gray-400 font-medium tracking-wide">Full log of all competition records</p>
+                <h3 className="text-[18px] font-bold text-white uppercase tracking-wide">Results History</h3>
+                <p className="text-[12px] text-white/50 font-semibold tracking-wide">Full log of all competition records</p>
               </div>
-              <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-3 bg-[#1c1c1e] p-2 rounded-[16px] shadow-sm border border-white/5">
                  <div className="relative flex-1 sm:w-64">
-                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</div>
-                   <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-xl pl-9 pr-4 py-2 text-xs font-bold focus:ring-2 focus:ring-monument-primary outline-none transition-all shadow-inner" />
+                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-xs">🔍</div>
+                   <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/5 border-none rounded-xl pl-9 pr-4 py-2 text-[14px] font-semibold text-white placeholder-white/40 focus:ring-2 focus:ring-[#0A84FF]/50 outline-none transition-all shadow-inner" />
                  </div>
-                 <div className="bg-gray-100 dark:bg-gray-900 px-3 py-2 rounded-xl shrink-0 shadow-inner">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{groupedRecentResults.length} Competitions</span>
+                 <div className="bg-[#1c1c1e] border border-white/5 px-3 py-2 rounded-xl shrink-0">
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{groupedRecentResults.length} Competitions</span>
                  </div>
-                 <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl shadow-inner ml-1">
+                 <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl shadow-inner ml-1">
                     <button 
                       onClick={() => setViewMode('cards')} 
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-gray-800 shadow-sm text-monument-primary' : 'text-gray-400 hover:text-gray-500'}`}
+                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-[#1c1c1e] shadow-sm text-[#0A84FF] border border-white/10' : 'text-white/40 hover:text-white'}`}
                       title="Card View"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
                     </button>
                     <button 
                       onClick={() => setViewMode('table')} 
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-800 shadow-sm text-monument-primary' : 'text-gray-400 hover:text-gray-500'}`}
+                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-[#1c1c1e] shadow-sm text-[#0A84FF] border border-white/10' : 'text-white/40 hover:text-white'}`}
                       title="Table View"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -227,12 +237,12 @@ export default function AddResultPage() {
             
             <div className="overflow-y-auto custom-scrollbar flex-1 pb-4">
               {groupedRecentResults.length === 0 ? (
-                <div className="p-12 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm text-center">
+                <div className="p-12 bg-[#1c1c1e] rounded-[24px] border border-white/5 shadow-sm text-center">
                   <div className="text-5xl mb-4 opacity-50">🏆</div>
-                  <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  <h3 className="text-lg font-bold text-white mb-1">
                     {searchQuery ? "No results match your search" : "No results recorded yet"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-white/50">
                     {searchQuery ? "Try a different search term." : "Use the form to start awarding medals!"}
                   </p>
                 </div>
@@ -245,18 +255,18 @@ export default function AddResultPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                         key={eventId} 
-                        className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col group hover:shadow-md transition-shadow"
+                        className="bg-[#1c1c1e] rounded-[24px] shadow-sm border border-white/5 overflow-hidden flex flex-col group hover:border-white/10 transition-all"
                       >
-                        <div className="p-5 border-b border-gray-50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/30">
+                        <div className="p-5 border-b border-white/5 bg-[#1c1c1e]/50">
                           <div className="flex items-center gap-3 mb-2">
-                             <div className="w-10 h-10 rounded-2xl bg-white dark:bg-gray-700 shadow-sm flex items-center justify-center text-xl border border-gray-100 dark:border-gray-600">
+                             <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-xl">
                                 {event?.icon || '🏆'}
                              </div>
-                             <h4 className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight leading-tight flex-1">{event?.name || 'Unknown Event'}</h4>
+                             <h4 className="text-[14px] font-bold text-white tracking-wide flex-1">{event?.name || 'Unknown Event'}</h4>
                           </div>
                         </div>
 
-                        <div className="p-5 flex-1 bg-white dark:bg-gray-800">
+                        <div className="p-5 flex-1 bg-transparent">
                           <div className="flex flex-col gap-3">
                              {(["gold", "silver", "bronze"] as const).map(medal => {
                                const item = items.find(i => i.medal_type === medal);
@@ -264,26 +274,26 @@ export default function AddResultPage() {
                                const { icon } = getMedalStyles(medal);
 
                                return (
-                                 <div key={medal} className={`flex items-center gap-3 p-2 rounded-xl ${department ? 'bg-gray-50 dark:bg-gray-900/50' : ''}`}>
+                                 <div key={medal} className={`flex items-center gap-3 p-2 rounded-xl ${department ? 'bg-white/5' : ''}`}>
                                     <span className="text-xl w-6 flex justify-center drop-shadow-sm">{icon}</span>
                                      {item && !department ? (
                                        <div className="flex items-center gap-2 flex-1 min-w-0" title="No Team">
-                                         <span className="text-xs font-semibold italic text-gray-400 dark:text-gray-500 truncate pr-2">No Team</span>
+                                         <span className="text-xs font-semibold italic text-white/40 truncate pr-2">No Team</span>
                                        </div>
                                      ) : department ? (
                                        <div className="flex items-center gap-2 flex-1 min-w-0" title={department.name}>
                                          {department.image_url ? (
                                            <Image src={department.image_url} alt="" width={24} height={24} className="object-contain drop-shadow-sm shrink-0" />
                                          ) : (
-                                           <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                           <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white/50">
                                              {department.name?.substring(0, 2).toUpperCase() || "??"}
                                            </div>
                                          )}
-                                         <span className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate pr-2">{department.name}</span>
+                                         <span className="text-[13px] font-bold text-white truncate pr-2">{department.name}</span>
                                        </div>
                                      ) : (
-                                       <span className="text-[10px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
-                                         <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                                       <span className="text-[10px] font-bold italic text-[#0A84FF]/70 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                                         <div className="w-1 h-1 bg-[#0A84FF] rounded-full animate-pulse" />
                                          Awaiting...
                                        </span>
                                      )}
@@ -294,11 +304,11 @@ export default function AddResultPage() {
                         </div>
 
                         {!selectedTournament?.is_archived && (
-                          <div className="p-3 border-t border-gray-50 dark:border-gray-700/50 flex justify-end gap-2 bg-gray-50/50 dark:bg-gray-800/30">
-                             <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-gray-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                          <div className="p-3 border-t border-white/5 flex justify-end gap-2 bg-transparent">
+                             <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-white/40 hover:text-[#0A84FF] hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
                               ✏️ Edit
                              </button>
-                             <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                             <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-white/40 hover:text-[#FF453A] hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
                               🗑️ Delete
                              </button>
                           </div>
@@ -308,27 +318,27 @@ export default function AddResultPage() {
                   })}
                 </div>
               ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden mb-20">
+                <div className="bg-[#1c1c1e] rounded-[24px] border border-white/5 shadow-sm overflow-hidden mb-20">
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[600px] table-auto">
                       <thead>
-                        <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
-                          <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">Event</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥇 GOLD</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥈 SILVER</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400">🥉 BRONZE</th>
-                          {!selectedTournament?.is_archived && <th className="px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>}
+                        <tr className="bg-[#1c1c1e]/90 border-b border-white/5">
+                          <th className="px-3 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/40">Event</th>
+                          <th className="px-3 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/40">🥇 GOLD</th>
+                          <th className="px-3 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/40">🥈 SILVER</th>
+                          <th className="px-3 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/40">🥉 BRONZE</th>
+                          {!selectedTournament?.is_archived && <th className="px-3 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/40 text-right">Actions</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                      <tbody className="divide-y divide-white/5">
                         {groupedRecentResults.map(({ eventId, items, event }) => (
-                          <tr key={eventId} className="group hover:bg-gray-50/30 dark:hover:bg-gray-900/30 transition-colors">
+                          <tr key={eventId} className="group hover:bg-white/5 transition-colors">
                             <td className="px-3 py-2 text-xs">
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-xs border border-gray-100 dark:border-gray-600 group-hover:bg-white dark:group-hover:bg-gray-600 transition-colors">
+                                <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-xs">
                                   {event?.icon || '🏆'}
                                 </div>
-                                <span className="text-[11px] font-bold text-gray-800 dark:text-gray-100 leading-tight truncate max-w-[100px]">{event?.name || 'Unknown Event'}</span>
+                                <span className="text-[13px] font-bold text-white leading-tight truncate max-w-[100px]">{event?.name || 'Unknown Event'}</span>
                               </div>
                             </td>
                             {(['gold', 'silver', 'bronze'] as const).map(medal => {
@@ -341,22 +351,22 @@ export default function AddResultPage() {
                                     <span className="text-sm w-4 flex justify-center opacity-80 shrink-0">{icon}</span>
                                      {item && !dept ? (
                                        <div className="flex items-center gap-1.5 overflow-hidden">
-                                         <span className="text-[10px] font-semibold italic text-gray-400 dark:text-gray-500 truncate">No Team</span>
+                                         <span className="text-[10px] font-semibold italic text-white/40 truncate">No Team</span>
                                        </div>
                                      ) : dept ? (
                                        <div className="flex items-center gap-1.5 overflow-hidden">
                                          {dept.image_url ? (
                                            <Image src={dept.image_url} alt="" width={18} height={18} className="object-contain drop-shadow-sm shrink-0" />
                                          ) : (
-                                           <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[7px] font-bold text-gray-500 shrink-0">
+                                           <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-[7px] font-bold text-white/50 shrink-0">
                                              {dept.name?.substring(0, 2).toUpperCase() || "??"}
                                            </div>
                                          )}
-                                         <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{dept.name}</span>
+                                         <span className="text-[11px] font-bold text-white truncate">{dept.name}</span>
                                        </div>
                                      ) : (
-                                       <span className="text-[9px] font-black italic text-violet-400 dark:text-violet-300 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
-                                         <div className="w-1 h-1 bg-violet-400 rounded-full animate-pulse" />
+                                       <span className="text-[9px] font-bold italic text-[#0A84FF]/70 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
+                                         <div className="w-1 h-1 bg-[#0A84FF] rounded-full animate-pulse" />
                                          Awaiting...
                                        </span>
                                      )}
@@ -367,10 +377,10 @@ export default function AddResultPage() {
                             {!selectedTournament?.is_archived && (
                               <td className="px-3 py-2 text-right">
                                 <div className="flex items-center justify-end">
-                                  <button onClick={() => handleEditByEvent(eventId)} className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition-all" title="Edit">
+                                  <button onClick={() => handleEditByEvent(eventId)} className="p-1.5 text-white/40 hover:text-[#0A84FF] hover:bg-white/5 rounded-lg transition-all" title="Edit">
                                     <span className="text-xs">✏️</span>
                                   </button>
-                                  <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all" title="Delete">
+                                  <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 text-white/40 hover:text-[#FF453A] hover:bg-white/5 rounded-lg transition-all" title="Delete">
                                     <span className="text-xs">🗑️</span>
                                   </button>
                                 </div>
@@ -409,10 +419,10 @@ export default function AddResultPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center"
             >
-              <div className="w-20 h-20 border-4 border-monument-primary border-t-white rounded-full animate-spin mb-8 shadow-2xl shadow-violet-500/20" />
-              <h2 className="text-3xl font-black uppercase tracking-[0.2em] mb-2 leading-none">Deleting</h2>
-              <div className="h-1 w-12 bg-monument-primary rounded-full mb-4" />
-              <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Processing Database Permanent Directive</p>
+              <div className="w-20 h-20 border-4 border-[#FF453A] border-t-white rounded-full animate-spin mb-8 shadow-2xl" />
+              <h2 className="text-3xl font-black uppercase tracking-[0.2em] mb-2 leading-none text-white">Deleting</h2>
+              <div className="h-1 w-12 bg-[#FF453A] rounded-full mb-4" />
+              <p className="text-white/50 font-bold uppercase tracking-widest text-[10px]">Processing Database Permanent Directive</p>
             </motion.div>
           </motion.div>
         )}

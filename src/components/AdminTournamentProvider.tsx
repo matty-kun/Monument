@@ -15,7 +15,7 @@ export interface Tournament {
 interface TournamentContextType {
   tournaments: Tournament[];
   selectedTournament: Tournament | null;
-  setSelectedTournament: (t: Tournament) => void;
+  setSelectedTournament: (t: Tournament | null) => void;
   activeTournament: Tournament | null;
   loading: boolean;
 }
@@ -55,11 +55,7 @@ export default function AdminTournamentProvider({ children }: { children: React.
           const found = data.find(t => t.id === storedId);
           if (found) {
             setSelectedTournament(found);
-          } else {
-            setSelectedTournament(active);
           }
-        } else {
-          setSelectedTournament(active);
         }
       }
       setLoading(false);
@@ -67,9 +63,13 @@ export default function AdminTournamentProvider({ children }: { children: React.
     fetchTournaments();
   }, [supabase]);
 
-  const handleSelectTournament = (t: Tournament) => {
+  const handleSelectTournament = (t: Tournament | null) => {
     setSelectedTournament(t);
-    localStorage.setItem("selected_tournament_id", t.id);
+    if (t) {
+      localStorage.setItem("selected_tournament_id", t.id);
+    } else {
+      localStorage.removeItem("selected_tournament_id");
+    }
   };
 
   return (

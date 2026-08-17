@@ -35,7 +35,10 @@ export const useDashboardViewModel = ({ selectedTournament }: UseDashboardViewMo
         return;
       }
 
-      if (!selectedTournament) return;
+      if (!selectedTournament) {
+        setLoading(false);
+        return;
+      }
 
       const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
       setRole(profile?.role || "user");
