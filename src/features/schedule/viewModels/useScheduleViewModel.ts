@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Schedule, ScheduleStatus } from "../models/scheduleTypes";
 import { Department, Category } from "@/shared/models/tournamentTypes";
+import { getTournamentDataFilter, getTournamentRealtimeFilter, readMysteryMode } from "@/utils/tournamentRealtime";
 
 interface UseScheduleViewModelProps {
+  tournamentId: string;
   initialSchedules: Schedule[];
   initialDepartments: Department[];
   initialCategories: Category[];
@@ -11,6 +13,7 @@ interface UseScheduleViewModelProps {
 }
 
 export const useScheduleViewModel = ({
+  tournamentId,
   initialSchedules,
   initialDepartments,
   initialCategories,
@@ -32,21 +35,19 @@ export const useScheduleViewModel = ({
       .channel('public-schedules-page')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'schedules' },
+        { event: '*', schema: 'public', table: 'schedules', filter: getTournamentDataFilter(tournamentId) },
         () => setShowRefresh(true)
       )
       .subscribe();
 
     const mysterySub = supabase
-      .channel('app_settings_schedule')
+      .channel(`tournament-settings-schedule-${tournamentId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'app_settings', filter: "key=eq.mystery_mode" },
+        { event: 'UPDATE', schema: 'public', table: 'tournaments', filter: getTournamentRealtimeFilter(tournamentId) },
         (payload) => {
-          if (payload.new && (payload.new as any).key === 'mystery_mode') {
-            setMysteryMode((payload.new as any).value === 'true');
-          } else if (payload.eventType === 'DELETE') {
-            setMysteryMode(false);
+          if (payload.new) {
+            setMysteryMode(readMysteryMode(payload.new));
           }
         }
       )
@@ -56,7 +57,7 @@ export const useScheduleViewModel = ({
       supabase.removeChannel(channel);
       supabase.removeChannel(mysterySub);
     };
-  }, [supabase]);
+  }, [supabase, tournamentId]);
 
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
     if (schedule.status === "finished") {

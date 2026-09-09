@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic";
 
 import ManageUsersClient from "./ManageUsersClient";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { getUsers, UserProfile } from "@/utils/actions";
+import { createReadOnlyClient, createServiceClient } from "@/utils/supabase/server";
+import { UserProfile } from "@/utils/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Manage Users | CITE FEST 2026",
+  title: "Manage Users | MONUMENT 2026",
 };
 
 export default async function ManageUsersPage() {
@@ -14,9 +15,29 @@ export default async function ManageUsersPage() {
   let currentUserId: string | null = null;
 
   try {
-    const { users: fetchedUsers, currentUserId: fetchedUserId } = await getUsers();
-    users = fetchedUsers;
-    currentUserId = fetchedUserId;
+    const supabase = await createReadOnlyClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      currentUserId = user.id;
+      const adminSupabase = createServiceClient();
+      
+      const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers();
+      if (!authError && authUsers) {
+        const { data: profiles, error: profilesError } = await adminSupabase
+          .from("profiles")
+          .select("id, role, email");
+          
+        if (!profilesError && profiles) {
+          const profileMap = new Map(profiles.map((p) => [p.id, p.role]));
+          users = authUsers.users.map((u) => ({
+            id: u.id,
+            email: u.email || "N/A",
+            role: profileMap.get(u.id) || "user",
+          }));
+        }
+      }
+    }
   } catch (error) {
     console.error("Error fetching users:", error);
   }

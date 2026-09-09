@@ -8,17 +8,31 @@ import { stringToColor } from "@/utils/colors";
 import { useResultsViewModel } from "@/features/results/viewModels/useResultsViewModel";
 import { EventsClientPageProps } from "@/features/results/models/resultsTypes";
 
-export default function EventsClientPage({ initialResults, initialCategories, mysteryMode: initialMysteryMode }: EventsClientPageProps) {
+export default function EventsClientPage({ tournamentId, initialResults, initialCategories, mysteryMode: initialMysteryMode }: EventsClientPageProps) {
   const {
     searchQuery,
     setSearchQuery,
     showRefresh,
     grouped,
+    mysteryMode,
   } = useResultsViewModel({
+    tournamentId,
     initialResults,
     initialCategories,
     initialMysteryMode
   });
+
+  if (mysteryMode) {
+    return (
+      <div className="bg-black text-white min-h-screen pb-24 flex flex-col items-center justify-center px-6 text-center">
+        <Trophy className="w-16 h-16 text-gray-700 mb-5" strokeWidth={1} />
+        <h1 className="text-2xl font-black mb-2">Results are under wraps</h1>
+        <p className="text-sm text-gray-400 max-w-sm">
+          Results will appear here when the tournament standings are revealed.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-hidden">

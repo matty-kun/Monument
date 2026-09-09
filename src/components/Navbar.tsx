@@ -72,13 +72,13 @@ export default function Navbar() {
               >
                 <Icon
                   className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                    isActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+                    isActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
                   fill={isActive ? 'currentColor' : 'none'}
                 />
                 <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                  isActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+                  isActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
                 }`}>
                   {label}
                 </span>
@@ -104,13 +104,13 @@ export default function Navbar() {
             >
               <History
                 className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                  isHistoryActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+                  isHistoryActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
                 }`}
                 strokeWidth={isHistoryActive ? 2.5 : 2}
                 fill="none"
               />
               <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                isHistoryActive ? 'text-gray-900 dark:text-[#0A84FF]' : 'text-gray-400 dark:text-white'
+                isHistoryActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
               }`}>
                 History
               </span>
@@ -171,7 +171,7 @@ export default function Navbar() {
                     onClick={() => setIsMoreOpen(false)}
                     className={`p-4 rounded-2xl flex items-center justify-between transition-all border ${
                       t.is_active
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md dark:bg-[#0A84FF] dark:border-transparent dark:shadow-none'
+                        ? 'bg-monument-green text-white border-monument-green shadow-md dark:bg-monument-green dark:border-transparent dark:shadow-none'
                         : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-transparent shadow-sm dark:shadow-none'
                     }`}
                   >

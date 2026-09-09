@@ -7,13 +7,13 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = {
   metadataBase: new URL("https://citefest.vercel.app"),
-  title: "Podium | CITE FEST 2026",
-  description: "See the real-time team standings, medal counts, and total points for the CITE FEST 2026. Who will take the podium?",
+  title: "Podium | MONUMENT",
+  description: "See the real-time team standings, medal counts, and total points for MONUMENT. Who will take the podium?",
   openGraph: {
-    title: "Podium | CITE FEST 2026",
-    description: "Real-time team standings for the CITE FEST test.",
+    title: "Podium | MONUMENT",
+    description: "Real-time team standings for MONUMENT.",
     url: "https://citefest.vercel.app",
-    siteName: "CITE FEST",
+    siteName: "MONUMENT",
     images: [
       {
         url: "/og-image.png",
@@ -28,8 +28,8 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CITE FEST",
-    description: "CITE FEST — Real-time Intramural Score Tracking System",
+    title: "MONUMENT",
+    description: "MONUMENT — Real-time Intramural Score Tracking System",
     images: ["/og-image.png"],
   },
 };

@@ -23,6 +23,7 @@ export interface Schedule {
 export type ScheduleStatus = "live" | "scheduled" | "finished";
 
 export interface ScheduleClientPageProps {
+  tournamentId: string;
   initialSchedules: Schedule[];
   initialEvents: Event[];
   initialVenues: Venue[];

@@ -50,7 +50,7 @@ export default function DepartmentsPage() {
   if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
-    <div className="w-full h-full dark:text-gray-200 flex flex-col overflow-hidden">
+    <div className="w-full h-full text-gray-900 dark:text-white flex flex-col overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
         <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Manage Teams' }]} />
       </div>
@@ -63,7 +63,7 @@ export default function DepartmentsPage() {
         {!selectedTournament?.is_archived && (
           <button 
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-monument-primary hover:border-monument-primary dark:hover:text-violet-400 dark:hover:border-violet-500 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+            className="flex items-center gap-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-white hover:text-monument-primary hover:border-monument-primary dark:hover:text-monument-primary dark:hover:border-monument-primary transition-all shadow-sm active:scale-95 whitespace-nowrap"
           >
             <FaDownload size={14} /> Import from Past
           </button>
@@ -74,17 +74,17 @@ export default function DepartmentsPage() {
         {/* LEFT COLUMN: Entry Form */}
         {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
-              <div className="p-6 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-gray-100">{editingId ? 'Update Team' : 'Team Entry Form'}</h2>
+            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
+              <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0 sticky top-0 z-10 backdrop-blur-sm">
+                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-white">{editingId ? 'Update Team' : 'Team Entry Form'}</h2>
               </div>
               
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
                 <form onSubmit={handleAddOrUpdate} className="space-y-6 flex flex-col">
-                  <div className="flex flex-col items-center gap-4 bg-gray-50/50 dark:bg-gray-900/30 p-8 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700 group relative w-full">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 absolute top-3 left-4">Logo Visual</label>
-                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-xl border-4 border-white dark:border-gray-700 flex items-center justify-center relative mt-2 group-hover:scale-105 transition-transform duration-500">
-                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-100 dark:text-gray-700 shadow-inner" />}
+                  <div className="flex flex-col items-center gap-4 bg-gray-50 dark:bg-white/5 p-8 rounded-[24px] border border-dashed border-gray-200 dark:border-white/5 group relative w-full">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 absolute top-3 left-4">Logo Visual</label>
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white dark:bg-[#1c1c1e] shadow-xl border-4 border-white dark:border-white/5 flex items-center justify-center relative mt-2 group-hover:scale-105 transition-transform duration-500">
+                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-100 dark:text-white/20 shadow-inner" />}
                         {imagePreview && (
                             <button type="button" onClick={() => { setImagePreview(null); setSelectedImage(null); setPhotoRemoved(true); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                <FaTrash className="text-white scale-110" />
@@ -92,18 +92,18 @@ export default function DepartmentsPage() {
                         )}
                       </div>
                       <div className="flex flex-col gap-2 w-full mt-2">
-                        <label className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-gray-500 flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                        <label className="cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-white/40 flex items-center justify-center gap-2 shadow-sm active:scale-95">
                           <FaPlus size={10} /> Choose PNG/JPG File
                           <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
                         </label>
                         <div className="relative">
-                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
+                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 dark:text-white/40">
                              <span className="text-[10px] font-bold">URL:</span>
                           </div>
                           <input 
                             type="text" 
                             placeholder="...or paste external image link" 
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl text-[10px] font-bold text-gray-600 dark:text-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
                             value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
                             onChange={(e) => {
                                const val = e.target.value;
@@ -120,13 +120,13 @@ export default function DepartmentsPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Team Name</label>
-                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl px-4 py-4 text-sm font-bold placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all" placeholder="e.g. CITE Department" required />
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2">Team Name</label>
+                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none" placeholder="e.g. CITE Department" required />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Courses / Abbreviation</label>
-                      <input type="text" value={courses} onChange={(e) => setCourses(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-2xl px-4 py-4 text-sm font-bold placeholder:text-gray-400 focus:ring-2 focus:ring-monument-primary transition-all" placeholder="e.g. BSCS, BSIS" />
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2">Courses / Abbreviation</label>
+                      <input type="text" value={courses} onChange={(e) => setCourses(e.target.value)} className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none" placeholder="e.g. BSCS, BSIS" />
                     </div>
                   </div>
 
@@ -135,7 +135,7 @@ export default function DepartmentsPage() {
                       {uploading ? "SAVING..." : editingId ? "UPDATE TEAM" : "CREATE TEAM"}
                     </button>
                     {editingId && (
-                      <button type="button" onClick={resetForm} className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold py-3 rounded-2xl hover:bg-gray-200 transition-colors">Cancel Edit</button>
+                      <button type="button" onClick={resetForm} className="w-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/60 font-bold py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancel Edit</button>
                     )}
                   </div>
                 </form>
@@ -146,50 +146,50 @@ export default function DepartmentsPage() {
 
         {/* RIGHT COLUMN: List */}
         <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm gap-4 shrink-0 mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1c1c1e] p-4 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm gap-4 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
-                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" placeholder="Search teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900/50 border-none rounded-2xl pl-12 pr-4 py-3 text-sm font-medium" />
+                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
+                  <input type="text" placeholder="Search teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border-none rounded-[16px] pl-12 pr-4 py-3 text-sm font-medium outline-none placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#0A84FF]/50 transition-all" />
                </div>
-               <div className="flex bg-gray-50 dark:bg-gray-900/50 p-1 rounded-xl">
-                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaTable size={18}/></button>
-                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-gray-700 shadow-sm text-monument-primary' : 'text-gray-400'}`}><FaThLarge size={18}/></button>
+               <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
+                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-monument-primary border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}><FaTable size={18}/></button>
+                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-monument-primary border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}><FaThLarge size={18}/></button>
                </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <AnimatePresence mode="wait">
                 {viewMode === 'table' ? (
-                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full overflow-hidden transition-all hover:shadow-md">
+                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 flex flex-col h-full overflow-hidden transition-all hover:shadow-md">
                     <div className="overflow-y-auto custom-scrollbar overflow-x-auto relative flex-1">
-                      <table className="min-w-full divide-y divide-gray-50 dark:divide-gray-700">
-                        <thead className="bg-gray-50/50 dark:bg-gray-900/20 sticky top-0 z-10 backdrop-blur-sm">
+                      <table className="min-w-full divide-y divide-gray-100 dark:divide-white/5">
+                        <thead className="bg-gray-50 dark:bg-[#1c1c1e]/90 sticky top-0 z-10 backdrop-blur-sm">
                         <tr>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Logo</th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Team Name</th>
-                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Abbr / Courses</th>
-                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>}
+                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-500 dark:text-white/40 uppercase tracking-widest">Logo</th>
+                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-500 dark:text-white/40 uppercase tracking-widest">Team Name</th>
+                          <th className="px-8 py-5 text-left text-[10px] font-black text-gray-500 dark:text-white/40 uppercase tracking-widest">Abbr / Courses</th>
+                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[10px] font-black text-gray-500 dark:text-white/40 uppercase tracking-widest">Actions</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                      <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                         {filteredDepartments.length === 0 ? (
-                          <tr><td colSpan={2} className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No teams found</td></tr>
+                          <tr><td colSpan={4} className="py-20 text-center text-gray-400 dark:text-white/40 font-bold uppercase tracking-widest text-xs">No teams found</td></tr>
                         ) : filteredDepartments.map((dept) => (
-                          <tr key={dept.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors group">
+                          <tr key={dept.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
                             <td className="px-8 py-5">
-                              {dept.image_url ? <img src={dept.image_url} className="w-10 h-10 object-contain drop-shadow-sm border-2 border-white dark:border-gray-700 shadow-sm" /> : <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"><FaShieldAlt className="text-gray-300" /></div>}
+                              {dept.image_url ? <img src={dept.image_url} className="w-10 h-10 object-contain drop-shadow-sm border-2 border-white dark:border-white/5 shadow-sm rounded-full bg-white dark:bg-[#1c1c1e]" /> : <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center"><FaShieldAlt className="text-gray-300 dark:text-white/20" /></div>}
                             </td>
                             <td className="px-8 py-5">
-                              <span className="text-sm font-black text-gray-800 dark:text-gray-100 tracking-tight">{dept.name}</span>
+                              <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{dept.name}</span>
                             </td>
                             <td className="px-8 py-5">
-                              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{dept.courses || '--'}</span>
+                              <span className="text-xs font-bold text-gray-500 dark:text-white/60 uppercase">{dept.courses || '--'}</span>
                             </td>
                             {!selectedTournament?.is_archived && (
                               <td className="px-8 py-5 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-all"><FaEdit /></button>
-                                  <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"><FaTrash /></button>
+                                  <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-xl transition-all"><FaEdit /></button>
+                                  <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-[#FF453A] hover:bg-[#FF453A]/10 rounded-xl transition-all"><FaTrash /></button>
                                 </div>
                               </td>
                             )}
@@ -202,19 +202,19 @@ export default function DepartmentsPage() {
                 ) : (
                   <motion.div key="card" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar p-2 h-full">
                   {filteredDepartments.length === 0 ? (
-                    <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No teams found</div>
+                    <div className="col-span-full py-20 text-center text-gray-500 dark:text-white/40 font-bold uppercase tracking-widest text-sm">No teams found</div>
                   ) : filteredDepartments.map((dept) => (
-                    <div key={dept.id} className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all group relative items-center text-center flex flex-col">
-                       <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-900 mb-4 shadow-inner border-2 border-white dark:border-gray-700 flex items-center justify-center">
-                          {dept.image_url ? <img src={dept.image_url} className="w-full h-full object-contain" /> : <FaShieldAlt size={32} className="text-gray-200 dark:text-gray-700" />}
+                    <div key={dept.id} className="bg-white dark:bg-[#1c1c1e] p-8 rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 hover:shadow-xl transition-all group relative items-center text-center flex flex-col">
+                       <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 dark:bg-white/5 mb-4 shadow-inner border-2 border-white dark:border-white/5 flex items-center justify-center">
+                          {dept.image_url ? <img src={dept.image_url} className="w-full h-full object-contain" /> : <FaShieldAlt size={32} className="text-gray-200 dark:text-white/20" />}
                        </div>
-                       <h4 className="text-lg font-black text-gray-800 dark:text-white uppercase tracking-tight leading-tight">{dept.name}</h4>
-                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{dept.courses || 'No Courses Listed'}</p>
+                       <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight leading-tight">{dept.name}</h4>
+                       <p className="text-[10px] text-gray-400 dark:text-white/40 font-bold uppercase tracking-widest mt-1">{dept.courses || 'No Courses Listed'}</p>
                        
                        {!selectedTournament?.is_archived && (
                          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
-                            <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
+                            <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                            <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
                          </div>
                        )}
                     </div>

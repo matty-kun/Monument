@@ -28,6 +28,7 @@ export interface GroupedResult {
 }
 
 export interface EventsClientPageProps {
+  tournamentId: string;
   initialResults: ProcessedResult[];
   initialCategories: { id: string; name: string; icon?: string }[];
   mysteryMode?: boolean;

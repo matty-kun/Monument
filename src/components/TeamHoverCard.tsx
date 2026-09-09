@@ -33,9 +33,9 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
       const fetchData = async () => {
         setIsLoading(true);
         try {
-          // Fetch both mystery mode and history in parallel
+          // Fetch both active tournament visibility and history in parallel
           const [settingsRes, historyRes] = await Promise.all([
-            supabase.from("app_settings").select("value").eq("key", "mystery_mode").single(),
+            supabase.from("tournaments").select("mystery_mode").eq("is_active", true).single(),
             supabase
               .from("results")
               .select(`
@@ -52,7 +52,7 @@ export default function TeamHoverCard({ teamId, children }: TeamHoverCardProps) 
           ]);
           
           if (settingsRes.data) {
-            setMysteryMode(settingsRes.data.value === 'true');
+            setMysteryMode(settingsRes.data.mystery_mode === true);
           }
 
           if (historyRes.data) {

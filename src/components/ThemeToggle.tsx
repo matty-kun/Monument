@@ -3,10 +3,12 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -14,6 +16,11 @@ export default function ThemeToggle() {
 
   if (!mounted) {
     return null; // Avoid hydration mismatch
+  }
+
+  // Hide the floating theme toggle on admin routes since it has its own sidebar toggle
+  if (pathname?.startsWith('/admin')) {
+    return null;
   }
 
   return (

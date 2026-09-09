@@ -9,10 +9,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'monument-primary': '#7c3aed',
+        'monument-primary': '#269a7a',
         'monument-green': '#269a7a',
         'monument-gold': '#d6b14e',
-        'monument-dark': '#4c1d95',
+        'monument-dark': '#1b7359',
         'monument-dark-uniform': '#111827',
         'apple-light-bg': '#F2F2F7',
         'apple-light-card': '#FFFFFF',

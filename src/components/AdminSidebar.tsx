@@ -17,11 +17,14 @@ import {
   PanelLeftOpen,
   Menu,
   X,
-  Trophy
+  Trophy,
+  Sun,
+  Moon
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 import { useTournament, Tournament } from "./AdminTournamentProvider";
 
 interface SidebarItem {
@@ -39,8 +42,11 @@ export default function AdminSidebar() {
   const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
   const { tournaments, selectedTournament, setSelectedTournament, activeTournament } = useTournament();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function fetchRole() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -73,7 +79,7 @@ export default function AdminSidebar() {
 
       {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden" onClick={() => setIsOpen(false)}></div>}
 
-      <aside className={`fixed top-0 left-0 bottom-0 z-[60] bg-[#1c1c1e]/90 backdrop-blur-xl border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} ${isCollapsed ? 'md:w-20' : 'md:w-72'} md:sticky md:h-screen md:shrink-0`}>
+      <aside className={`fixed top-0 left-0 bottom-0 z-[60] bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border-r border-gray-200 dark:border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} ${isCollapsed ? 'md:w-20' : 'md:w-72'} md:sticky md:h-screen md:shrink-0`}>
         <div className="flex flex-col h-full py-6">
           <div className={`px-4 mb-10 flex items-center group/sidebar-header ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             <div className="relative flex items-center gap-3">
@@ -115,7 +121,7 @@ export default function AdminSidebar() {
                                       <div className="relative">
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
-                                          className="flex items-center gap-2 text-[17px] font-black text-white tracking-tight leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:opacity-80 transition-opacity"
+                                          className="flex items-center gap-2 text-[17px] font-black text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:opacity-80 transition-opacity"
                                         >
                                           <span className="max-w-[150px] truncate">
                                             {selectedTournament ? selectedTournament.name : 'Platform Overview'}
@@ -127,27 +133,27 @@ export default function AdminSidebar() {
                                           {isDropdownOpen && (
                                             <>
                                               <div className="fixed inset-0 z-[80]" onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); }} />
-                                              <motion.div 
-                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                transition={{ duration: 0.15 }}
-                                                className="absolute top-full left-0 mt-3 w-64 bg-[#2c2c2e] border border-white/10 rounded-[16px] shadow-2xl z-[90] overflow-hidden flex flex-col py-2"
-                                              >
-                                                <button
-                                                  onClick={(e) => { e.stopPropagation(); setSelectedTournament(null); setIsDropdownOpen(false); }}
-                                                  className={`text-left px-4 py-2.5 text-[14px] font-semibold transition-colors ${!selectedTournament ? 'bg-[#0A84FF] text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                                                <motion.div 
+                                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                  transition={{ duration: 0.15 }}
+                                                  className="absolute top-full left-0 mt-3 w-64 bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 rounded-[16px] shadow-2xl z-[90] overflow-hidden flex flex-col py-2"
                                                 >
+                                                  <button
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedTournament(null); setIsDropdownOpen(false); }}
+                                                    className={`text-left px-4 py-2.5 text-[14px] font-semibold transition-colors ${!selectedTournament ? 'bg-monument-green text-white' : 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
+                                                  >
                                                   Platform Overview
                                                 </button>
-                                                <div className="h-px w-full bg-white/10 my-1" />
-                                                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                                  {tournaments.map(t => (
-                                                    <button
-                                                      key={t.id}
-                                                      onClick={(e) => { e.stopPropagation(); setSelectedTournament(t); setIsDropdownOpen(false); }}
-                                                      className={`w-full text-left px-4 py-2.5 text-[14px] font-semibold transition-colors flex items-center justify-between ${selectedTournament?.id === t.id ? 'bg-[#0A84FF]/20 text-[#0A84FF]' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-                                                    >
+                                                  <div className="h-px w-full bg-gray-200 dark:bg-white/10 my-1" />
+                                                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                    {tournaments.map(t => (
+                                                      <button
+                                                        key={t.id}
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedTournament(t); setIsDropdownOpen(false); }}
+                                                        className={`w-full text-left px-4 py-2.5 text-[14px] font-semibold transition-colors flex items-center justify-between ${selectedTournament?.id === t.id ? 'bg-monument-green/20 text-monument-green' : 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
+                                                      >
                                                       <span className="truncate">{t.name}</span>
                                                       {selectedTournament?.id === t.id && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                                     </button>
@@ -159,9 +165,9 @@ export default function AdminSidebar() {
                                         </AnimatePresence>
                                       </div>
                                     ) : (
-                                      <span className="text-[17px] font-semibold text-white tracking-tight leading-none whitespace-nowrap">LOADING...</span>
+                                      <span className="text-[17px] font-semibold text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap">LOADING...</span>
                                     )}
-                                      <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider mt-1 whitespace-nowrap">
+                                      <span className="text-[10px] font-semibold text-gray-500 dark:text-white/50 uppercase tracking-wider mt-1 whitespace-nowrap">
                                       {selectedTournament ? (selectedTournament.is_active ? '● Active Season' : '○ Archived Season') : '● Global Platform'}
                                     </span>
                                 </div>
@@ -173,7 +179,7 @@ export default function AdminSidebar() {
             </div>
 
             {!isCollapsed && !isOpen && (
-              <button onClick={() => setIsCollapsed(true)} className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+              <button onClick={() => setIsCollapsed(true)} className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all">
                 <PanelLeftClose size={20} />
               </button>
             )}
@@ -185,13 +191,13 @@ export default function AdminSidebar() {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} 
-                      className={`flex items-center group relative ${isCollapsed ? 'justify-center py-4' : 'px-4 py-3 justify-between'} rounded-[20px] transition-all duration-300 ${isActive ? 'bg-[#0A84FF] text-white shadow-lg shadow-[#0A84FF]/20' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
+                      className={`flex items-center group relative ${isCollapsed ? 'justify-center py-4' : 'px-4 py-3 justify-between'} rounded-[20px] transition-all duration-300 ${isActive ? 'bg-monument-green text-white shadow-lg shadow-monument-green/20' : 'text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}>
                   <div className="flex items-center gap-4">
                     <Icon size={isCollapsed ? 26 : 20} className={isActive ? 'text-white' : 'transition-transform group-hover:scale-110 duration-300'} />
                     {!isCollapsed && <span className={`text-[14px] font-semibold tracking-wide ${isActive ? 'text-white' : ''}`}>{item.label}</span>}
                   </div>
                   {isCollapsed && (
-                    <div className="fixed left-24 bg-[#1c1c1e] border border-white/10 text-white text-[12px] font-semibold tracking-wide px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-[100] shadow-2xl">
+                    <div className="fixed left-24 bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-[12px] font-semibold tracking-wide px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-[100] shadow-2xl">
                       {item.label}
                     </div>
                   )}
@@ -201,17 +207,33 @@ export default function AdminSidebar() {
           </nav>
 
           <div className="mt-auto px-4 pt-6 pb-6">
-             <div className={`group bg-[#1c1c1e] hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-white/5 shadow-sm hover:border-white/10 cursor-default ${isCollapsed ? 'justify-center p-3' : ''}`}>
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0A84FF] to-[#0051a8] shadow-inner flex items-center justify-center shrink-0 relative">
-                  <Users className="text-white drop-shadow-md" size={18} strokeWidth={2.5} />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#1c1c1e] rounded-full"></div>
-                </div>
-                {!isCollapsed && (
-                  <div className="overflow-hidden flex-1">
-                    <p className="text-[10px] font-semibold text-white/40 tracking-widest uppercase mb-0.5">Account</p>
-                    <p className="text-[14px] font-bold text-white tracking-wide truncate capitalize">{role?.replace('_', ' ') || 'Developer'}</p>
+             <div className="space-y-2">
+               <button 
+                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                 className={`w-full group bg-white dark:bg-[#1c1c1e] hover:bg-gray-100 dark:hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-gray-200 dark:border-white/5 shadow-sm hover:border-gray-300 dark:hover:border-white/10 ${isCollapsed ? 'justify-center' : ''}`}
+               >
+                 <div className="w-11 h-11 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70 flex items-center justify-center shrink-0 group-hover:text-monument-green transition-colors">
+                   {mounted ? (theme === "dark" ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-4 h-4" />}
+                 </div>
+                 {!isCollapsed && (
+                   <div className="overflow-hidden flex-1 text-left">
+                     <p className="text-[10px] font-semibold text-gray-500 dark:text-white/40 tracking-widest uppercase mb-0.5">Appearance</p>
+                     <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-wide truncate capitalize">{mounted ? (theme === 'dark' ? 'Dark Mode' : 'Light Mode') : '...'}</p>
+                   </div>
+                 )}
+               </button>
+               <div className={`group bg-white dark:bg-[#1c1c1e] hover:bg-gray-100 dark:hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-gray-200 dark:border-white/5 shadow-sm hover:border-gray-300 dark:hover:border-white/10 cursor-default ${isCollapsed ? 'justify-center' : ''}`}>
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-monument-green to-emerald-700 shadow-inner flex items-center justify-center shrink-0 relative">
+                    <Users className="text-white drop-shadow-md" size={18} strokeWidth={2.5} />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#1c1c1e] rounded-full"></div>
                   </div>
-                )}
+                  {!isCollapsed && (
+                    <div className="overflow-hidden flex-1">
+                      <p className="text-[10px] font-semibold text-gray-500 dark:text-white/40 tracking-widest uppercase mb-0.5">Account</p>
+                      <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-wide truncate capitalize">{role?.replace('_', ' ') || 'Developer'}</p>
+                    </div>
+                  )}
+               </div>
              </div>
           </div>
         </div>

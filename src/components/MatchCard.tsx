@@ -104,7 +104,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const { status, label, color } = getDynamicStatus(schedule);
   
   // Fetch department info and sort by medal if the event is finished
-  let departments = schedule.departments.map(getDepartmentInfo);
+  const departments = schedule.departments.map(getDepartmentInfo);
   if (status === 'finished' && (schedule.events as any)?.results) {
     const getRank = (deptId: string) => {
       const medal = (schedule.events as any).results.find((r: any) => r.department_id === deptId)?.medal_type;

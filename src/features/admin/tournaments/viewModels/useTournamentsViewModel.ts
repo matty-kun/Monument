@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { AdminTournament } from "../models/tournamentTypes";
+import { toggleMysteryMode } from "@/utils/settings/actions";
 
 export const useTournamentsViewModel = () => {
   const supabase = createClient();
@@ -64,9 +65,11 @@ export const useTournamentsViewModel = () => {
   };
 
   const handleToggleMysteryMode = async (id: string, currentValue: boolean) => {
-    const { error } = await supabase.from("tournaments").update({ mystery_mode: !currentValue }).eq("id", id);
-    if (!error) {
+    const result = await toggleMysteryMode(id, !currentValue);
+    if (result.success) {
       setLocalTournaments(localTournaments.map(t => t.id === id ? { ...t, mystery_mode: !currentValue } : t));
+    } else {
+      alert(result.error || "Failed to update mystery mode.");
     }
   };
 

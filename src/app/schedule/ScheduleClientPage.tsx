@@ -10,6 +10,7 @@ import MatchCard from "@/components/MatchCard";
 import CompactMatchCard from "@/components/CompactMatchCard";
 
 export default function ScheduleClientPage({ 
+    tournamentId,
     initialSchedules, 
     initialEvents, 
     initialVenues, 
@@ -28,6 +29,7 @@ export default function ScheduleClientPage({
     getDepartmentInfo,
     getCategoryName,
   } = useScheduleViewModel({
+    tournamentId,
     initialSchedules,
     initialDepartments,
     initialCategories,

@@ -3,8 +3,13 @@
 import { createServiceClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import crypto from "crypto";
+import { canVoteForDepartment, hasValidPredictionIds } from "./predictionPolicy";
 
 export async function votePrediction(scheduleId: string, departmentId: string) {
+  if (!hasValidPredictionIds(scheduleId, departmentId)) {
+    return { success: false, error: "Invalid match or team." };
+  }
+
   const supabase = createServiceClient();
   
   // Get IP address from headers
@@ -15,10 +20,36 @@ export async function votePrediction(scheduleId: string, departmentId: string) {
   // Fallback IP for local dev if headers are missing
   const ip = forwardedFor?.split(",")[0] || realIp || "127.0.0.1";
   
-  // Hash the IP to maintain privacy
-  const ipHash = crypto.createHash('sha256').update(ip).digest('hex');
+  const hashSecret = process.env.PREDICTION_HASH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!hashSecret) {
+    console.error("Prediction hashing secret is not configured.");
+    return { success: false, error: "Predictions are temporarily unavailable." };
+  }
+
+  const ipHash = crypto.createHmac("sha256", hashSecret).update(ip).digest("hex");
 
   try {
+    const { data: schedule, error: scheduleError } = await supabase
+      .from("schedules")
+      .select("tournament_id, status, departments")
+      .eq("id", scheduleId)
+      .single();
+
+    if (scheduleError || !schedule) {
+      return { success: false, error: "Match not found." };
+    }
+
+    const { data: department, error: departmentError } = await supabase
+      .from("tournament_departments")
+      .select("department_id, name")
+      .eq("tournament_id", schedule.tournament_id)
+      .eq("department_id", departmentId)
+      .single();
+
+    if (departmentError || !department || !canVoteForDepartment(schedule, department)) {
+      return { success: false, error: "Voting is not available for this team." };
+    }
+
     // Check existing vote
     const { data: existing, error: fetchError } = await supabase
       .from("match_predictions")

@@ -112,16 +112,8 @@ export default async function EventResultsPage({ searchParams }: { searchParams:
 
     if (resultsError) {
       console.error("Error fetching event results:", resultsError);
-      const fs = require('fs');
-      fs.writeFileSync('error_log.txt', JSON.stringify(resultsError, null, 2));
       return { results: [], categories: [] };
     }
-
-    const fs = require('fs');
-    fs.writeFileSync('data_log.txt', JSON.stringify({
-       tSlug: tournamentId,
-       count: resultsData ? resultsData.length : 0
-    }, null, 2));
 
     const typedResults = resultsData as unknown as Result[];
     const processedResults: ProcessedResult[] = typedResults.map((r) => {
@@ -169,10 +161,13 @@ export default async function EventResultsPage({ searchParams }: { searchParams:
     );
   }
 
-  const { results, categories } = await fetchEventData();
+  const { results, categories } = mysteryMode
+    ? { results: [], categories: [] }
+    : await fetchEventData();
 
   return (
     <EventsClientPage
+      tournamentId={tournamentId}
       initialResults={results}
       initialCategories={categories}
       mysteryMode={mysteryMode}

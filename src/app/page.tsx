@@ -1,16 +1,15 @@
 import { createReadOnlyClient } from "@/utils/supabase/server";
 import { calculateTotalPoints } from "@/utils/scoring";
 import LeaderboardClientPage from "./LeaderboardClientPage";
-import { getMysteryMode } from "@/utils/settings/actions";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://citefest.vercel.app"),
-  title: "Podium | CITE FEST",
-  description: "See the real-time team standings, medal counts, and total points for the CITE FEST test. Who will take the podium?",
+  title: "Podium | MONUMENT",
+  description: "See the real-time team standings, medal counts, and total points for MONUMENT. Who will take the podium?",
   openGraph: {
-    title: "Podium | CITE FEST",
-    description: "Real-time team standings for the CITE FEST test.",
+    title: "Podium | MONUMENT",
+    description: "Real-time team standings for MONUMENT.",
   },
 };
 
@@ -37,7 +36,7 @@ export default async function ScoreboardPage({ searchParams }: { searchParams: P
 
   // 1. Fetch tournament to resolve ID and name. If no slug, active tournament is used by default in RPC, but we want the name.
   let tournamentId: string | undefined;
-  let tournamentName = "CITE FEST 2026";
+  let tournamentName = "MONUMENT 2026";
   let mysteryMode = false;
 
   if (tSlug) {
@@ -104,7 +103,7 @@ export default async function ScoreboardPage({ searchParams }: { searchParams: P
     return calculated;
   };
   
-  const leaderboard = await fetchLeaderboard();
+  const leaderboard = mysteryMode ? [] : await fetchLeaderboard();
 
   return (
     <div className="w-full min-h-screen bg-[#F5F5F7] dark:bg-black transition-colors">
@@ -116,4 +115,4 @@ export default async function ScoreboardPage({ searchParams }: { searchParams: P
       />
     </div>
   );
-}
+}

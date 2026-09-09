@@ -89,17 +89,17 @@ export default function ManageEventsPage() {
 
       <div className="mb-4 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-3 text-[32px] font-black text-white tracking-tight leading-none mb-2">
+          <h1 className="flex items-center gap-3 text-[32px] font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">
             {editingId ? 'Edit Event' : 'Manage Events'}
           </h1>
-          <p className="text-[15px] text-white/50 font-semibold tracking-wide">
+          <p className="text-[15px] text-gray-500 dark:text-white/50 font-semibold tracking-wide">
             Configure competitions, sports, and technical events
           </p>
         </div>
         {!selectedTournament?.is_archived && (
           <button 
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 bg-[#1c1c1e] border border-white/10 px-5 py-2.5 rounded-[16px] text-sm font-bold text-white hover:bg-white/5 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+            className="flex items-center gap-2 bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 px-5 py-2.5 rounded-[16px] text-sm font-bold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95 whitespace-nowrap"
           >
             <FaDownload size={14} /> Import from Past
           </button>
@@ -110,42 +110,42 @@ export default function ManageEventsPage() {
         {/* LEFT COLUMN: Entry Form */}
         {!selectedTournament?.is_archived && (
         <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-[#1c1c1e] rounded-[24px] shadow-sm border border-white/5 overflow-hidden transition-all flex flex-col h-full">
-              <div className="p-6 border-b border-white/5 bg-[#1c1c1e] shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                <h2 className="text-[12px] font-bold uppercase tracking-widest text-white/40">{editingId ? 'Update Event' : 'Add New Event'}</h2>
+            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all flex flex-col h-full">
+              <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0 sticky top-0 z-10 backdrop-blur-sm">
+                <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/40">{editingId ? 'Update Event' : 'Add New Event'}</h2>
               </div>
               
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative">
                 <form onSubmit={handleAddOrUpdate} className="space-y-6">
                   {/* Visual Picker */}
                   <div className="space-y-4">
-                    <div className="flex bg-white/5 p-1 rounded-2xl">
-                      <button type="button" onClick={() => setVisualType('emoji')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'emoji' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-500'}`}>Emoji</button>
-                      <button type="button" onClick={() => setVisualType('photo')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'photo' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-500'}`}>Photo</button>
+                    <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl">
+                      <button type="button" onClick={() => setVisualType('emoji')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'emoji' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>Emoji</button>
+                      <button type="button" onClick={() => setVisualType('photo')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'photo' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>Photo</button>
                     </div>
 
-                    <div className="flex flex-col items-center gap-4 bg-[#1c1c1e] p-6 rounded-[20px] border border-dashed border-white/10">
+                    <div className="flex flex-col items-center gap-4 bg-gray-50 dark:bg-[#1c1c1e] p-6 rounded-[20px] border border-dashed border-gray-300 dark:border-white/10">
                         <div className="relative group w-20 h-20">
                           {visualType === 'photo' ? (
-                            imagePreview ? <img src={imagePreview} className="w-full h-full object-contain rounded-[16px] shadow-md border border-white/5" alt="Preview"/> :
-                            <div className="w-full h-full flex items-center justify-center bg-white/5 rounded-[16px] text-3xl">🖼️</div>
-                          ) : <div className="w-full h-full flex items-center justify-center text-4xl bg-white/5 rounded-[16px] shadow-inner border border-white/5">{icon || '🏆'}</div>}
+                            imagePreview ? <img src={imagePreview} className="w-full h-full object-contain rounded-[16px] shadow-md border border-gray-200 dark:border-white/5" alt="Preview"/> :
+                            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-white/5 rounded-[16px] text-3xl">🖼️</div>
+                          ) : <div className="w-full h-full flex items-center justify-center text-4xl bg-white dark:bg-white/5 rounded-[16px] shadow-inner border border-gray-200 dark:border-white/5">{icon || '🏆'}</div>}
                         </div>
                         
                         {visualType === 'photo' ? (
                           <div className="flex flex-col gap-2 w-full">
-                            <label className="w-full cursor-pointer bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-center py-3 rounded-[16px] hover:border-[#0A84FF] transition-colors text-white/50 shadow-sm active:scale-95">
+                            <label className="w-full cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-center py-3 rounded-[16px] hover:border-[#0A84FF] transition-colors text-gray-500 dark:text-white/50 shadow-sm active:scale-95">
                               Choose Image File
                               <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
                             </label>
                             <div className="relative">
-                              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-500">
+                              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
                                  <span className="text-[10px] font-bold uppercase">URL:</span>
                               </div>
                               <input 
                                 type="text" 
                                 placeholder="...or paste image link" 
-                                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/5 rounded-[16px] text-[10px] font-bold text-white placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none"
+                                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-[16px] text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none"
                                 value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
                                 onChange={(e) => {
                                    const val = e.target.value;
@@ -158,7 +158,7 @@ export default function ManageEventsPage() {
                             </div>
                           </div>
                         ) : (
-                          <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="w-full py-3 bg-white/5 border border-white/10 rounded-[16px] text-[10px] font-bold uppercase hover:bg-white/10 transition-all text-gray-400">Pick Emoji</button>
+                          <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="w-full py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-[10px] font-bold uppercase hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-gray-400">Pick Emoji</button>
                         )}
 
                         {showEmojiPicker && visualType === 'emoji' && (
@@ -172,7 +172,7 @@ export default function ManageEventsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Event Title</label>
-                      <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-4 text-sm font-bold text-white placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none" placeholder="e.g. Basketball Men" required />
+                      <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none" placeholder="e.g. Basketball Men" required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -197,7 +197,7 @@ export default function ManageEventsPage() {
                       {uploading ? "SAVING..." : editingId ? "UPDATE EVENT" : "CREATE EVENT"}
                     </button>
                     {editingId && (
-                      <button type="button" onClick={resetForm} className="w-full bg-white/5 border border-white/10 text-white font-bold py-3 rounded-[16px] hover:bg-white/10 transition-colors">Cancel Edit</button>
+                      <button type="button" onClick={resetForm} className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white font-bold py-3 rounded-[16px] hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancel Edit</button>
                     )}
                   </div>
                 </form>
@@ -208,44 +208,44 @@ export default function ManageEventsPage() {
 
         {/* RIGHT COLUMN: List */}
         <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-[#1c1c1e] p-2 rounded-[24px] border border-white/5 shadow-sm gap-4 shrink-0 mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1c1c1e] p-2 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm gap-4 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
                   <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" placeholder="Search events or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/5 text-white border-none rounded-[16px] pl-12 pr-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-white/20 transition-all placeholder:text-gray-500" />
+                  <input type="text" placeholder="Search events or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border-none rounded-[16px] pl-12 pr-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500" />
                </div>
-               <div className="flex bg-white/5 p-1 rounded-xl shrink-0">
-                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-500'}`}><FaTable size={18}/></button>
-                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-500'}`}><FaThLarge size={18}/></button>
+               <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl shrink-0">
+                  <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}><FaTable size={18}/></button>
+                  <button onClick={() => setViewMode('card')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'card' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}><FaThLarge size={18}/></button>
                </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <AnimatePresence mode="wait">
                 {viewMode === 'table' ? (
-                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-[#1c1c1e] rounded-[24px] shadow-sm border border-white/5 flex flex-col h-full overflow-hidden transition-all">
+                  <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 flex flex-col h-full overflow-hidden transition-all">
                     <div className="overflow-y-auto custom-scrollbar overflow-x-auto relative flex-1">
                     <table className="w-full text-left border-collapse min-w-[600px] table-auto">
-                      <thead className="bg-[#1c1c1e]/90 border-b border-white/5 sticky top-0 z-10 backdrop-blur-sm">
+                      <thead className="bg-gray-50 dark:bg-[#1c1c1e]/90 border-b border-gray-200 dark:border-white/5 sticky top-0 z-10 backdrop-blur-sm">
                         <tr>
-                          <th className="px-8 py-5 text-left text-[12px] font-bold text-white/40 uppercase tracking-widest">Icon</th>
-                          <th className="px-8 py-5 text-left text-[12px] font-bold text-white/40 uppercase tracking-widest">Event Name</th>
-                          <th className="px-8 py-5 text-left text-[12px] font-bold text-white/40 uppercase tracking-widest">Category</th>
-                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[12px] font-bold text-white/40 uppercase tracking-widest">Actions</th>}
+                          <th className="px-8 py-5 text-left text-[12px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">Icon</th>
+                          <th className="px-8 py-5 text-left text-[12px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">Event Name</th>
+                          <th className="px-8 py-5 text-left text-[12px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">Category</th>
+                          {!selectedTournament?.is_archived && <th className="px-8 py-5 text-right text-[12px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">Actions</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5">
+                      <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                         {filteredEvents.length === 0 ? (
                           <tr><td colSpan={4} className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No events found</td></tr>
                         ) : filteredEvents.map((event) => (
-                          <tr key={event.id} className="hover:bg-white/5 transition-colors group">
+                          <tr key={event.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
                             <td className="px-8 py-5">
-                              <PhotoOrEmoji icon={event.icon} className="w-10 h-10 object-cover rounded-xl border border-white/10 shadow-sm" />
+                              <PhotoOrEmoji icon={event.icon} className="w-10 h-10 object-cover rounded-xl border border-gray-200 dark:border-white/10 shadow-sm bg-white dark:bg-transparent" />
                             </td>
                             <td className="px-8 py-5">
-                              <span className="text-[14px] font-bold text-white tracking-tight">{formatEventName(event)}</span>
+                              <span className="text-[14px] font-bold text-gray-900 dark:text-white tracking-tight">{formatEventName(event)}</span>
                             </td>
                             <td className="px-8 py-5">
-                              <span className="inline-flex px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[10px] font-bold text-white/70 uppercase">{getCategoryName(event.category)}</span>
+                              <span className="inline-flex px-3 py-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-full text-[10px] font-bold text-gray-600 dark:text-white/70 uppercase">{getCategoryName(event.category)}</span>
                             </td>
                             {!selectedTournament?.is_archived && (
                               <td className="px-8 py-5 text-right">
@@ -253,8 +253,8 @@ export default function ManageEventsPage() {
                                   <button onClick={() => { 
                                     setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
                                     setIcon(event.icon || ""); setVisualType(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? 'photo' : 'emoji'); setImagePreview(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? event.icon : null); window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }} className="p-2 text-white/40 hover:text-[#0A84FF] hover:bg-white/5 rounded-xl transition-all"><FaEdit size={14} /></button>
-                                  <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 text-white/40 hover:text-[#FF453A] hover:bg-white/5 rounded-xl transition-all"><FaTrash size={14} /></button>
+                                  }} className="p-2 text-gray-500 dark:text-white/40 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"><FaEdit size={14} /></button>
+                                  <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 text-gray-500 dark:text-white/40 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"><FaTrash size={14} /></button>
                                 </div>
                               </td>
                             )}
@@ -269,24 +269,24 @@ export default function ManageEventsPage() {
                   {filteredEvents.length === 0 ? (
                     <div className="col-span-full py-20 text-center text-gray-500 font-bold uppercase tracking-widest text-sm">No events found</div>
                   ) : filteredEvents.map((event) => (
-                    <div key={event.id} className="bg-[#1c1c1e] p-5 rounded-[24px] shadow-sm border border-white/5 hover:border-white/20 transition-all group flex flex-col gap-3 relative">
+                    <div key={event.id} className="bg-white dark:bg-[#1c1c1e] p-5 rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/20 transition-all group flex flex-col gap-3 relative">
                        <div className="flex items-center justify-between">
-                          <PhotoOrEmoji icon={event.icon} className="w-12 h-12 object-cover rounded-2xl shadow-sm border border-white/5 bg-white/5" />
+                          <PhotoOrEmoji icon={event.icon} className="w-12 h-12 object-cover rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5" />
                           {!selectedTournament?.is_archived && (
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                <button onClick={() => { 
                                        setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
                                        const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
                                        window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                               }} className="p-2 bg-white/5 border border-white/10 text-white/70 hover:text-[#0A84FF] hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaEdit size={12}/></button>
-                               <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-white/5 border border-white/10 text-white/70 hover:text-[#FF453A] hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaTrash size={12}/></button>
+                               }} className="p-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/70 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaEdit size={12}/></button>
+                               <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/70 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaTrash size={12}/></button>
                             </div>
                           )}
                        </div>
                        <div className="flex-1">
-                          <h4 className="text-[16px] font-bold text-white uppercase tracking-tight leading-tight mb-2">{formatEventName(event)}</h4>
+                          <h4 className="text-[16px] font-bold text-gray-900 dark:text-white uppercase tracking-tight leading-tight mb-2">{formatEventName(event)}</h4>
                           <div className="flex flex-wrap items-center gap-2">
-                             <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-[9px] font-bold text-white/70 uppercase tracking-widest">{getCategoryName(event.category)}</span>
+                             <span className="px-3 py-1 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-full text-[9px] font-bold text-gray-600 dark:text-white/70 uppercase tracking-widest">{getCategoryName(event.category)}</span>
                              {(event.gender && event.gender !== "N/A") || (event.division && event.division !== "N/A") ? (
                                 <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                                   {event.gender !== "N/A" ? event.gender : ''} 

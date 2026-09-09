@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { calculateTotalPoints } from "@/utils/scoring";
 import { LeaderboardRow, LeaderboardRPCData } from "../models/leaderboardTypes";
+import { getTournamentRealtimeFilter, readMysteryMode } from "@/utils/tournamentRealtime";
 
 interface UseLeaderboardViewModelProps {
   initialLeaderboard: LeaderboardRow[];
@@ -74,10 +75,14 @@ export const useLeaderboardViewModel = ({
       .channel("settings-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tournaments", filter: `id=eq.${tournamentId}` },
+        { event: "*", schema: "public", table: "tournaments", filter: getTournamentRealtimeFilter(tournamentId || "") },
         (payload: any) => {
           if (payload.new) {
-            setMysteryMode(payload.new.mystery_mode);
+            const nextMysteryMode = readMysteryMode(payload.new);
+            setMysteryMode(nextMysteryMode);
+            if (!nextMysteryMode) {
+              void fetchLeaderboard();
+            }
           }
         }
       )

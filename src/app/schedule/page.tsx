@@ -307,6 +307,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   return (
     <ScheduleClientPage
+      tournamentId={tournamentId}
       initialSchedules={schedules}
       initialEvents={events}
       initialVenues={venues}

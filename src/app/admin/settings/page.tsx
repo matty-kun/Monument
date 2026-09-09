@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSettingsViewModel } from "@/features/admin/settings/viewModels/useSettingsViewModel";
 
 export default function AdminSettingsPage() {
-  const { mysteryMode, loading, saving, feedback, handleToggle } = useSettingsViewModel();
+  const { mysteryMode, loading, saving, feedback, handleToggle, tournamentName } = useSettingsViewModel();
 
   return (
     <div className="space-y-10 animate-fadeIn">
@@ -15,40 +15,40 @@ export default function AdminSettingsPage() {
           Settings
         </h1>
         <p className="text-sm text-gray-500 font-medium tracking-wide">
-          Global configuration for CITE FEST 2026
+          {tournamentName ? `Configuration for ${tournamentName}` : "Select a tournament to configure"}
         </p>
       </div>
 
       {/* Mystery Mode Card */}
       <div className="max-w-2xl">
-        <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#1c1c1e] rounded-3xl border border-gray-200 dark:border-white/5 shadow-sm overflow-hidden">
           {/* Card Header */}
-          <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500 ${mysteryMode ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
+          <div className="px-8 py-6 border-b border-gray-200 dark:border-white/5 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-500 ${mysteryMode ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-gray-100 dark:bg-white/5'}`}>
               {mysteryMode
                 ? <EyeOff size={24} className="text-monument-primary" />
                 : <Eye size={24} className="text-gray-400" />
               }
             </div>
             <div>
-              <h2 className="text-lg font-black text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
                 Mystery Mode
                 <Wand2 size={16} className="text-monument-primary" />
               </h2>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Leaderboard Visibility</p>
+              <p className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-widest mt-0.5">Leaderboard Visibility</p>
             </div>
           </div>
 
           {/* Card Body */}
           <div className="px-8 py-6 flex flex-col gap-6">
-            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+            <p className="text-sm text-gray-500 dark:text-white/60 leading-relaxed">
               When <span className="font-black text-monument-primary">Mystery Mode</span> is <span className="font-black">ON</span>, the public leaderboard will hide all scores, medal counts, and rankings — showing only a teaser message. This lets you record results in the background without spoiling the grand reveal at the culmination ceremony.
             </p>
 
-            <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-200 dark:border-white/5">
               <div className="flex items-center gap-3">
-                <ShieldAlert size={18} className={`transition-colors ${mysteryMode ? 'text-violet-500' : 'text-gray-300'}`} />
-                <span className="text-sm font-black text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                <ShieldAlert size={18} className={`transition-colors ${mysteryMode ? 'text-violet-500' : 'text-gray-300 dark:text-white/20'}`} />
+                <span className="text-sm font-black text-gray-700 dark:text-white uppercase tracking-wider">
                   {loading ? 'Loading...' : mysteryMode ? 'Mystery Mode: ON' : 'Mystery Mode: OFF'}
                 </span>
               </div>

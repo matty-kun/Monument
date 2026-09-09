@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import BouncingBallsLoader from '@/components/BouncingBallsLoader';
 
 export default function AdminLoginPage() {
@@ -60,31 +60,31 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 overflow-hidden">
+    <div className="flex flex-col md:flex-row items-center justify-center min-h-screen bg-[#F5F5F7] dark:bg-black transition-colors p-4 overflow-hidden">
       <div className="md:w-1/2 flex flex-col items-center justify-center text-center p-10">
         <Image
           src="/monument-logo.png"
           alt="Monument Logo"
           width={300}
           height={300}
-          className="mb-4"
+          className="mb-4 drop-shadow-md"
         />
-        <h1 className="text-5xl font-bold text-monument-primary dark:text-violet-400">CITE FEST</h1>
-        <p className="text-gray-600 mt-1 dark:text-gray-300">Competition Score Tracking System</p>
+        <h1 className="text-5xl font-black tracking-tight text-gray-900 dark:text-white">MONUMENT</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Competition Score Tracking System</p>
       </div>
 
       <div className="md:w-1/2 max-w-md w-full">
-        <div className="bg-white dark:bg-gray-800 backdrop-blur-sm p-8 shadow-2xl rounded-2xl border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-[#1c1c1e] p-8 shadow-sm rounded-[32px] border border-gray-200 dark:border-white/10 transition-colors">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-monument-green dark:text-green-400">Admin Portal</h2>
-            <p className="text-gray-600 dark:text-gray-300">Sign in to manage the system</p>
+            <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Admin Portal</h2>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">Sign in to manage the system</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-1.5"
               >
                 Email Address
               </label>
@@ -92,54 +92,59 @@ export default function AdminLoginPage() {
                 id="email"
                 type="email"
                 placeholder="you@example.com"
-                className="input mt-1"
+                className="w-full px-4 py-3 bg-gray-100 dark:bg-black border border-transparent dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-monument-green transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
 
-            <div className="relative">
+            <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1 mb-1.5"
               >
                 Password
               </label>
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                className="input mt-1 pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-8 md:top-8 flex items-center h-6 text-monument-green dark:text-green-400"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-black border border-transparent dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-monument-green transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 pr-12"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center h-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {errorMsg && (
-              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg dark:bg-red-900/50 dark:text-red-300 dark:border-red-400">
-                <p>{errorMsg}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-xl dark:bg-red-900/20 dark:text-red-400 dark:border-red-500">
+                <p className="font-medium text-sm">{errorMsg}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full text-lg py-3 text-white"
+              className="w-full text-lg font-bold py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:hover:scale-100 shadow-sm"
             >
               {loading ? (
-                <BouncingBallsLoader size="text-xl" />
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Signing In...
+                </span>
               ) : (
-                <span className="flex items-center justify-center gap-2"><LogIn className="w-5 h-5" /> Sign In</span>
+                <span>Sign In</span>
               )}
             </button>
           </form>

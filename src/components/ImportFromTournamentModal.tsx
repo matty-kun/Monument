@@ -65,12 +65,12 @@ export default function ImportFromTournamentModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-2xl w-full max-w-md relative overflow-hidden"
+            className="bg-white dark:bg-[#1c1c1e] rounded-3xl p-6 md:p-8 shadow-2xl w-full max-w-md relative overflow-hidden"
           >
             <button
               onClick={onClose}
               disabled={loading}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-all disabled:opacity-50"
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-all disabled:opacity-50"
             >
               <X size={20} />
             </button>
@@ -86,7 +86,7 @@ export default function ImportFromTournamentModal({
               </div>
             </div>
 
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+            <p className="text-sm text-gray-500 dark:text-white/60 mb-6 font-medium">
               {description}
             </p>
 
@@ -95,8 +95,8 @@ export default function ImportFromTournamentModal({
                 <BouncingBallsLoader />
               </div>
             ) : tournaments.length === 0 ? (
-              <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl text-center border border-gray-100 dark:border-gray-700">
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+              <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-2xl text-center border border-gray-200 dark:border-white/5">
+                <p className="text-sm font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">
                   No past tournaments found.
                 </p>
               </div>
@@ -110,7 +110,7 @@ export default function ImportFromTournamentModal({
                     value={selectedId}
                     onChange={(e) => setSelectedId(e.target.value)}
                     disabled={loading}
-                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-4 text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-monument-primary transition-all outline-none appearance-none cursor-pointer"
+                    className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-monument-primary transition-all outline-none appearance-none cursor-pointer"
                   >
                     {tournaments.map((t) => (
                       <option key={t.id} value={t.id}>

@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { ProcessedResult, GroupedResult } from "../models/resultsTypes";
+import { getTournamentDataFilter, getTournamentRealtimeFilter, readMysteryMode } from "@/utils/tournamentRealtime";
 
 interface UseResultsViewModelProps {
+  tournamentId: string;
   initialResults: ProcessedResult[];
   initialCategories: { id: string; name: string; icon?: string }[];
   initialMysteryMode?: boolean;
 }
 
 export const useResultsViewModel = ({
+  tournamentId,
   initialResults,
   initialCategories,
   initialMysteryMode = false,
@@ -27,21 +30,23 @@ export const useResultsViewModel = ({
       .channel('public-events-page')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'results' },
+        { event: '*', schema: 'public', table: 'results', filter: getTournamentDataFilter(tournamentId) },
         () => setShowRefresh(true)
       )
       .subscribe();
 
     const mysterySub = supabase
-      .channel('app_settings_events')
+      .channel(`tournament-settings-results-${tournamentId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'app_settings', filter: "key=eq.mystery_mode" },
+        { event: 'UPDATE', schema: 'public', table: 'tournaments', filter: getTournamentRealtimeFilter(tournamentId) },
         (payload) => {
-          if (payload.new && (payload.new as any).key === 'mystery_mode') {
-            setMysteryMode((payload.new as any).value === 'true');
-          } else if (payload.eventType === 'DELETE') {
-            setMysteryMode(false);
+          if (payload.new) {
+            const nextMysteryMode = readMysteryMode(payload.new);
+            setMysteryMode(nextMysteryMode);
+            if (!nextMysteryMode) {
+              setShowRefresh(true);
+            }
           }
         }
       )
@@ -51,7 +56,7 @@ export const useResultsViewModel = ({
       supabase.removeChannel(channel);
       supabase.removeChannel(mysterySub);
     };
-  }, [supabase]);
+  }, [supabase, tournamentId]);
 
   const getCategoryName = useCallback((categoryId: string | null) => {
     if (!categoryId) return null;
