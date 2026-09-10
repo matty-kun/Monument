@@ -11,7 +11,7 @@ function Bone({ className = "" }: BoneProps) {
 }
 
 const glassPanel =
-  "border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.13),rgba(255,255,255,0.035))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_16px_40px_rgba(0,0,0,0.28)]";
+  "border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_rgba(0,0,0,0.28)]";
 
 function PublicSkeletonShell({
   label,

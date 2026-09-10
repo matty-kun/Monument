@@ -40,12 +40,32 @@ export default function Navbar() {
   }, [supabase]);
 
   const searchParams = useSearchParams();
-  const tournamentParam = searchParams?.get('tournament');
+  const urlTournamentParam = searchParams?.get('tournament');
+  const [activeTournamentParam, setActiveTournamentParam] = useState<string | null>(null);
+
+  useEffect(() => {
+    const isMainPage = pathname === "/" || pathname === "/schedule";
+
+    if (urlTournamentParam) {
+      setActiveTournamentParam(urlTournamentParam);
+      sessionStorage.setItem('lastViewedTournament', urlTournamentParam);
+    } else if (isMainPage) {
+      setActiveTournamentParam(null);
+      sessionStorage.removeItem('lastViewedTournament');
+    } else {
+      const stored = sessionStorage.getItem('lastViewedTournament');
+      if (stored) {
+        setActiveTournamentParam(stored);
+      } else {
+        setActiveTournamentParam(null);
+      }
+    }
+  }, [pathname, urlTournamentParam]);
 
   const navLinks = useMemo(() => [
-    { href: tournamentParam ? `/?tournament=${tournamentParam}` : "/", label: "Podium", icon: Trophy },
-    { href: tournamentParam ? `/schedule?tournament=${tournamentParam}` : "/schedule", label: "Scores", icon: Swords },
-  ], [tournamentParam]);
+    { href: activeTournamentParam ? `/?tournament=${activeTournamentParam}` : "/", label: "Podium", icon: Trophy },
+    { href: activeTournamentParam ? `/schedule?tournament=${activeTournamentParam}` : "/schedule", label: "Scores", icon: Swords },
+  ], [activeTournamentParam]);
 
   const isMainAdminPath = pathname?.startsWith('/admin');
   if (isMainAdminPath) return null;
@@ -57,7 +77,7 @@ export default function Navbar() {
     <>
       {/* Bottom Navigation — Floating Pill Design */}
       <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[360px] z-50">
-        <nav className="bg-white/80 dark:bg-[#1c1c1e]/95 backdrop-blur-3xl border border-gray-200 dark:border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
+        <nav className="bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
           {navLinks.map(({ href, label, icon: Icon }) => {
             // ... (keep exact same map logic)
             // Wait, need to render history here or separately? I will render separately.
@@ -67,18 +87,18 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
-                  isActive ? 'bg-gray-100 dark:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                  isActive ? 'bg-white/10' : 'hover:bg-white/5'
                 }`}
               >
                 <Icon
                   className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                    isActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
+                    isActive ? 'text-monument-green' : 'text-white'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
                   fill={isActive ? 'currentColor' : 'none'}
                 />
                 <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                  isActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
+                  isActive ? 'text-monument-green' : 'text-white'
                 }`}>
                   {label}
                 </span>
@@ -90,27 +110,27 @@ export default function Navbar() {
           {role === 'admin' ? (
             <button
               onClick={() => setIsMoreOpen(true)}
-              className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/5"
+              className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-white/5"
             >
-              <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-gray-400 dark:text-white" strokeWidth={2} />
-              <span className="text-[10px] font-bold tracking-wide text-gray-400 dark:text-white">More</span>
+              <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-white" strokeWidth={2} />
+              <span className="text-[10px] font-bold tracking-wide text-white">More</span>
             </button>
           ) : (
             <Link
               href="/history"
               className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
-                isHistoryActive ? 'bg-gray-100 dark:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                isHistoryActive ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
             >
               <History
                 className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                  isHistoryActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
+                  isHistoryActive ? 'text-monument-green' : 'text-white'
                 }`}
                 strokeWidth={isHistoryActive ? 2.5 : 2}
                 fill="none"
               />
               <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                isHistoryActive ? 'text-gray-900 dark:text-monument-green' : 'text-gray-400 dark:text-white'
+                isHistoryActive ? 'text-monument-green' : 'text-white'
               }`}>
                 History
               </span>
@@ -135,23 +155,23 @@ export default function Navbar() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[#F5F5F7] dark:bg-[#1c1c1e] rounded-t-3xl pt-5 px-4 pb-28 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-2xl border-t border-gray-200 dark:border-white/5"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-[#1c1c1e] rounded-t-3xl pt-5 px-4 pb-28 shadow-2xl border-t border-white/5"
             >
               {/* Drag handle */}
-              <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-5 dark:opacity-40" />
+              <div className="w-10 h-1 bg-gray-600 rounded-full mx-auto mb-5 opacity-40" />
 
               {/* Admin link (if applicable) */}
               {(role === "admin" || role === "super_admin") && (
                 <Link
                   href="/admin/dashboard"
                   onClick={() => setIsMoreOpen(false)}
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all mb-3 border border-gray-100 dark:border-transparent"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all mb-3 border border-transparent"
                 >
                   <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
                     <LayoutDashboard className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-bold text-[15px] text-gray-900 dark:text-white">Admin Dashboard</div>
+                    <div className="font-bold text-[15px] text-white">Admin Dashboard</div>
                     <div className="text-[11px] text-gray-500">Manage events, results & more</div>
                   </div>
                 </Link>
@@ -171,8 +191,8 @@ export default function Navbar() {
                     onClick={() => setIsMoreOpen(false)}
                     className={`p-4 rounded-2xl flex items-center justify-between transition-all border ${
                       t.is_active
-                        ? 'bg-monument-green text-white border-monument-green shadow-md dark:bg-monument-green dark:border-transparent dark:shadow-none'
-                        : 'bg-white dark:bg-white/5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-transparent shadow-sm dark:shadow-none'
+                        ? 'bg-monument-green text-white shadow-none'
+                        : 'bg-white/5 text-gray-200 hover:bg-white/10 border-transparent shadow-none'
                     }`}
                   >
                     <div className="font-semibold text-[15px]">{t.name}</div>

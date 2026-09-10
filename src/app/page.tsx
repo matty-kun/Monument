@@ -85,20 +85,24 @@ async function ScoreboardContent({ searchParams }: ScoreboardPageProps) {
   }
 
   const fetchLeaderboard = async (): Promise<LeaderboardRow[]> => {
-    // 1. Fetch the stats from the RPC (using specific ID if available)
-    const { data: stats, error: statsError } = tournamentId 
-      ? await supabase.rpc('get_leaderboard_by_tournament', { p_tournament_id: tournamentId }).returns<LeaderboardRpcResponse[]>()
-      : await supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>();
+    // 1. Fetch stats and departments concurrently
+    const [statsResponse, deptResponse] = await Promise.all([
+      tournamentId 
+        ? supabase.rpc('get_leaderboard_by_tournament', { p_tournament_id: tournamentId }).returns<LeaderboardRpcResponse[]>()
+        : supabase.rpc('get_leaderboard').returns<LeaderboardRpcResponse[]>(),
+      supabase.from('tournament_departments')
+        .select('department_id, abbreviation, image_url, mascot_url')
+        .eq('tournament_id', tournamentId)
+    ]);
+
+    const { data: stats, error: statsError } = statsResponse;
+    const { data: departments, error: deptError } = deptResponse;
 
     if (statsError || !stats) {
       console.error("Error fetching leaderboard stats:", statsError);
       return [];
     }
     
-    // 2. Fetch all tournament departments to get abbreviations, logos and mascots
-    const { data: departments, error: deptError } = await supabase.from('tournament_departments')
-      .select('department_id, abbreviation, image_url, mascot_url')
-      .eq('tournament_id', tournamentId);
     if (deptError) {
       console.error("Error fetching department abbreviations:", deptError);
     }

@@ -298,15 +298,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
             )}
           </div>
 
-          {/* Follow/Notify Button */}
-          {status !== 'finished' && (
-            <div className="flex justify-center mb-8">
-              <button className="bg-white/10 hover:bg-white/20 transition-colors rounded-full px-6 py-2 flex items-center gap-2 border border-white/10 backdrop-blur-md">
-                <Clock size={16} className="text-white" />
-                <span className="text-[15px] font-bold text-white">Notify Me</span>
-              </button>
-            </div>
-          )}
+
 
           {/* Info Cards Area */}
           <div className="px-4 flex-1 space-y-4 pb-8">
@@ -444,23 +436,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
               </div>
             )}
 
-            {/* Head-to-Head History (Mocked Placeholder for aesthetics) */}
-            {departments.length === 2 && (
-              <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
-                <div className="text-[15px] font-bold text-gray-900 dark:text-white mb-4">Head-to-Head History</div>
-                <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-black/30 rounded-xl border border-gray-200 dark:border-white/5">
-                  <div className="flex flex-col items-center">
-                    <span className="text-[20px] font-black text-gray-900 dark:text-white">3</span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">{departments[0]?.abbreviation} WINS</span>
-                  </div>
-                  <div className="text-[12px] text-gray-400 dark:text-gray-500 font-bold">VS</div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-[20px] font-black text-gray-900 dark:text-white">1</span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase">{departments[1]?.abbreviation} WINS</span>
-                  </div>
-                </div>
-              </div>
-            )}
+
 
           </div>
         </div>

@@ -152,13 +152,13 @@ export default function ScheduleClientPage({
   };
 
   return (
-    <div className="bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
+    <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
       {/* Top Header */}
-      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl">
-        <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-4">Matches</h1>
+      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-black/80 backdrop-blur-xl">
+        <h1 className="text-3xl font-black text-white tracking-tight mb-4">Matches</h1>
 
         {/* Segmented Control */}
-        <div className="flex p-1 bg-gray-200/50 dark:bg-white/10 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 shadow-inner">
+        <div className="flex p-1 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 shadow-inner">
           {(['all', 'ongoing', 'upcoming', 'finished'] as const).map(tab => {
             const isActive = statusTab === tab;
             let label = "All";
@@ -170,7 +170,7 @@ export default function ScheduleClientPage({
               <button
                 key={tab}
                 onClick={() => setStatusTab(tab)}
-                className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${isActive ? 'bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-white/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`flex-1 py-1.5 text-[13px] font-semibold rounded-lg transition-colors ${isActive ? 'bg-[#1c1c1e] text-white shadow-sm border border-white/10' : 'text-gray-400 hover:text-gray-300'}`}
               >
                 {label}
               </button>
@@ -190,7 +190,7 @@ export default function ScheduleClientPage({
           >
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center gap-2 bg-white dark:bg-[#1c1c1e] text-black dark:text-white shadow-xl rounded-full px-5 py-2 hover:bg-gray-100 dark:hover:bg-white/10 active:scale-95 transition-all pointer-events-auto text-sm font-bold tracking-wide"
+              className="flex items-center gap-2 bg-[#1c1c1e] text-white shadow-xl rounded-full px-5 py-2 hover:bg-white/10 active:scale-95 transition-all pointer-events-auto text-sm font-bold tracking-wide"
             >
               <span>Refresh Matches</span>
             </button>
@@ -201,7 +201,7 @@ export default function ScheduleClientPage({
       <div className="relative z-10 px-4 mt-4">
         {/* Search Bar */}
         <div className="relative mb-6">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
           </svg>
           <input
@@ -209,7 +209,7 @@ export default function ScheduleClientPage({
             placeholder="Search teams or events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] py-2.5 pl-9 pr-4 text-[15px] text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-200 dark:border-white/[0.08] dark:bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] dark:text-white dark:placeholder:text-gray-500 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:focus:ring-white/10"
+            className="w-full rounded-xl border border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] py-2.5 pl-9 pr-4 text-[15px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-white/10"
           />
         </div>
 
@@ -218,15 +218,15 @@ export default function ScheduleClientPage({
           {Object.keys(groupedSchedules).length > 0 ? (
             Object.entries(groupedSchedules).map(([dateStr, daySchedules]) => (
               <div key={dateStr} className="space-y-3">
-                <h2 className="text-[14px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-1">
+                <h2 className="text-[14px] font-bold text-gray-400 uppercase tracking-wider pl-1">
                   {formatDateLabel(dateStr)}
                 </h2>
-                <div className="flex flex-col overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_48px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.13),rgba(255,255,255,0.035))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_18px_48px_rgba(0,0,0,0.28)]">
+                <div className="flex flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
                   {daySchedules.map((s, index) => {
                     const globalIndex = filteredSchedules.findIndex(fs => fs.id === s.id);
                     const isLast = index === daySchedules.length - 1;
                     return (
-                      <div key={s.id} className={isLast ? "" : "border-b border-black/[0.06] dark:border-white/[0.08]"}>
+                      <div key={s.id} className={isLast ? "" : "border-b border-white/[0.08]"}>
                         <CompactMatchCard
                           schedule={s}
                           getDepartmentInfo={getDepartmentInfo}
@@ -241,7 +241,7 @@ export default function ScheduleClientPage({
             ))
           ) : (
             <div className="w-full flex flex-col items-center justify-center text-center h-[30vh]">
-              <p className="text-gray-500 dark:text-gray-400 font-medium">No matches found.</p>
+              <p className="text-gray-400 font-medium">No matches found.</p>
             </div>
           )}
         </div>
@@ -269,18 +269,18 @@ export default function ScheduleClientPage({
             className="fixed inset-0 z-[70] flex flex-col pt-safe"
           >
             {/* Background gradient behind cards inside modal */}
-            <div className="absolute inset-0 bg-[#F5F5F7] dark:bg-black" />
+            <div className="absolute inset-0 bg-black" />
             
             {/* Modal Header: Date and Close Button */}
             <div className="relative flex justify-center items-center mt-4 mb-4 shrink-0">
-              <div className="text-center font-bold text-gray-900 dark:text-white text-[15px] sm:text-[17px] tracking-wide">
+              <div className="text-center font-bold text-white text-[15px] sm:text-[17px] tracking-wide">
                 {formatFullDate(filteredSchedules[activeSwiperIndex]?.date)}
               </div>
               <button 
                 onClick={() => setSelectedMatchIndex(null)}
-                className="absolute right-4 z-50 w-8 h-8 sm:w-10 sm:h-10 bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 shadow-sm flex items-center justify-center rounded-full transition-colors"
+                className="absolute right-4 z-50 w-8 h-8 sm:w-10 sm:h-10 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/10 shadow-sm flex items-center justify-center rounded-full transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-900 dark:text-white">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>

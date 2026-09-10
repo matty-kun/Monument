@@ -115,7 +115,7 @@ export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
                           alt={team?.name ?? "Team"}
                           fill
                           sizes={column === 1 ? "104px" : "76px"}
-                          priority={column === 1}
+                          priority={true}
                           className="relative object-contain transition-transform duration-300 group-hover:-translate-y-0.5"
                           style={{
                             filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.52)) drop-shadow(0 10px 16px rgba(0,0,0,0.28))",
