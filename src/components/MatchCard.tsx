@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { Schedule } from "@/features/schedule/models/scheduleTypes";
-import { stringToColor } from "@/utils/colors";
-import { MapPin, Clock, Users, Trophy, ChevronRight, Download } from "lucide-react";
+import { teamNameToColor } from "@/utils/colors";
+import { Clock, ChevronRight, Download } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { Department } from "@/shared/models/tournamentTypes";
 import { useRef, useState, useEffect } from "react";
@@ -45,27 +45,15 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   }, [schedule.id, supabase]);
 
   const handleVote = async (deptId: string) => {
-    if (isVoting) return;
+    if (isVoting || votedTeamId) return;
     setIsVoting(true);
     
     // Optimistic UI updates based on current voted state
     const prevVoted = votedTeamId;
     const prevPredictions = { ...predictions };
     
-    if (prevVoted === deptId) {
-      // Toggling off
-      setVotedTeamId(null);
-      setPredictions(prev => ({...prev, [deptId]: Math.max(0, (prev[deptId] || 1) - 1)}));
-    } else {
-      // Changing vote or new vote
-      setVotedTeamId(deptId);
-      setPredictions(prev => {
-        const next = { ...prev };
-        if (prevVoted) next[prevVoted] = Math.max(0, (next[prevVoted] || 1) - 1);
-        next[deptId] = (next[deptId] || 0) + 1;
-        return next;
-      });
-    }
+    setVotedTeamId(deptId);
+    setPredictions(prev => ({ ...prev, [deptId]: (prev[deptId] || 0) + 1 }));
     
     const { votePrediction } = await import('@/features/schedule/actions/votePrediction');
     const res = await votePrediction(schedule.id, deptId);
@@ -95,13 +83,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const formatFullDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString("en-US", { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const { status, label, color } = getDynamicStatus(schedule);
+  const { status } = getDynamicStatus(schedule);
   
   // Fetch department info and sort by medal if the event is finished
   const departments = schedule.departments.map(getDepartmentInfo);
@@ -115,12 +97,54 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
     };
     departments.sort((a, b) => getRank(a.id) - getRank(b.id));
   }
+
+  const hasPodium = status === 'finished' && Boolean((schedule.events as any)?.results) && departments.length >= 3;
+  const displayDepartments = hasPodium
+    ? [departments[1], departments[0], departments[2], ...departments.slice(3)]
+    : departments;
   
   // Show teams in list format (bottom) if > 2 teams
   const showTeamsInList = departments.length > 2;
 
-  // Removed dynamic background to favor clean white aesthetic
-  const backgroundStyle = { backgroundColor: '#ffffff' };
+  const teamColors = displayDepartments
+    .slice(0, 3)
+    .map((department) => teamNameToColor(department.name || department.abbreviation || department.id));
+
+  const backgroundStyle = (() => {
+    if (teamColors.length === 0) {
+      return {
+        background: "linear-gradient(180deg, rgba(38, 154, 122, 0.72) 0%, rgba(38, 154, 122, 0.28) 100%)",
+      };
+    }
+
+    if (teamColors.length === 1) {
+      return {
+        background: [
+          `radial-gradient(circle at 50% -8%, ${teamColors[0]} 0%, ${teamColors[0]}d0 34%, transparent 76%)`,
+          `linear-gradient(180deg, ${teamColors[0]}8f 0%, ${teamColors[0]}42 100%)`,
+        ].join(", "),
+      };
+    }
+
+    if (teamColors.length === 2) {
+      return {
+        background: [
+          `radial-gradient(circle at 8% 0%, ${teamColors[0]} 0%, ${teamColors[0]}c4 30%, transparent 68%)`,
+          `radial-gradient(circle at 92% 0%, ${teamColors[1]} 0%, ${teamColors[1]}c4 30%, transparent 68%)`,
+          `linear-gradient(135deg, ${teamColors[0]}66 0%, rgba(20, 20, 22, 0.24) 50%, ${teamColors[1]}66 100%)`,
+        ].join(", "),
+      };
+    }
+
+    return {
+      background: [
+        `radial-gradient(circle at 0% 0%, ${teamColors[0]} 0%, ${teamColors[0]}b8 25%, transparent 62%)`,
+        `radial-gradient(circle at 50% -10%, ${teamColors[1]} 0%, ${teamColors[1]}c8 27%, transparent 64%)`,
+        `radial-gradient(circle at 100% 0%, ${teamColors[2]} 0%, ${teamColors[2]}b8 25%, transparent 62%)`,
+        `linear-gradient(135deg, ${teamColors[0]}52 0%, ${teamColors[1]}4a 50%, ${teamColors[2]}52 100%)`,
+      ].join(", "),
+    };
+  })();
 
   const getMedal = (deptId: string) => {
     if (status !== 'finished' || !(schedule.events as any)?.results) return null;
@@ -131,8 +155,8 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const d1Votes = predictions[departments[0]?.id] || 0;
   const d2Votes = predictions[departments[1]?.id] || 0;
   const totalVotes = d1Votes + d2Votes;
-  const d1Percentage = totalVotes > 0 ? (d1Votes / totalVotes) * 100 : 50;
-  const d2Percentage = totalVotes > 0 ? (d2Votes / totalVotes) * 100 : 50;
+  const d1Percentage = totalVotes > 0 ? (d1Votes / totalVotes) * 100 : 0;
+  const d2Percentage = totalVotes > 0 ? (d2Votes / totalVotes) * 100 : 0;
   
   const totalMultiVotes = Object.values(predictions).reduce((a, b) => a + b, 0);
 
@@ -141,7 +165,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
     const badge = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : medal === 'bronze' ? '🥉' : null;
     
     return (
-      <div key={d.id || index} className="flex flex-col items-center flex-1 max-w-[110px] shrink min-w-0 relative">
+      <div key={d.id || index} className="relative mx-auto flex w-full min-w-0 max-w-[110px] flex-1 shrink flex-col items-center">
         <div className="relative w-16 h-16 sm:w-[84px] sm:h-[84px] mb-2 sm:mb-3 shrink-0">
           {badge && (
             <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 text-3xl sm:text-4xl z-20 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
@@ -151,16 +175,16 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
           {d.image_url ? (
             <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" />
           ) : (
-            <div className="w-full h-full rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 shadow-sm border border-gray-200 dark:border-white/10">
+            <div className="w-full h-full rounded-full bg-black/20 flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-sm border border-white/20 backdrop-blur-md">
               {d.abbreviation || d.name.slice(0, 3)}
             </div>
           )}
         </div>
-      <div className={`text-center font-bold text-[14px] sm:text-[16px] tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis ${isWinner ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>
+      <div className={`text-center font-bold text-[14px] sm:text-[16px] tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-sm ${isWinner ? 'text-white' : 'text-white/75'}`}>
         {d.name}
       </div>
       {score !== undefined && score !== null && !showTeamsInList && (
-        <div className={`mt-0.5 text-[22px] font-black tracking-tight ${isWinner ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+        <div className={`mt-0.5 text-[22px] font-black tracking-tight drop-shadow-sm ${isWinner ? 'text-white' : 'text-white/65'}`}>
           {score}
         </div>
       )}
@@ -200,10 +224,10 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
     <div className="w-full h-full flex flex-col pt-2 pb-4">
       <div 
         ref={cardRef}
-        className="w-full flex-1 bg-white dark:bg-[#1c1c1e]/90 rounded-[40px] overflow-hidden flex flex-col relative border border-gray-200 dark:border-white/10 shadow-xl" 
+        className="w-full flex-1 bg-[#e7e7ea] dark:bg-[#161618] rounded-[40px] overflow-hidden flex flex-col relative border border-gray-200 dark:border-white/10 shadow-xl"
       >
-        {/* Subtle top gradient for contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 dark:from-white/5 to-white/90 dark:to-transparent pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none" style={backgroundStyle} />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/45 pointer-events-none" />
         
         {/* Fixed Download Button at bottom */}
         <button 
@@ -219,17 +243,17 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
         <div className="relative z-10 w-full h-full overflow-y-auto hide-scrollbar flex flex-col pb-24">
           
           {/* Top Sheet Handle (Visual only) */}
-          <div className="w-10 h-1.5 bg-gray-300 dark:bg-white/20 rounded-full mx-auto mt-3" />
+          <div className="w-10 h-1.5 bg-white/35 rounded-full mx-auto mt-3" />
 
           {/* Top Bar: Event Name and Share */}
           <div className="flex justify-center items-center relative mt-3 mb-6">
-            <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center px-12">
+            <span className="text-[13px] font-bold text-white/75 uppercase tracking-widest text-center px-12 drop-shadow-sm">
               {schedule.events?.name}
             </span>
             <div className="absolute top-0 right-5 flex items-center gap-1.5">
               <div className={`w-2 h-2 rounded-full shadow-sm ${status === 'finished' ? 'bg-[#FF5F56]' : status === 'live' ? 'bg-[#27C93F]' : 'bg-[#FFBD2E]'}`} />
               {status !== 'finished' && (
-                <span className={`text-[10px] font-bold ${status === 'live' ? 'text-[#27C93F]' : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className={`text-[10px] font-bold ${status === 'live' ? 'text-[#47ef61]' : 'text-white/70'}`}>
                   {status === 'live' ? 'LIVE' : (schedule.start_time.startsWith("00:00") ? "TBA" : formatTime(schedule.start_time))}
                 </span>
               )}
@@ -241,14 +265,27 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
             {departments.length === 0 ? (
               <div className="text-center text-gray-400 dark:text-gray-500 py-10 font-bold">Teams TBA</div>
             ) : showTeamsInList ? (
-              // If more than 2 teams, show the clustered teams in the center instead of a single icon
               <div className="flex flex-col items-center justify-center py-2">
-                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
-                   {departments.map((d, i) => {
-                     // Since there are many teams, we don't show individual scores here, we just show the team hero
-                     return renderTeamHero(d, i, schedule.winner_id === d.id);
-                   })}
-                 </div>
+                {hasPodium ? (
+                  <>
+                    <div className="grid w-full grid-cols-3 items-end gap-1 sm:gap-3 mb-6">
+                      {displayDepartments.slice(0, 3).map((d, i) => (
+                        <div key={d.id} className={i === 1 ? "pb-5" : ""}>
+                          {renderTeamHero(d, i, schedule.winner_id === d.id)}
+                        </div>
+                      ))}
+                    </div>
+                    {displayDepartments.length > 3 && (
+                      <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                        {displayDepartments.slice(3).map((d, i) => renderTeamHero(d, i + 3, false))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-6">
+                    {displayDepartments.map((d, i) => renderTeamHero(d, i, schedule.winner_id === d.id))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex justify-between items-center px-1 sm:px-2 gap-2">
@@ -275,7 +312,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
           <div className="px-4 flex-1 space-y-4 pb-8">
             
             {/* Match Details Card */}
-            <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
+            <div className="bg-white/55 dark:bg-black/20 backdrop-blur-2xl border border-white/60 dark:border-white/15 rounded-[24px] p-5 shadow-[0_16px_40px_rgba(0,0,0,0.12)]">
               <div className="text-center text-[15px] font-bold text-gray-900 dark:text-white mb-5">
                 Match Details
               </div>
@@ -330,7 +367,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
             )}
 
             {/* Fan Predictions */}
-            {departments.length === 2 && (
+            {status !== 'finished' && departments.length === 2 && (
               <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-[15px] font-bold text-gray-900 dark:text-white">Fan Predictions</div>
@@ -354,18 +391,18 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={() => handleVote(departments[0]?.id as string)} disabled={isVoting} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[0]?.id ? 'bg-[#00e5ff]/10 text-[#00b8cc] border-[#00b8cc]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
-                    {votedTeamId === departments[0]?.id ? 'Voted' : `Vote ${departments[0]?.abbreviation}`}
+                  <button onClick={() => handleVote(departments[0]?.id as string)} disabled={isVoting || Boolean(votedTeamId)} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[0]?.id ? 'bg-[#00e5ff]/10 text-[#00b8cc] border-[#00b8cc]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
+                    {votedTeamId === departments[0]?.id ? 'Voted' : votedTeamId ? 'Locked' : `Vote ${departments[0]?.abbreviation}`}
                   </button>
-                  <button onClick={() => handleVote(departments[1]?.id as string)} disabled={isVoting} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[1]?.id ? 'bg-[#ff3366]/10 text-[#e62e5c] border-[#e62e5c]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
-                    {votedTeamId === departments[1]?.id ? 'Voted' : `Vote ${departments[1]?.abbreviation}`}
+                  <button onClick={() => handleVote(departments[1]?.id as string)} disabled={isVoting || Boolean(votedTeamId)} className={`flex-1 border py-2.5 rounded-xl text-[13px] font-bold transition-colors ${votedTeamId === departments[1]?.id ? 'bg-[#ff3366]/10 text-[#e62e5c] border-[#e62e5c]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 disabled:opacity-50 shadow-sm'}`}>
+                    {votedTeamId === departments[1]?.id ? 'Voted' : votedTeamId ? 'Locked' : `Vote ${departments[1]?.abbreviation}`}
                   </button>
                 </div>
               </div>
             )}
 
             {/* Fan Predictions for Multi-Team */}
-            {departments.length >= 3 && (
+            {status !== 'finished' && departments.length >= 3 && (
               <div className="bg-white/80 dark:bg-[#2c2c2e]/80 backdrop-blur-xl border border-gray-200 dark:border-white/5 rounded-[24px] p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-[15px] font-bold text-gray-900 dark:text-white">Fan Predictions</div>
@@ -381,7 +418,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                       <button 
                         key={d.id} 
                         onClick={() => handleVote(d.id)} 
-                        disabled={isVoting} 
+                        disabled={isVoting || Boolean(votedTeamId)}
                         className={`relative w-full overflow-hidden border py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors group shadow-sm ${votedTeamId === d.id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10 disabled:opacity-90'}`}
                       >
                          <div className={`absolute left-0 top-0 bottom-0 transition-all duration-500 z-0 ${votedTeamId === d.id ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-white/5'}`} style={{ width: `${votedTeamId || totalMultiVotes > 0 ? dPercentage : 0}%` }} />
@@ -393,7 +430,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                            <span className={`text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-900 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{d.name}</span>
                          </div>
                          <div className={`z-10 text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                           {votedTeamId === d.id ? 'Voted' : (votedTeamId || totalMultiVotes > 0 ? `${dPercentage.toFixed(0)}%` : 'Vote')}
+                           {votedTeamId === d.id ? 'Voted' : votedTeamId ? 'Locked' : (totalMultiVotes > 0 ? `${dPercentage.toFixed(0)}%` : 'Vote')}
                          </div>
                       </button>
                     );
@@ -424,19 +461,6 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                 </div>
               </div>
             )}
-
-            {/* Standings Context */}
-            <div className="bg-gradient-to-br from-purple-50/80 dark:from-purple-900/20 to-white/90 dark:to-[#1c1c1e] backdrop-blur-xl border border-purple-100 dark:border-purple-500/20 rounded-[24px] p-5 flex items-start gap-4 shadow-sm">
-              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center shrink-0">
-                <Trophy size={18} className="text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <div className="text-[14px] font-bold text-purple-900 dark:text-purple-300 mb-1">Championship Implications</div>
-                <div className="text-[13px] text-purple-800/80 dark:text-purple-200/70 leading-relaxed">
-                  {schedule.context || "This match is critical for the overall standings. A win here secures a massive point advantage for the tournament leaderboard."}
-                </div>
-              </div>
-            </div>
 
           </div>
         </div>

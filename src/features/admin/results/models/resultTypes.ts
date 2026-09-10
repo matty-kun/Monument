@@ -20,7 +20,10 @@ export interface ResultCategory {
 export interface ResultWithDepartment {
   id: string;
   event_id: string;
-  department_id: string;
+  department_id: string | null;
   medal_type: 'gold' | 'silver' | 'bronze' | 'none';
   departments: ResultDepartment | ResultDepartment[] | null;
+  assigned_by?: string | null;
+  assigned_by_email?: string | null;
+  created_at?: string;
 }

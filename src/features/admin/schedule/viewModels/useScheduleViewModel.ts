@@ -3,6 +3,8 @@ import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { AdminSchedule, ScheduleEvent, ScheduleVenue, ScheduleDepartment } from "../models/scheduleTypes";
 import { Tournament } from "@/components/AdminTournamentProvider";
+import { replaceEventResultsAction } from "@/features/admin/results/actions";
+import type { ResultAssignmentInput } from "@/features/admin/results/resultPolicy";
 
 interface UseScheduleViewModelProps {
   selectedTournament: Tournament | null;
@@ -219,23 +221,23 @@ export const useScheduleViewModel = ({ selectedTournament }: UseScheduleViewMode
     const toastId = toast.loading(is3Team ? "Recording medals & finishing match..." : "Saving match result...");
     try {
       if (is3Team) {
+        const assignments: ResultAssignmentInput[] = [];
+        if (medalGoldId !== null && medalGoldId !== 'awaiting') assignments.push({ departmentId: medalGoldId === '' ? null : medalGoldId, medalType: 'gold' });
+        if (medalSilverId !== null && medalSilverId !== 'awaiting') assignments.push({ departmentId: medalSilverId === '' ? null : medalSilverId, medalType: 'silver' });
+        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') assignments.push({ departmentId: medalBronzeId === '' ? null : medalBronzeId, medalType: 'bronze' });
+
+        const result = await replaceEventResultsAction({
+          eventId: resultMatch.event_id,
+          tournamentId: selectedTournament!.id,
+          assignments,
+        });
+        if (!result.success) throw new Error(result.error);
+
         const { error: schedError } = await supabase
           .from("schedules")
           .update({ status: 'finished', winner_id: medalGoldId })
           .eq("id", resultMatch.id);
         if (schedError) throw schedError;
-
-        await supabase.from('results').delete().eq('event_id', resultMatch.event_id);
-
-        const resultsBatch: { event_id: string; department_id: string | null; medal_type: string; points: number, tournament_id: string }[] = [];
-        if (medalGoldId !== null && medalGoldId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalGoldId === '' ? null : medalGoldId, medal_type: 'gold', points: medalGoldId === '' ? 0 : 200, tournament_id: selectedTournament!.id });
-        if (medalSilverId !== null && medalSilverId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalSilverId === '' ? null : medalSilverId, medal_type: 'silver', points: medalSilverId === '' ? 0 : 150, tournament_id: selectedTournament!.id });
-        if (medalBronzeId !== null && medalBronzeId !== 'awaiting') resultsBatch.push({ event_id: resultMatch.event_id, department_id: medalBronzeId === '' ? null : medalBronzeId, medal_type: 'bronze', points: medalBronzeId === '' ? 0 : 100, tournament_id: selectedTournament!.id });
-
-        if (resultsBatch.length > 0) {
-          const { error: resError } = await supabase.from('results').insert(resultsBatch);
-          if (resError) throw resError;
-        }
 
         toast.success("Match finished & medals recorded!", { id: toastId });
       } else {

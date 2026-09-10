@@ -1,240 +1,257 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Medal, 
-  Flag, 
-  CalendarDays, 
-  Building2, 
-  Tags, 
-  MapPin, 
-  Users,
-  Settings,
+import {
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Flag,
+  History,
+  LayoutDashboard,
+  MapPin,
+  Medal,
+  Menu,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
-  Menu,
-  X,
-  Trophy,
+  Settings,
   Sun,
-  Moon
+  Tags,
+  Trophy,
+  Users,
+  X,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { useTournament, Tournament } from "./AdminTournamentProvider";
+import { createClient } from "@/utils/supabase/client";
+import { useTournament } from "./AdminTournamentProvider";
 
 interface SidebarItem {
   href: string;
   label: string;
-  icon: any;
+  icon: typeof LayoutDashboard;
   role?: string;
 }
 
+const navigation: SidebarItem[] = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, role: "super_admin" },
+  { href: "/admin/results", label: "Results", icon: Medal },
+  { href: "/admin/activity", label: "Activity log", icon: History },
+  { href: "/admin/events", label: "Events", icon: Flag },
+  { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
+  { href: "/admin/departments", label: "Teams", icon: Building2 },
+  { href: "/admin/categories", label: "Categories", icon: Tags },
+  { href: "/admin/venues", label: "Venues", icon: MapPin },
+  { href: "/admin/users", label: "Users", icon: Users, role: "super_admin" },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
+];
+
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false); // Mobile
-  const [isCollapsed, setIsCollapsed] = useState(false); // Desktop
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const supabase = createClient();
-  const { tournaments, selectedTournament, setSelectedTournament, activeTournament } = useTournament();
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [supabase] = useState(() => createClient());
+  const { tournaments, selectedTournament, setSelectedTournament } = useTournament();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
+
     async function fetchRole() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-        setRole(data?.role || "user");
-      }
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      setRole(data?.role || "user");
     }
+
     fetchRole();
   }, [supabase]);
 
-  const items: SidebarItem[] = [
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/tournaments", label: "Tournaments", icon: Trophy, role: "super_admin" },
-    { href: "/admin/results", label: "Results", icon: Medal },
-    { href: "/admin/events", label: "Events", icon: Flag },
-    { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
-    { href: "/admin/departments", label: "Teams", icon: Building2 },
-    { href: "/admin/categories", label: "Categories", icon: Tags },
-    { href: "/admin/venues", label: "Venues", icon: MapPin },
-    { href: "/admin/users", label: "Users", icon: Users, role: "super_admin" },
-  ];
+  const filteredItems = navigation.filter((item) => !item.role || item.role === role);
+  const contextName = selectedTournament?.name || "Platform overview";
+  const isDark = resolvedTheme === "dark";
 
-  const filteredItems = items.filter(item => !item.role || item.role === role);
+  const closeMobileNavigation = () => {
+    setIsOpen(false);
+    setIsDropdownOpen(false);
+  };
 
   return (
     <>
-      <button onClick={() => setIsOpen(!isOpen)} className="fixed bottom-6 right-6 z-[70] bg-monument-primary text-white p-4 rounded-full shadow-2xl md:hidden flex items-center justify-center">
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-[#dde1df] bg-white/95 px-4 backdrop-blur-md dark:border-white/10 dark:bg-[#111412]/95 md:hidden">
+        <button type="button" onClick={() => setIsOpen(true)} className="admin-icon-button" aria-label="Open navigation">
+          <Menu size={18} />
+        </button>
+        <div className="min-w-0 px-3 text-center">
+          <p className="truncate text-sm font-semibold text-[#171a18] dark:text-white">{contextName}</p>
+          <p className="text-[10px] text-[#747b77] dark:text-white/45">Monument admin</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+          className="admin-icon-button"
+          aria-label={isDark ? "Use light theme" : "Use dark theme"}
+        >
+          {mounted ? (isDark ? <Sun size={17} /> : <Moon size={17} />) : <span className="h-4 w-4" />}
+        </button>
+      </header>
 
-      {isOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden" onClick={() => setIsOpen(false)}></div>}
+      {isOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-[55] bg-black/45 md:hidden"
+          onClick={closeMobileNavigation}
+          aria-label="Close navigation"
+        />
+      )}
 
-      <aside className={`fixed top-0 left-0 bottom-0 z-[60] bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-xl border-r border-gray-200 dark:border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'} ${isCollapsed ? 'md:w-20' : 'md:w-72'} md:sticky md:h-screen md:shrink-0`}>
-        <div className="flex flex-col h-full py-6">
-          <div className={`px-4 mb-10 flex items-center group/sidebar-header ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-            <div className="relative flex items-center gap-3">
-              <div 
-                className={`flex items-center cursor-pointer transition-all duration-500 rounded-2xl ${isCollapsed ? 'p-0 w-12 h-12 justify-center' : 'p-0'}`} 
-                onClick={() => isCollapsed && setIsCollapsed(false)}
-              >
-                <div className={`relative flex items-center ${isCollapsed ? 'w-10 h-10 justify-center overflow-hidden' : ''}`}>
-                    <AnimatePresence mode="wait">
-                        {isCollapsed ? (
-                            <motion.div 
-                                key="collapsed-logo" 
-                                initial={{ opacity: 0, scale: 0.8 }} 
-                                animate={{ opacity: 1, scale: 1 }} 
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="relative w-full h-full flex items-center justify-center group"
-                            >
-                                <div className="absolute inset-0 flex items-center justify-center transition-all duration-300 group-hover:opacity-0 group-hover:scale-50">
-                                    <Image src="/monument-logo.png" alt="Logo" width={32} height={32} className="rounded-lg" />
-                                </div>
-                                <div 
-                                    className="absolute inset-0 flex items-center justify-center opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-110 text-white"
-                                    onClick={(e) => { e.stopPropagation(); setIsCollapsed(false); }}
-                                >
-                                    <PanelLeftOpen size={24} />
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div 
-                                key="full-logo" 
-                                initial={{ opacity: 0, x: -10 }} 
-                                animate={{ opacity: 1, x: 0 }} 
-                                exit={{ opacity: 0, x: -10 }}
-                                className="flex items-center gap-3"
-                            >
-                                <Image src="/monument-logo.png" alt="Logo" width={40} height={40} className="rounded-lg" />
-                                <div className="flex flex-col whitespace-nowrap overflow-visible">
-                                    {tournaments.length > 0 ? (
-                                      <div className="relative">
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
-                                          className="flex items-center gap-2 text-[17px] font-black text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap bg-transparent border-none p-0 focus:ring-0 cursor-pointer outline-none hover:opacity-80 transition-opacity"
-                                        >
-                                          <span className="max-w-[150px] truncate">
-                                            {selectedTournament ? selectedTournament.name : 'Platform Overview'}
-                                          </span>
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                        </button>
-                                        
-                                        <AnimatePresence>
-                                          {isDropdownOpen && (
-                                            <>
-                                              <div className="fixed inset-0 z-[80]" onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); }} />
-                                                <motion.div 
-                                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                  transition={{ duration: 0.15 }}
-                                                  className="absolute top-full left-0 mt-3 w-64 bg-white dark:bg-[#2c2c2e] border border-gray-200 dark:border-white/10 rounded-[16px] shadow-2xl z-[90] overflow-hidden flex flex-col py-2"
-                                                >
-                                                  <button
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedTournament(null); setIsDropdownOpen(false); }}
-                                                    className={`text-left px-4 py-2.5 text-[14px] font-semibold transition-colors ${!selectedTournament ? 'bg-monument-green text-white' : 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
-                                                  >
-                                                  Platform Overview
-                                                </button>
-                                                  <div className="h-px w-full bg-gray-200 dark:bg-white/10 my-1" />
-                                                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                                                    {tournaments.map(t => (
-                                                      <button
-                                                        key={t.id}
-                                                        onClick={(e) => { e.stopPropagation(); setSelectedTournament(t); setIsDropdownOpen(false); }}
-                                                        className={`w-full text-left px-4 py-2.5 text-[14px] font-semibold transition-colors flex items-center justify-between ${selectedTournament?.id === t.id ? 'bg-monument-green/20 text-monument-green' : 'text-gray-600 dark:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}
-                                                      >
-                                                      <span className="truncate">{t.name}</span>
-                                                      {selectedTournament?.id === t.id && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                                    </button>
-                                                  ))}
-                                                </div>
-                                              </motion.div>
-                                            </>
-                                          )}
-                                        </AnimatePresence>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[17px] font-semibold text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap">LOADING...</span>
-                                    )}
-                                      <span className="text-[10px] font-semibold text-gray-500 dark:text-white/50 uppercase tracking-wider mt-1 whitespace-nowrap">
-                                      {selectedTournament ? (selectedTournament.is_active ? '● Active Season' : '○ Archived Season') : '● Global Platform'}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-              </div>
-            </div>
+      <aside
+        className={`fixed inset-y-0 left-0 z-[60] w-[268px] shrink-0 border-r border-[#dde1df] bg-[#fbfcfb] transition-[width,transform] duration-200 dark:border-white/10 dark:bg-[#101211] md:sticky md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } ${isCollapsed ? "md:w-[68px]" : "md:w-[248px]"}`}
+      >
+        <div className="flex h-full flex-col">
+          <div className={`flex h-16 items-center border-b border-[#e5e8e6] dark:border-white/10 ${isCollapsed ? "justify-center px-2" : "justify-between px-4"}`}>
+            <button
+              type="button"
+              onClick={() => isCollapsed && setIsCollapsed(false)}
+              className="flex min-w-0 items-center gap-3 text-left"
+              aria-label={isCollapsed ? "Expand sidebar" : "Monument admin"}
+            >
+              <Image src="/monument-logo.png" alt="" width={30} height={30} className="h-[30px] w-[30px] rounded-md object-cover" />
+              {!isCollapsed && (
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-semibold leading-4 text-[#151816] dark:text-white">Monument</span>
+                  <span className="block pt-1 font-mono text-[10px] leading-none text-[#79807c] dark:text-white/45">ADMIN CONSOLE</span>
+                </span>
+              )}
+            </button>
 
-            {!isCollapsed && !isOpen && (
-              <button onClick={() => setIsCollapsed(true)} className="p-2 text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all">
-                <PanelLeftClose size={20} />
-              </button>
+            {!isCollapsed && (
+              <>
+                <button type="button" onClick={() => setIsCollapsed(true)} className="admin-icon-button hidden md:inline-flex" aria-label="Collapse sidebar">
+                  <PanelLeftClose size={17} />
+                </button>
+                <button type="button" onClick={closeMobileNavigation} className="admin-icon-button md:hidden" aria-label="Close navigation">
+                  <X size={18} />
+                </button>
+              </>
             )}
           </div>
 
-          <nav className="flex-1 px-3 space-y-2 overflow-y-auto no-scrollbar">
-            {filteredItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} 
-                      className={`flex items-center group relative ${isCollapsed ? 'justify-center py-4' : 'px-4 py-3 justify-between'} rounded-[20px] transition-all duration-300 ${isActive ? 'bg-monument-green text-white shadow-lg shadow-monument-green/20' : 'text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'}`}>
-                  <div className="flex items-center gap-4">
-                    <Icon size={isCollapsed ? 26 : 20} className={isActive ? 'text-white' : 'transition-transform group-hover:scale-110 duration-300'} />
-                    {!isCollapsed && <span className={`text-[14px] font-semibold tracking-wide ${isActive ? 'text-white' : ''}`}>{item.label}</span>}
-                  </div>
-                  {isCollapsed && (
-                    <div className="fixed left-24 bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-[12px] font-semibold tracking-wide px-4 py-2 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0 z-[100] shadow-2xl">
-                      {item.label}
+          <div className={isCollapsed ? "px-2 py-3" : "px-3 py-4"}>
+            {isCollapsed ? (
+              <button type="button" onClick={() => setIsCollapsed(false)} className="admin-icon-button mx-auto" title={contextName} aria-label={`Selected tournament: ${contextName}`}>
+                <PanelLeftOpen size={17} />
+              </button>
+            ) : (
+              <div className="relative">
+                <p className="mb-1.5 px-2 font-mono text-[10px] text-[#808783] dark:text-white/40">TOURNAMENT</p>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen((open) => !open)}
+                  className="flex h-10 w-full items-center justify-between gap-3 rounded-md border border-[#dde1df] bg-white px-3 text-left text-sm font-medium text-[#202421] transition-colors hover:border-[#b8c0bc] dark:border-white/10 dark:bg-white/[0.035] dark:text-white dark:hover:border-white/20"
+                  aria-haspopup="listbox"
+                  aria-expanded={isDropdownOpen}
+                >
+                  <span className="min-w-0 truncate">{contextName}</span>
+                  <ChevronDown size={15} className={`shrink-0 text-[#747b77] transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {isDropdownOpen && (
+                  <>
+                    <button type="button" className="fixed inset-0 z-[70] cursor-default" onClick={() => setIsDropdownOpen(false)} aria-label="Close tournament selector" />
+                    <div className="absolute left-0 right-0 top-[66px] z-[80] max-h-72 overflow-y-auto rounded-md border border-[#d8dcda] bg-white p-1 shadow-[0_14px_38px_rgba(18,24,20,0.14)] dark:border-white/10 dark:bg-[#191c1a]">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedTournament(null); setIsDropdownOpen(false); }}
+                        className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left text-sm text-[#4f5652] hover:bg-[#f0f2f1] dark:text-white/65 dark:hover:bg-white/[0.06]"
+                      >
+                        Platform overview
+                        {!selectedTournament && <Check size={14} className="text-monument-primary" />}
+                      </button>
+                      {tournaments.map((tournament) => (
+                        <button
+                          type="button"
+                          key={tournament.id}
+                          onClick={() => { setSelectedTournament(tournament); setIsDropdownOpen(false); }}
+                          className="flex w-full items-center justify-between gap-3 rounded px-2.5 py-2 text-left text-sm text-[#4f5652] hover:bg-[#f0f2f1] dark:text-white/65 dark:hover:bg-white/[0.06]"
+                        >
+                          <span className="truncate">{tournament.name}</span>
+                          {selectedTournament?.id === tournament.id && <Check size={14} className="shrink-0 text-monument-primary" />}
+                        </button>
+                      ))}
                     </div>
-                  )}
-                </Link>
-              );
-            })}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <nav className={`min-h-0 flex-1 overflow-y-auto pb-3 ${isCollapsed ? "px-2" : "px-3"}`} aria-label="Admin navigation">
+            {!isCollapsed && <p className="mb-1.5 px-2 font-mono text-[10px] text-[#808783] dark:text-white/40">WORKSPACE</p>}
+            <div className="space-y-0.5">
+              {filteredItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobileNavigation}
+                    title={isCollapsed ? item.label : undefined}
+                    className={`group relative flex h-9 items-center rounded-md text-[13px] font-medium transition-colors ${
+                      isCollapsed ? "justify-center px-2" : "gap-3 px-2.5"
+                    } ${
+                      isActive
+                        ? "bg-[#e9eeeb] text-[#151816] dark:bg-white/[0.09] dark:text-white"
+                        : "text-[#626965] hover:bg-[#f0f2f1] hover:text-[#151816] dark:text-white/55 dark:hover:bg-white/[0.055] dark:hover:text-white"
+                    }`}
+                  >
+                    {isActive && <span className="absolute left-0 h-4 w-0.5 rounded-full bg-monument-primary" />}
+                    <Icon size={16} strokeWidth={1.8} className="shrink-0" />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
-          <div className="mt-auto px-4 pt-6 pb-6">
-             <div className="space-y-2">
-               <button 
-                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                 className={`w-full group bg-white dark:bg-[#1c1c1e] hover:bg-gray-100 dark:hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-gray-200 dark:border-white/5 shadow-sm hover:border-gray-300 dark:hover:border-white/10 ${isCollapsed ? 'justify-center' : ''}`}
-               >
-                 <div className="w-11 h-11 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/70 flex items-center justify-center shrink-0 group-hover:text-monument-green transition-colors">
-                   {mounted ? (theme === "dark" ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-4 h-4" />}
-                 </div>
-                 {!isCollapsed && (
-                   <div className="overflow-hidden flex-1 text-left">
-                     <p className="text-[10px] font-semibold text-gray-500 dark:text-white/40 tracking-widest uppercase mb-0.5">Appearance</p>
-                     <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-wide truncate capitalize">{mounted ? (theme === 'dark' ? 'Dark Mode' : 'Light Mode') : '...'}</p>
-                   </div>
-                 )}
-               </button>
-               <div className={`group bg-white dark:bg-[#1c1c1e] hover:bg-gray-100 dark:hover:bg-white/5 rounded-[20px] p-3 flex items-center gap-3 transition-all border border-gray-200 dark:border-white/5 shadow-sm hover:border-gray-300 dark:hover:border-white/10 cursor-default ${isCollapsed ? 'justify-center' : ''}`}>
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-monument-green to-emerald-700 shadow-inner flex items-center justify-center shrink-0 relative">
-                    <Users className="text-white drop-shadow-md" size={18} strokeWidth={2.5} />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#1c1c1e] rounded-full"></div>
-                  </div>
-                  {!isCollapsed && (
-                    <div className="overflow-hidden flex-1">
-                      <p className="text-[10px] font-semibold text-gray-500 dark:text-white/40 tracking-widest uppercase mb-0.5">Account</p>
-                      <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-wide truncate capitalize">{role?.replace('_', ' ') || 'Developer'}</p>
-                    </div>
-                  )}
-               </div>
-             </div>
+          <div className={`border-t border-[#e5e8e6] py-3 dark:border-white/10 ${isCollapsed ? "px-2" : "px-3"}`}>
+            <button
+              type="button"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              title={isCollapsed ? (isDark ? "Use light theme" : "Use dark theme") : undefined}
+              className={`flex h-9 w-full items-center rounded-md text-[#626965] transition-colors hover:bg-[#f0f2f1] hover:text-[#151816] dark:text-white/55 dark:hover:bg-white/[0.055] dark:hover:text-white ${isCollapsed ? "justify-center" : "gap-3 px-2.5"}`}
+            >
+              {mounted ? (isDark ? <Sun size={16} /> : <Moon size={16} />) : <span className="h-4 w-4" />}
+              {!isCollapsed && <span className="text-[13px] font-medium">{isDark ? "Light mode" : "Dark mode"}</span>}
+            </button>
+
+            <div className={`mt-1 flex h-10 items-center ${isCollapsed ? "justify-center" : "gap-3 px-2.5"}`}>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dfeae4] text-[10px] font-semibold text-[#17694f] dark:bg-monument-primary/20 dark:text-[#7bd2b4]">
+                {role === "super_admin" ? "SA" : "AD"}
+              </span>
+              {!isCollapsed && (
+                <span className="min-w-0">
+                  <span className="block truncate text-[12px] font-medium capitalize text-[#343936] dark:text-white/80">{role?.replace("_", " ") || "Admin"}</span>
+                  <span className="block text-[10px] text-[#858c88] dark:text-white/35">Signed in</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </aside>

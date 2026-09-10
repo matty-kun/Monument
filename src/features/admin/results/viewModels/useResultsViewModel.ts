@@ -3,6 +3,8 @@ import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { Tournament } from "@/components/AdminTournamentProvider";
 import { ResultDepartment, ResultEvent, ResultCategory, ResultWithDepartment } from "../models/resultTypes";
+import { replaceEventResultsAction } from "../actions";
+import type { ResultAssignmentInput } from "../resultPolicy";
 
 interface UseResultsViewModelProps {
   selectedTournament: Tournament | null;
@@ -46,7 +48,7 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
 
     const { data: recentData } = await supabase
       .from('results')
-      .select('id, event_id, department_id, medal_type, events!inner(tournament_id)')
+      .select('id, event_id, department_id, medal_type, assigned_by, assigned_by_email, created_at, events!inner(tournament_id)')
       .eq('tournament_id', selectedTournament.id)
       .order('created_at', { ascending: false })
       .limit(20);
@@ -76,7 +78,7 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
 
     const [scheduleRes, resultsRes] = await Promise.all([
       supabase.from('schedules').select('departments').eq('event_id', idToFetch).single(),
-      supabase.from('results').select('id, event_id, department_id, medal_type').eq('event_id', idToFetch)
+      supabase.from('results').select('id, event_id, department_id, medal_type, assigned_by, assigned_by_email, created_at').eq('event_id', idToFetch)
     ]);
 
     const { data: schedule, error: scheduleError } = scheduleRes;
@@ -180,23 +182,17 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
         return;
       }
 
-      const { error: deleteError } = await supabase
-        .from('results')
-        .delete()
-        .eq('event_id', eventId);
+      const assignments: ResultAssignmentInput[] = [];
+      if (goldId !== "awaiting") assignments.push({ departmentId: goldId === "" ? null : goldId, medalType: "gold" });
+      if (silverId !== "awaiting") assignments.push({ departmentId: silverId === "" ? null : silverId, medalType: "silver" });
+      if (bronzeId !== "awaiting") assignments.push({ departmentId: bronzeId === "" ? null : bronzeId, medalType: "bronze" });
 
-      if (deleteError) throw deleteError;
-
-      const resultsBatch = [];
-
-      if (goldId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: goldId === "" ? null : goldId, medal_type: 'gold', points: goldId === "" ? 0 : 200, tournament_id: selectedTournament.id });
-      if (silverId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: silverId === "" ? null : silverId, medal_type: 'silver', points: silverId === "" ? 0 : 150, tournament_id: selectedTournament.id });
-      if (bronzeId !== "awaiting") resultsBatch.push({ event_id: eventId, department_id: bronzeId === "" ? null : bronzeId, medal_type: 'bronze', points: bronzeId === "" ? 0 : 100, tournament_id: selectedTournament.id });
-
-      if (resultsBatch.length > 0) {
-        const { error: insertError } = await supabase.from('results').insert(resultsBatch);
-        if (insertError) throw insertError;
-      }
+      const result = await replaceEventResultsAction({
+        eventId,
+        tournamentId: selectedTournament.id,
+        assignments,
+      });
+      if (!result.success) throw new Error(result.error);
 
       toast.success("Event results finalized successfully!", { id: loadingToast });
       setEventId("");
@@ -253,17 +249,18 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
   }
 
   async function handleConfirmDelete() {
-    if (!resultToDeleteId) return;
+    if (!resultToDeleteId || !selectedTournament) return;
     setIsDeleting(true);
 
     try {
-      const { error } = await supabase
-        .from("results")
-        .delete()
-        .eq("event_id", resultToDeleteId);
+      const result = await replaceEventResultsAction({
+        eventId: resultToDeleteId,
+        tournamentId: selectedTournament.id,
+        assignments: [],
+      });
 
-      if (error) {
-        toast.error(`Error deleting results: ${error.message}`);
+      if (!result.success) {
+        toast.error(`Error deleting results: ${result.error}`);
       } else {
         toast.success("Event results deleted.");
         fetchEventData();

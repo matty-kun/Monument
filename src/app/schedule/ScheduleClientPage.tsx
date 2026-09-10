@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatTime } from "@/lib/utils";
 import { useScheduleViewModel } from "@/features/schedule/viewModels/useScheduleViewModel";
 import { ScheduleClientPageProps, Schedule } from "@/features/schedule/models/scheduleTypes";
 import MatchCard from "@/components/MatchCard";
@@ -12,8 +10,6 @@ import CompactMatchCard from "@/components/CompactMatchCard";
 export default function ScheduleClientPage({ 
     tournamentId,
     initialSchedules, 
-    initialEvents, 
-    initialVenues, 
     initialCategories,
     initialDepartments,
     mysteryMode: initialMysteryMode
@@ -46,13 +42,39 @@ export default function ScheduleClientPage({
   const scrollLeft = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const getClosestSlideIndex = (container: HTMLDivElement) => {
+    const viewportCenter = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    Array.from(container.children).forEach((child, index) => {
+      const slide = child as HTMLElement;
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const distance = Math.abs(slideCenter - viewportCenter);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    return closestIndex;
+  };
+
+  const scrollToSlide = (index: number, behavior: ScrollBehavior = "smooth") => {
+    const container = swiperRef.current;
+    const slide = container?.children[index] as HTMLElement | undefined;
+    if (!container || !slide) return;
+
+    const centeredLeft = slide.offsetLeft - (container.clientWidth - slide.offsetWidth) / 2;
+    container.scrollTo({ left: centeredLeft, behavior });
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!swiperRef.current) return;
+    if (!swiperRef.current || e.button !== 0) return;
     isDragging.current = true;
-    // Disable smooth scrolling temporarily while dragging to avoid jerky movement
-    swiperRef.current.style.scrollBehavior = 'auto';
-    swiperRef.current.style.scrollSnapType = 'none';
-    startX.current = e.pageX - swiperRef.current.offsetLeft;
+    swiperRef.current.style.scrollBehavior = "auto";
+    startX.current = e.clientX;
     scrollLeft.current = swiperRef.current.scrollLeft;
   };
 
@@ -69,54 +91,43 @@ export default function ScheduleClientPage({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging.current || !swiperRef.current) return;
     e.preventDefault();
-    const x = e.pageX - swiperRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.2; // Smoother 1.2x multiplier
+    const walk = e.clientX - startX.current;
     swiperRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
   const restoreSnap = () => {
-    if (swiperRef.current) {
-      swiperRef.current.style.scrollBehavior = 'smooth';
-      swiperRef.current.style.scrollSnapType = 'x mandatory';
-      // Snap to closest
-      const itemWidth = swiperRef.current.clientWidth;
-      const index = Math.round(swiperRef.current.scrollLeft / itemWidth);
-      swiperRef.current.scrollTo({ left: index * itemWidth, behavior: 'smooth' });
-    }
+    if (!swiperRef.current) return;
+    swiperRef.current.style.scrollBehavior = "smooth";
+    scrollToSlide(getClosestSlideIndex(swiperRef.current));
+  };
+
+  const openMatch = (index: number) => {
+    setActiveSwiperIndex(index);
+    setSelectedMatchIndex(index);
   };
 
   // Jump to selected match when sheet opens
   useEffect(() => {
     if (selectedMatchIndex !== null && swiperRef.current) {
-      setActiveSwiperIndex(selectedMatchIndex);
-      const child = swiperRef.current.children[selectedMatchIndex] as HTMLElement;
-      if (child) {
-        // Use a tiny timeout to ensure rendering is complete before scrolling
-        setTimeout(() => {
-          if (swiperRef.current) {
-            swiperRef.current.scrollTo({ left: child.offsetLeft, behavior: 'instant' });
-          }
-        }, 10);
-      }
+      const frame = requestAnimationFrame(() => scrollToSlide(selectedMatchIndex, "instant"));
+      return () => cancelAnimationFrame(frame);
     }
-    return () => {
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    };
   }, [selectedMatchIndex]);
+
+  useEffect(() => () => {
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+  }, []);
 
   const handleSwiperScroll = () => {
     if (swiperRef.current) {
-      const scrollPosition = swiperRef.current.scrollLeft;
-      const itemWidth = swiperRef.current.clientWidth;
-      const newIndex = Math.round(scrollPosition / itemWidth);
-      
-      // Debounce the state update to prevent massive re-renders during drag/scroll
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
       scrollTimeout.current = setTimeout(() => {
+        if (!swiperRef.current) return;
+        const newIndex = getClosestSlideIndex(swiperRef.current);
         if (newIndex !== activeSwiperIndex && newIndex >= 0 && newIndex < filteredSchedules.length) {
           setActiveSwiperIndex(newIndex);
         }
-      }, 50); // 50ms debounce
+      }, 80);
     }
   };
 
@@ -142,14 +153,8 @@ export default function ScheduleClientPage({
 
   return (
     <div className="bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
-      {/* Top gradient wash */}
-      <div
-        className="absolute left-0 right-0 top-0 h-72 pointer-events-none z-0"
-        style={{ background: "linear-gradient(to bottom, rgba(22,163,74,0.15) 0%, transparent 100%)" }}
-      />
-
       {/* Top Header */}
-      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/10">
+      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-[#F5F5F7]/80 dark:bg-black/80 backdrop-blur-xl">
         <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-4">Matches</h1>
 
         {/* Segmented Control */}
@@ -204,7 +209,7 @@ export default function ScheduleClientPage({
             placeholder="Search teams or events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl pl-9 pr-4 py-2.5 text-[15px] focus:outline-none focus:ring-1 focus:ring-gray-200 dark:focus:ring-white/20 transition-shadow backdrop-blur-sm border border-gray-200 dark:border-white/10 shadow-sm"
+            className="w-full rounded-xl border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] py-2.5 pl-9 pr-4 text-[15px] text-gray-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-200 dark:border-white/[0.08] dark:bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] dark:text-white dark:placeholder:text-gray-500 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] dark:focus:ring-white/10"
           />
         </div>
 
@@ -216,17 +221,17 @@ export default function ScheduleClientPage({
                 <h2 className="text-[14px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-1">
                   {formatDateLabel(dateStr)}
                 </h2>
-                <div className="flex flex-col bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 rounded-[32px] overflow-hidden shadow-sm">
+                <div className="flex flex-col overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_48px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.13),rgba(255,255,255,0.035))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.11),0_18px_48px_rgba(0,0,0,0.28)]">
                   {daySchedules.map((s, index) => {
                     const globalIndex = filteredSchedules.findIndex(fs => fs.id === s.id);
                     const isLast = index === daySchedules.length - 1;
                     return (
-                      <div key={s.id} className={isLast ? "" : "border-b border-gray-100 dark:border-white/5"}>
+                      <div key={s.id} className={isLast ? "" : "border-b border-black/[0.06] dark:border-white/[0.08]"}>
                         <CompactMatchCard
                           schedule={s}
                           getDepartmentInfo={getDepartmentInfo}
                           getDynamicStatus={getDynamicStatus}
-                          onClick={() => setSelectedMatchIndex(globalIndex)}
+                          onClick={() => openMatch(globalIndex)}
                         />
                       </div>
                     );
@@ -236,7 +241,6 @@ export default function ScheduleClientPage({
             ))
           ) : (
             <div className="w-full flex flex-col items-center justify-center text-center h-[30vh]">
-              <span className="text-5xl opacity-20 mb-3">📅</span>
               <p className="text-gray-500 dark:text-gray-400 font-medium">No matches found.</p>
             </div>
           )}
@@ -261,7 +265,7 @@ export default function ScheduleClientPage({
             initial={{ y: "100%" }}
             animate={{ y: "0%" }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            transition={{ type: "spring", damping: 32, stiffness: 300, mass: 0.75 }}
             className="fixed inset-0 z-[70] flex flex-col pt-safe"
           >
             {/* Background gradient behind cards inside modal */}
@@ -290,10 +294,10 @@ export default function ScheduleClientPage({
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
-              className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar flex-1 w-full select-none cursor-grab active:cursor-grabbing"
-              style={{ scrollBehavior: 'smooth' }}
+              className="flex w-full flex-1 cursor-grab snap-x snap-mandatory scroll-px-[5vw] select-none overflow-x-auto overscroll-x-contain hide-scrollbar active:cursor-grabbing"
+              style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
             >
-              {filteredSchedules.map((s, idx) => (
+              {filteredSchedules.map((s) => (
                 <div 
                   key={s.id} 
                   className="w-[90vw] md:w-[400px] shrink-0 snap-center h-full px-2"

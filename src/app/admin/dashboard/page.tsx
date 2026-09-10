@@ -1,20 +1,31 @@
-'use client';
+"use client";
 
+import {
+  ArrowUpRight,
+  Building2,
+  CalendarDays,
+  Flag,
+  LogOut,
+  Medal,
+  Tags,
+} from "lucide-react";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
-import { Settings, LogOut, Medal, Flag, CalendarDays, Building2, Tags, MapPin, Users } from "lucide-react";
-import { formatTime } from "@/lib/utils";
-import { useTournament } from "@/components/AdminTournamentProvider";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
+import { type Tournament, useTournament } from "@/components/AdminTournamentProvider";
 import { useDashboardViewModel } from "@/features/admin/dashboard/viewModels/useDashboardViewModel";
+import { formatTime } from "@/lib/utils";
+
+const medalStyles: Record<string, string> = {
+  gold: "bg-[#fff4c5] text-[#7a5a00] dark:bg-[#d6b14e]/15 dark:text-[#f0ce70]",
+  silver: "bg-[#edf0ef] text-[#59615d] dark:bg-white/10 dark:text-white/65",
+  bronze: "bg-[#f3e4d8] text-[#83502f] dark:bg-[#b87549]/15 dark:text-[#dda67f]",
+};
 
 export default function AdminDashboardPage() {
   const { selectedTournament } = useTournament();
-  
   const {
     role,
     loading,
-    mounted,
     loadingCard,
     recentSchedules,
     standings,
@@ -22,166 +33,234 @@ export default function AdminDashboardPage() {
     teamsData,
     stats,
     handleCardClick,
-    handleLogout
+    handleLogout,
   } = useDashboardViewModel({ selectedTournament });
 
-  if (loading) return <div className="flex justify-center items-center h-[60vh]"><BouncingBallsLoader /></div>;
+  if (loading) {
+    return <div className="flex h-[60vh] items-center justify-center"><BouncingBallsLoader /></div>;
+  }
+
   if (!selectedTournament) return <EmptyTournamentState />;
 
-  const StatCard = ({ label, value, icon, color }: { label: string, value: number, icon: any, color: string }) => {
-    const Icon = icon;
-    return (
-      <div className="bg-white dark:bg-[#1c1c1e] p-6 rounded-[24px] shadow-sm dark:shadow-lg border border-gray-200 dark:border-white/5 flex items-center justify-between group hover:bg-gray-50 dark:hover:bg-white/5 transition-all">
-        <div>
-          <p className="text-[12px] font-semibold tracking-wide text-gray-500 dark:text-white/50 mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white leading-none">{value}</p>
-        </div>
-        <div className={`p-4 rounded-xl ${color} text-white group-hover:scale-110 transition-transform shadow-md dark:shadow-lg shadow-black/10 dark:shadow-black/20`}>
-           <Icon size={24} />
-        </div>
-      </div>
-    );
-  };
+  return (
+    <DashboardView
+      selectedTournament={selectedTournament}
+      role={role}
+      loadingCard={loadingCard}
+      recentSchedules={recentSchedules}
+      standings={standings}
+      recentResults={recentResults}
+      teamsData={teamsData}
+      stats={stats}
+      handleCardClick={handleCardClick}
+      handleLogout={handleLogout}
+    />
+  );
+}
+
+interface DashboardViewProps {
+  selectedTournament: Tournament;
+  role: string | null;
+  loadingCard: string;
+  recentSchedules: any[];
+  standings: any[];
+  recentResults: any[];
+  teamsData: any[];
+  stats: { teams: number; events: number; results: number; categories: number };
+  handleCardClick: (href: string) => void;
+  handleLogout: () => void | Promise<void>;
+}
+
+export function DashboardView({
+  selectedTournament,
+  role,
+  loadingCard,
+  recentSchedules,
+  standings,
+  recentResults,
+  teamsData,
+  stats,
+  handleCardClick,
+  handleLogout,
+}: DashboardViewProps) {
+  const quickActions = [
+    { href: "/admin/results", label: "Record results", detail: "Medals and points", icon: Medal },
+    { href: "/admin/schedule", label: "Update schedule", detail: "Times and venues", icon: CalendarDays },
+    { href: "/admin/events", label: "Manage events", detail: "Entries and details", icon: Flag },
+  ];
 
   return (
-    <div className="space-y-10 animate-fadeIn max-w-[1400px]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-[32px] font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">
-            Dashboard
-          </h1>
-          <p className="text-[15px] text-gray-500 dark:text-white/50 font-semibold tracking-wide">
-            {selectedTournament?.name || "Management Control"}
-          </p>
+    <div className="admin-dashboard animate-fadeIn space-y-6">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#dfe3e1] pb-5 dark:border-white/10 sm:flex-row sm:items-end">
+        <div className="min-w-0">
+          <div className="mb-2 flex items-center gap-2 font-mono text-[10px] text-[#78807b] dark:text-white/40">
+            <span className={`h-1.5 w-1.5 rounded-full ${selectedTournament.is_active ? "bg-monument-primary" : "bg-[#9ba19e]"}`} />
+            {selectedTournament.is_active ? "ACTIVE TOURNAMENT" : "TOURNAMENT WORKSPACE"}
+          </div>
+          <h1 className="truncate text-2xl font-semibold text-[#151816] dark:text-white">{selectedTournament.name}</h1>
+          <p className="mt-1 text-sm text-[#737a76] dark:text-white/45">Operations overview and recent tournament activity</p>
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={handleLogout} className="flex items-center gap-2 bg-white dark:bg-[#1c1c1e] text-red-600 dark:text-red-500 border border-red-200 dark:border-red-500/20 px-5 py-3 rounded-2xl hover:bg-red-50 dark:hover:bg-red-500 hover:text-red-700 dark:hover:text-white transition-all shadow-sm group" title="Logout">
-            <span className="text-[12px] font-bold tracking-wide">Logout</span>
-            <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs capitalize text-[#7a817d] dark:text-white/40 sm:inline">{role?.replace("_", " ")}</span>
+          <button type="button" onClick={handleLogout} className="admin-secondary-button text-red-600 dark:text-red-400" title="Sign out">
+            <LogOut size={15} />
+            <span>Sign out</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Total Teams" value={stats.teams} icon={Building2} color="bg-[#0A84FF]" />
-        <StatCard label="Active Events" value={stats.events} icon={Flag} color="bg-[#30D158]" />
-        <StatCard label="Medals Awarded" value={stats.results} icon={Medal} color="bg-[#FF9F0A]" />
-        <StatCard label="Categories" value={stats.categories} icon={Tags} color="bg-[#FF375F]" />
-      </div>
-
-      {/* Main Actions (The Grid) */}
-      <div>
-        <div className="mb-6 flex items-center justify-between">
-           <h2 className="text-[14px] font-bold tracking-widest text-gray-500 dark:text-white/40 uppercase">Quick Actions</h2>
+      <section className="admin-panel overflow-hidden" aria-label="Tournament totals">
+        <div className="grid grid-cols-2 divide-x divide-y divide-[#e2e5e3] dark:divide-white/10 sm:grid-cols-4 sm:divide-y-0">
+          <StatBlock label="Teams" value={stats.teams} icon={Building2} />
+          <StatBlock label="Events" value={stats.events} icon={Flag} />
+          <StatBlock label="Results" value={stats.results} icon={Medal} />
+          <StatBlock label="Categories" value={stats.categories} icon={Tags} />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div onClick={() => handleCardClick("/admin/results")} className="bg-white dark:bg-[#1c1c1e] p-8 rounded-[24px] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm transition-all cursor-pointer group flex flex-col items-center text-center">
-               <div className="w-16 h-16 bg-[#FF9F0A]/10 dark:bg-[#FF9F0A]/20 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Medal size={32} className="text-[#FF9F0A]" />
-               </div>
-               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Add Results</h3>
-               <p className="text-[14px] text-gray-500 dark:text-white/50 font-medium">Record medal winners and points</p>
+      </section>
+
+      <section>
+        <div className="mb-2.5 flex items-center justify-between">
+          <h2 className="admin-section-title">Quick actions</h2>
+          <span className="font-mono text-[10px] text-[#8a908d] dark:text-white/30">COMMON TASKS</span>
+        </div>
+        <div className="grid overflow-hidden rounded-lg border border-[#dfe3e1] bg-white dark:border-white/10 dark:bg-[#131614] sm:grid-cols-3 sm:divide-x sm:divide-[#e2e5e3] sm:dark:divide-white/10">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            const isNavigating = loadingCard === action.href;
+
+            return (
+              <button
+                type="button"
+                key={action.href}
+                onClick={() => handleCardClick(action.href)}
+                disabled={isNavigating}
+                className="group flex min-h-20 items-center gap-3 border-b border-[#e2e5e3] px-4 text-left transition-colors last:border-b-0 hover:bg-[#f7f8f7] disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/[0.035] sm:border-b-0"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#dfe3e1] bg-[#f6f8f7] text-[#4f5752] group-hover:border-monument-primary/40 group-hover:text-monument-primary dark:border-white/10 dark:bg-white/[0.035] dark:text-white/55">
+                  <Icon size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold text-[#202421] dark:text-white/85">{action.label}</span>
+                  <span className="block text-xs text-[#818783] dark:text-white/35">{action.detail}</span>
+                </span>
+                <ArrowUpRight size={14} className="shrink-0 text-[#a1a6a3] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-monument-primary" />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.8fr)]">
+        <section className="admin-panel overflow-hidden">
+          <div className="admin-panel-header">
+            <div>
+              <h2 className="admin-section-title">Upcoming and live</h2>
+              <p className="admin-section-description">The next scheduled tournament activity</p>
             </div>
+            <CalendarDays size={16} className="text-[#89908c] dark:text-white/35" />
+          </div>
 
-            <div onClick={() => handleCardClick("/admin/schedule")} className="bg-white dark:bg-[#1c1c1e] p-8 rounded-[24px] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm transition-all cursor-pointer group flex flex-col items-center text-center">
-               <div className="w-16 h-16 bg-[#30D158]/10 dark:bg-[#30D158]/20 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <CalendarDays size={32} className="text-[#30D158]" />
-               </div>
-               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Schedule</h3>
-               <p className="text-[14px] text-gray-500 dark:text-white/50 font-medium">Manage event dates and venues</p>
-            </div>
-
-            <div onClick={() => handleCardClick("/admin/events")} className="bg-white dark:bg-[#1c1c1e] p-8 rounded-[24px] border border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm transition-all cursor-pointer group flex flex-col items-center text-center">
-               <div className="w-16 h-16 bg-[#0A84FF]/10 dark:bg-[#0A84FF]/20 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Flag size={32} className="text-[#0A84FF]" />
-               </div>
-               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Manage Events</h3>
-               <p className="text-[14px] text-gray-500 dark:text-white/50 font-medium">Edit event details and info</p>
-            </div>
-        </div>
-      </div>
-
-      {/* Dashboard Data Views */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Schedules */}
-        <div className="bg-white dark:bg-[#1c1c1e] p-6 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm flex flex-col h-full">
-           <h2 className="text-[14px] font-bold tracking-widest text-gray-500 dark:text-white/40 uppercase mb-6">Upcoming & Live</h2>
-           <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-96">
-              {recentSchedules.length > 0 ? recentSchedules.map((s: any) => (
-                <div key={s.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-                   <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{s.events?.icon || '🏅'}</span>
-                        <h4 className="text-[15px] font-bold text-gray-900 dark:text-white">{s.events?.name || 'Unknown Event'}</h4>
-                      </div>
-                      <span className="text-[10px] font-bold tracking-wider text-blue-700 dark:text-[#0A84FF] uppercase bg-blue-100 dark:bg-[#0A84FF]/20 px-2 py-1 rounded-lg">{s.date}</span>
-                   </div>
-                   <div className="text-[12px] font-semibold text-gray-500 dark:text-white/50 tracking-wide mb-2">
-                     {formatTime(s.start_time)} - {formatTime(s.end_time)} | {s.venues?.name || 'TBA'}
-                   </div>
-                   <div className="flex gap-1 text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase tracking-wider">
-                     {s.departments?.join(' VS ')}
-                   </div>
-                </div>
-              )) : (
-                 <div className="text-[14px] text-gray-400 dark:text-white/40 text-center py-10 font-semibold">No upcoming schedules</div>
-              )}
-           </div>
-        </div>
-
-        {/* Current Standings */}
-        <div className="bg-white dark:bg-[#1c1c1e] p-6 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm flex flex-col h-full">
-           <h2 className="text-[14px] font-bold tracking-widest text-gray-500 dark:text-white/40 uppercase mb-6">Top Standings</h2>
-           <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar max-h-96">
-              {standings.length > 0 ? standings.map((team: any, index: number) => (
-                <div key={team.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
-                   <div className="flex items-center gap-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[14px] shadow-sm ${index === 0 ? 'bg-[#FFD700] text-black' : index === 1 ? 'bg-[#C0C0C0] text-black' : index === 2 ? 'bg-[#CD7F32] text-white' : 'bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-white/60'}`}>
-                         {index + 1}
-                      </div>
-                      {team.imageUrl ? (
-                        <img src={team.imageUrl} className="w-8 h-8 object-contain drop-shadow-sm" alt={team.name} />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-white shadow-sm">{team.name.slice(0,2)}</div>
-                      )}
-                      <span className="text-[15px] font-bold text-gray-900 dark:text-white tracking-wide">{team.name}</span>
-                   </div>
-                   <div className="text-[16px] font-black text-monument-green">{team.points} <span className="text-[10px] text-gray-400 dark:text-white/40 font-bold tracking-widest">PTS</span></div>
-                </div>
-              )) : (
-                 <div className="text-[14px] text-gray-400 dark:text-white/40 text-center py-10 font-semibold">No rankings available</div>
-              )}
-           </div>
-        </div>
-
-        {/* Recent Results */}
-        <div className="bg-white dark:bg-[#1c1c1e] p-6 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm flex flex-col h-full">
-           <h2 className="text-[14px] font-bold tracking-widest text-gray-500 dark:text-white/40 uppercase mb-6">Recent Results</h2>
-           <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar max-h-96">
-              {recentResults.length > 0 ? recentResults.map((r: any) => {
-                const isGold = r.medal_type === 'gold';
-                const isSilver = r.medal_type === 'silver';
-                const teamName = teamsData.find((t: any) => t.department_id === r.department_id)?.name || 'Unknown';
-                return (
-                  <div key={r.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 flex items-center gap-4">
-                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg text-2xl ${isGold ? 'bg-[#FFD700]' : isSilver ? 'bg-[#C0C0C0]' : 'bg-[#CD7F32]'}`}>
-                        {isGold ? '🥇' : isSilver ? '🥈' : '🥉'}
-                     </div>
-                     <div className="flex-1">
-                        <h4 className="text-[15px] font-bold text-gray-900 dark:text-white">{r.events?.name || 'Unknown Event'}</h4>
-                        <p className="text-[12px] font-semibold text-gray-500 dark:text-white/50 tracking-wide mt-1">Won By {teamName}</p>
-                     </div>
+          <div className="divide-y divide-[#e7e9e8] dark:divide-white/10">
+            {recentSchedules.length > 0 ? recentSchedules.map((schedule: any) => (
+              <div key={schedule.id} className="grid gap-3 px-4 py-3.5 transition-colors hover:bg-[#fafbfa] dark:hover:bg-white/[0.02] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-5">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#edf3f0] text-base dark:bg-monument-primary/10">{schedule.events?.icon || "🏅"}</span>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[13px] font-semibold text-[#202421] dark:text-white/85">{schedule.events?.name || "Unknown event"}</h3>
+                    <p className="mt-0.5 truncate text-xs text-[#7a817d] dark:text-white/40">{schedule.departments?.join(" vs ") || "Participants to be announced"}</p>
                   </div>
-                )
-              }) : (
-                 <div className="text-[14px] text-gray-400 dark:text-white/40 text-center py-10 font-semibold">No results posted yet</div>
-              )}
-           </div>
-        </div>
+                </div>
+                <div className="pl-11 text-left sm:pl-0 sm:text-right">
+                  <p className="font-mono text-[11px] text-[#414743] dark:text-white/65">{schedule.date}</p>
+                  <p className="mt-0.5 text-[11px] text-[#888e8b] dark:text-white/35">{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)} · {schedule.venues?.name || "TBA"}</p>
+                </div>
+              </div>
+            )) : <EmptyRow label="No upcoming schedules" />}
+          </div>
+        </section>
+
+        <section className="admin-panel overflow-hidden">
+          <div className="admin-panel-header">
+            <div>
+              <h2 className="admin-section-title">Standings</h2>
+              <p className="admin-section-description">Current top five teams</p>
+            </div>
+            <Medal size={16} className="text-[#89908c] dark:text-white/35" />
+          </div>
+
+          <div className="divide-y divide-[#e7e9e8] dark:divide-white/10">
+            {standings.length > 0 ? standings.map((team: any, index: number) => (
+              <div key={team.id || team.department_id} className="flex h-14 items-center gap-3 px-4 sm:px-5">
+                <span className="w-5 font-mono text-[11px] text-[#848a87] dark:text-white/35">{String(index + 1).padStart(2, "0")}</span>
+                {team.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={team.imageUrl} className="h-7 w-7 shrink-0 object-contain" alt="" />
+                ) : (
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf0ef] text-[9px] font-semibold text-[#626965] dark:bg-white/10 dark:text-white/60">{team.name.slice(0, 2)}</span>
+                )}
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#303532] dark:text-white/75">{team.name}</span>
+                <span className="font-mono text-xs font-semibold text-[#17694f] dark:text-[#72cbae]">{team.points} pts</span>
+              </div>
+            )) : <EmptyRow label="No rankings available" />}
+          </div>
+        </section>
       </div>
 
+      <section className="admin-panel overflow-hidden">
+        <div className="admin-panel-header">
+          <div>
+            <h2 className="admin-section-title">Recent results</h2>
+            <p className="admin-section-description">Latest podium entries across all events</p>
+          </div>
+          <button type="button" onClick={() => handleCardClick("/admin/results")} className="admin-text-button">View all <ArrowUpRight size={13} /></button>
+        </div>
+
+        <div>
+          <table className="w-full table-fixed border-collapse text-left">
+            <thead>
+              <tr className="border-b border-[#e7e9e8] dark:border-white/10">
+                <th className="admin-table-heading w-24 sm:w-36">Placement</th>
+                <th className="admin-table-heading">Event</th>
+                <th className="admin-table-heading">Team</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#e7e9e8] dark:divide-white/10">
+              {recentResults.length > 0 ? recentResults.map((result: any) => {
+                const teamName = teamsData.find((team: any) => team.department_id === result.department_id)?.name || "Unknown team";
+                const medalType = result.medal_type || "bronze";
+
+                return (
+                  <tr key={result.id} className="hover:bg-[#fafbfa] dark:hover:bg-white/[0.02]">
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex min-w-16 items-center justify-center rounded px-2 py-1 text-[10px] font-semibold capitalize ${medalStyles[medalType] || medalStyles.bronze}`}>{medalType}</span>
+                    </td>
+                    <td className="break-words px-3 py-3 text-[13px] font-medium text-[#303532] dark:text-white/75 sm:px-5">{result.events?.name || "Unknown event"}</td>
+                    <td className="break-words px-3 py-3 text-[13px] text-[#737a76] dark:text-white/45 sm:px-5">{teamName}</td>
+                  </tr>
+                );
+              }) : (
+                <tr><td colSpan={3}><EmptyRow label="No results posted yet" /></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
+}
+
+function StatBlock({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Building2 }) {
+  return (
+    <div className="flex min-h-24 items-center gap-3 px-4 py-4 sm:px-5">
+      <Icon size={16} className="shrink-0 text-[#89908c] dark:text-white/35" />
+      <div>
+        <p className="text-[11px] text-[#7a817d] dark:text-white/40">{label}</p>
+        <p className="mt-0.5 font-mono text-2xl font-semibold leading-none text-[#1c201d] dark:text-white">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function EmptyRow({ label }: { label: string }) {
+  return <div className="px-5 py-10 text-center text-xs text-[#8b918e] dark:text-white/35">{label}</div>;
 }

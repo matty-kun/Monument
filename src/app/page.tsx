@@ -1,6 +1,8 @@
 import { createReadOnlyClient } from "@/utils/supabase/server";
 import { calculateTotalPoints } from "@/utils/scoring";
 import LeaderboardClientPage from "./LeaderboardClientPage";
+import { PodiumSkeleton } from "@/components/PublicPageSkeletons";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,7 +31,19 @@ interface LeaderboardRow {
 
 type LeaderboardRpcResponse = Omit<LeaderboardRow, 'total_points'>;
 
-export default async function ScoreboardPage({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
+type ScoreboardPageProps = {
+  searchParams: Promise<{ tournament?: string }>;
+};
+
+export default function ScoreboardPage({ searchParams }: ScoreboardPageProps) {
+  return (
+    <Suspense fallback={<PodiumSkeleton />}>
+      <ScoreboardContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ScoreboardContent({ searchParams }: ScoreboardPageProps) {
   const supabase = await createReadOnlyClient();
   const resolvedParams = await searchParams;
   const tSlug = resolvedParams?.tournament;

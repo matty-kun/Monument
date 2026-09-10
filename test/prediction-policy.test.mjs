@@ -12,7 +12,17 @@ test("prediction policy rejects invalid IDs, finished matches, and non-participa
   assert.equal(hasValidPredictionIds("not-a-uuid", departmentId), false);
 
   const department = { department_id: departmentId, name: "Engineering" };
-  assert.equal(canVoteForDepartment({ status: "scheduled", departments: ["Engineering"] }, department), true);
+  const beforeMatchEnds = new Date("2026-04-08T04:00:00.000Z");
+  const afterMatchEnds = new Date("2026-04-08T06:00:00.000Z");
+  const scheduledMatch = {
+    status: "scheduled",
+    departments: ["Engineering"],
+    date: "2026-04-08",
+    end_time: "13:00:00",
+  };
+
+  assert.equal(canVoteForDepartment(scheduledMatch, department, beforeMatchEnds), true);
+  assert.equal(canVoteForDepartment(scheduledMatch, department, afterMatchEnds), false);
   assert.equal(canVoteForDepartment({ status: "finished", departments: ["Engineering"] }, department), false);
   assert.equal(canVoteForDepartment({ status: "scheduled", departments: ["Business"] }, department), false);
 });

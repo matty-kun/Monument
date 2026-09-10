@@ -26,7 +26,7 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
 
       <div className="px-4 mt-6 space-y-4 relative z-10">
         {pastTournaments.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 shadow-sm rounded-[24px]">
+          <div className="rounded-[20px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] py-16 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(255,255,255,0.045))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_16px_40px_rgba(0,0,0,0.25)]">
             <History className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <div className="text-gray-400 dark:text-gray-500 font-medium text-[15px]">No previous games found.</div>
           </div>
@@ -38,10 +38,10 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
               <Link 
                 key={t.id} 
                 href={`/?tournament=${t.slug}`}
-                className="bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 shadow-sm rounded-[24px] p-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-[#2c2c2e] active:scale-[0.98] transition-all group"
+                className="group flex items-center justify-between rounded-[20px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(255,255,255,0.46))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_rgba(0,0,0,0.08)] backdrop-blur-2xl transition-[border-color,transform,filter] hover:brightness-105 active:scale-[0.985] dark:border-white/20 dark:bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(255,255,255,0.045))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_16px_40px_rgba(0,0,0,0.25)] dark:hover:border-white/25"
               >
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-center border border-gray-200 dark:border-white/10 group-hover:bg-[#0A84FF]/10 group-hover:border-[#0A84FF]/20 transition-colors shadow-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/70 bg-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md transition-colors group-hover:border-[#0A84FF]/25 group-hover:bg-[#0A84FF]/10 dark:border-white/[0.12] dark:bg-white/[0.06]">
                     <Trophy className="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-[#0A84FF] transition-colors" />
                   </div>
                   <div>
@@ -51,7 +51,7 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
                     </div>
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center group-hover:bg-gray-200 dark:group-hover:bg-white/20 transition-colors">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/40 backdrop-blur-md transition-colors group-hover:bg-white/70 dark:border-white/10 dark:bg-white/[0.08] dark:group-hover:bg-white/[0.14]">
                   <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
                 </div>
               </Link>
