@@ -75,30 +75,27 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Bottom Navigation — Floating Pill Design */}
-      <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[360px] z-50">
-        <nav className="bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/10 rounded-[32px] shadow-2xl flex justify-between items-center h-[64px] px-2.5">
+      {/* Bottom Navigation — Spotify Design */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/95 to-transparent pointer-events-none" />
+        <nav className="relative flex justify-around items-end pb-5 pt-12 px-2">
           {navLinks.map(({ href, label, icon: Icon }) => {
-            // ... (keep exact same map logic)
-            // Wait, need to render history here or separately? I will render separately.
             const isActive = mounted && pathname === href.split('?')[0]; // simple path check
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
-                  isActive ? 'bg-white/10' : 'hover:bg-white/5'
-                }`}
+                className="flex flex-col items-center justify-center w-20 transition-all duration-300 z-10"
               >
                 <Icon
-                  className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                    isActive ? 'text-monument-green' : 'text-white'
+                  className={`w-[26px] h-[26px] mb-1 transition-colors duration-300 ${
+                    isActive ? 'text-white' : 'text-[#b3b3b3]'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
-                  fill={isActive ? 'currentColor' : 'none'}
+                  fill={isActive && label !== 'Scores' ? 'currentColor' : 'none'}
                 />
-                <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                  isActive ? 'text-monument-green' : 'text-white'
+                <span className={`text-[10px] font-semibold tracking-wide transition-colors duration-300 ${
+                  isActive ? 'text-white' : 'text-[#b3b3b3]'
                 }`}>
                   {label}
                 </span>
@@ -110,27 +107,25 @@ export default function Navbar() {
           {role === 'admin' ? (
             <button
               onClick={() => setIsMoreOpen(true)}
-              className="flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 hover:bg-white/5"
+              className="flex flex-col items-center justify-center w-20 transition-all duration-300 z-10 hover:opacity-80"
             >
-              <MoreHorizontal className="w-[20px] h-[20px] mb-0.5 text-white" strokeWidth={2} />
-              <span className="text-[10px] font-bold tracking-wide text-white">More</span>
+              <MoreHorizontal className="w-[26px] h-[26px] mb-1 text-[#b3b3b3]" strokeWidth={2} />
+              <span className="text-[10px] font-semibold tracking-wide text-[#b3b3b3]">More</span>
             </button>
           ) : (
             <Link
               href="/history"
-              className={`flex flex-col items-center justify-center w-[70px] h-[52px] rounded-[24px] transition-all duration-300 ${
-                isHistoryActive ? 'bg-white/10' : 'hover:bg-white/5'
-              }`}
+              className="flex flex-col items-center justify-center w-20 transition-all duration-300 z-10"
             >
               <History
-                className={`w-[20px] h-[20px] mb-0.5 transition-colors duration-300 ${
-                  isHistoryActive ? 'text-monument-green' : 'text-white'
+                className={`w-[26px] h-[26px] mb-1 transition-colors duration-300 ${
+                  isHistoryActive ? 'text-white' : 'text-[#b3b3b3]'
                 }`}
                 strokeWidth={isHistoryActive ? 2.5 : 2}
                 fill="none"
               />
-              <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${
-                isHistoryActive ? 'text-monument-green' : 'text-white'
+              <span className={`text-[10px] font-semibold tracking-wide transition-colors duration-300 ${
+                isHistoryActive ? 'text-white' : 'text-[#b3b3b3]'
               }`}>
                 History
               </span>

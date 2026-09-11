@@ -42,7 +42,7 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
           </div>
         ) : (
           pastTournaments.map(t => {
-            const dateStr = t.start_date ? new Date(t.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "Past Event";
+            const dateStr = t.start_date ? new Date(t.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "";
             const isViewing = t.slug === activeSlug;
             
             return (
@@ -58,9 +58,11 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
                     </div>
                     <div>
                       <h3 className="text-[17px] font-black text-white tracking-wide">{t.name}</h3>
-                      <div className="text-[13px] text-[#0A84FF]/90 font-bold tracking-wider uppercase mt-1">
-                        {dateStr}
-                      </div>
+                      {dateStr && (
+                        <div className="text-[13px] text-[#0A84FF]/90 font-bold tracking-wider uppercase mt-1">
+                          {dateStr}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">

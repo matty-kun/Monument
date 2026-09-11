@@ -114,7 +114,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
       {/* Filter Tabs */}
       <div className="relative z-10 px-4 sticky top-[52px] bg-black/80 backdrop-blur-xl py-3 border-b border-white/5">
         <div className="flex bg-white/10 p-1 rounded-xl overflow-x-auto no-scrollbar snap-x border border-white/5">
-          {(['all', 'gold', 'silver', 'bronze', 'upcoming'] as const).map(f => (
+          {(['all', 'gold', 'silver', 'bronze'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -124,7 +124,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                   : 'text-gray-500 hover:text-gray-300'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'gold' ? 'Gold' : f === 'silver' ? 'Silver' : f === 'bronze' ? 'Bronze' : 'Upcoming'}
+              {f === 'all' ? 'All' : f === 'gold' ? 'Gold' : f === 'silver' ? 'Silver' : 'Bronze'}
             </button>
           ))}
         </div>
@@ -154,15 +154,6 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
 
                   <div className="relative z-10 flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      {item.events?.icon && item.events.icon.startsWith('http') ? (
-                        <div className="w-10 h-10 relative shrink-0">
-                          <Image src={item.events.icon} alt="" fill sizes="40px" className="object-contain" />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center shrink-0 border border-gray-200 dark:border-white/10">
-                          <span className="text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest">{getCategoryName(item.events?.category)?.slice(0, 2) || 'EV'}</span>
-                        </div>
-                      )}
                       <div className="flex flex-col">
                         <h4 className="font-bold text-[15px] text-white tracking-tight">{item.events?.name}</h4>
                         <div className="flex items-center gap-1.5 mt-0.5">
@@ -208,10 +199,10 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
           ) : (
             <div className="py-20 flex flex-col items-center justify-center text-center">
               <div className="opacity-20 mb-3">
-                {filter === 'upcoming' ? <CalendarClock className="w-12 h-12" /> : <Trophy className="w-12 h-12" />}
+                <Trophy className="w-12 h-12" />
               </div>
               <p className="text-gray-500 font-medium text-sm">
-                {filter === 'upcoming' ? "No upcoming schedules." : `No ${filter !== 'all' ? filter : ''} medals found.`}
+                {`No ${filter !== 'all' ? filter : ''} medals found.`}
               </p>
             </div>
           )}

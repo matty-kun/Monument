@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { Schedule } from "@/features/schedule/models/scheduleTypes";
 import { teamNameToColor } from "@/utils/colors";
-import { Clock, ChevronRight, Download } from "lucide-react";
+import { Clock, ChevronRight, Download as DownloadIcon, Share, X, MessageCircle, MoreHorizontal, Link as LinkIcon } from "lucide-react";
+import { FaFacebookF, FaInstagram } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 import { Department } from "@/shared/models/tournamentTypes";
 import { useRef, useState, useEffect } from "react";
@@ -19,7 +21,10 @@ interface MatchCardProps {
 
 export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatus, getCategoryName }: MatchCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [predictions, setPredictions] = useState<Record<string, number>>({});
   const [votedTeamId, setVotedTeamId] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
@@ -192,52 +197,208 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   );
 };
 
-  const handleShare = async () => {
-    if (!cardRef.current || isExporting) return;
+  const generateImage = async (): Promise<string | null> => {
+    if (!exportRef.current) return null;
     try {
-      setIsExporting(true);
-      
-      // We temporarily hide the share button from the capture by applying a class or using filter, 
-      // but simpler is just capture the whole card as is (with the share button). 
-      // People often don't mind the share button in the screenshot, but let's hide it.
-      const shareBtn = cardRef.current.querySelector('#share-btn') as HTMLElement;
-      if (shareBtn) shareBtn.style.display = 'none';
-
-      const dataUrl = await htmlToImage.toJpeg(cardRef.current, { quality: 0.95, backgroundColor: '#000' });
-      
-      if (shareBtn) shareBtn.style.display = 'flex';
-
-      // Force download photo
-      const link = document.createElement('a');
-      link.download = `match-${schedule.id}.jpg`;
-      link.href = dataUrl;
-      link.click();
+      return await htmlToImage.toJpeg(exportRef.current, { quality: 0.95, backgroundColor: '#000', pixelRatio: 2 });
     } catch (err) {
-      console.error('Error sharing image', err);
+      console.error('Error generating image', err);
       alert('Failed to generate image. Please try again.');
-    } finally {
-      setIsExporting(false);
+      return null;
     }
+  };
+
+  const openShareMenu = async () => {
+    setIsShareOpen(true);
+    setPreviewImage(null);
+    const dataUrl = await generateImage();
+    setPreviewImage(dataUrl);
+  };
+
+  const handleDownload = async () => {
+    if (!previewImage) return;
+    const link = document.createElement('a');
+    link.download = `match-${schedule.id}.jpg`;
+    link.href = previewImage;
+    link.click();
+    setIsShareOpen(false);
+  };
+
+  const handleNativeShare = async () => {
+    if (!previewImage) return;
+    if (navigator.share) {
+      try {
+        // Synchronous conversion to preserve user gesture in Safari
+        const byteString = atob(previewImage.split(',')[1]);
+        const mimeString = previewImage.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const dw = new DataView(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          dw.setUint8(i, byteString.charCodeAt(i));
+        }
+        const blob = new Blob([ab], { type: mimeString });
+        const file = new File([blob], `match-${schedule.id}.jpg`, { type: 'image/jpeg' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: schedule.events?.name,
+            text: 'Check out this match result!',
+          });
+        } else {
+          await navigator.share({
+            title: schedule.events?.name,
+            text: 'Check out this match result!',
+            url: window.location.href,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      alert("Native sharing is not supported on this browser or requires an HTTPS connection (currently testing on HTTP). Please use 'Save Image' for now.");
+    }
+    setIsShareOpen(false);
   };
 
   return (
     <div className="w-full h-full flex flex-col pt-2 pb-4">
+      {/* Hidden Export View for Compact Share Image */}
+      <div className="absolute top-[-9999px] left-[-9999px] pointer-events-none">
+        <div 
+          ref={exportRef} 
+          className="w-[400px] bg-[#161618] rounded-[40px] overflow-hidden flex flex-col relative border border-white/10 shadow-xl pb-8 pt-4"
+        >
+          <div className="absolute inset-0 pointer-events-none" style={backgroundStyle} />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/45 pointer-events-none" />
+          <div className="relative z-10 w-full flex flex-col pt-6 pb-6">
+            <div className="flex justify-center items-center relative mb-10 mt-2">
+              <span className="text-[16px] font-black text-white uppercase tracking-widest text-center px-8 drop-shadow-sm">
+                {schedule.events?.name}
+              </span>
+            </div>
+            
+            <div className="px-6 mb-6">
+              {departments.length === 0 ? (
+                <div className="text-center text-gray-500 py-10 font-bold">Teams TBA</div>
+              ) : showTeamsInList ? (
+                <div className="flex flex-col items-center justify-center py-2">
+                  {hasPodium ? (
+                    <div className="grid w-full grid-cols-3 items-end gap-3 mb-2">
+                      {displayDepartments.slice(0, 3).map((d, i) => (
+                        <div key={d.id} className={i === 1 ? "pb-6" : ""}>
+                          {renderTeamHero(d, i, schedule.winner_id === d.id)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap justify-center gap-4 mb-2">
+                      {displayDepartments.slice(0, 4).map((d, i) => renderTeamHero(d, i, schedule.winner_id === d.id))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex justify-between items-center gap-2">
+                  {renderTeamHero(departments[0], 0, schedule.winner_id === departments[0].id, schedule.score_a)}
+                  <div className="flex flex-col items-center justify-center shrink-0 min-w-[40px]">
+                    <span className="text-white/40 font-black text-2xl italic">VS</span>
+                  </div>
+                  {renderTeamHero(departments[1], 1, schedule.winner_id === departments[1].id, schedule.score_b)}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 flex justify-center items-center opacity-30">
+              <span className="text-[14px] font-black tracking-widest uppercase text-white">Monument</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div 
         ref={cardRef}
         className="w-full flex-1 bg-[#e7e7ea] dark:bg-[#161618] rounded-[40px] overflow-hidden flex flex-col relative border border-gray-200 dark:border-white/10 shadow-xl"
       >
         <div className="absolute inset-0 pointer-events-none" style={backgroundStyle} />
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/45 pointer-events-none" />
-        
-        {/* Fixed Download Button at bottom */}
-        <button 
-          id="share-btn"
-          onClick={handleShare}
-          disabled={isExporting}
-          className="absolute bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-white dark:bg-[#2c2c2e] flex items-center justify-center border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-[#3c3c3e] transition-all disabled:opacity-50 shadow-lg"
-        >
-          {isExporting ? <Clock size={20} className="text-gray-900 dark:text-white animate-spin" /> : <Download size={20} className="text-gray-900 dark:text-white" />}
-        </button>
+
+        {/* Custom Share Sheet Modal (Suno Style) */}
+        <AnimatePresence>
+          {isShareOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-xl flex flex-col pt-safe px-6 pb-8"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-center relative py-6 shrink-0 mt-4">
+                  <h3 className="text-[16px] font-bold text-white tracking-wide">
+                    Share Match
+                  </h3>
+                  <button onClick={() => setIsShareOpen(false)} className="absolute right-0 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                {/* Preview Image */}
+                <div className="flex-1 flex flex-col items-center justify-center min-h-0 py-4 w-full">
+                  {previewImage ? (
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="relative w-full max-w-[320px] rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/10 flex shrink-0"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={previewImage} alt="Match Preview" className="w-full h-auto object-cover" />
+                    </motion.div>
+                  ) : (
+                    <div className="w-full max-w-[320px] aspect-[4/5] rounded-[32px] bg-white/5 border border-white/10 flex flex-col items-center justify-center animate-pulse shadow-2xl">
+                      <Clock size={32} className="text-white/30 animate-spin mb-4" />
+                      <span className="text-white/30 text-sm font-medium">Generating preview...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Share Action Buttons */}
+                <div className="mt-auto grid grid-cols-4 gap-y-8 gap-x-2 w-full max-w-sm mx-auto pt-6 shrink-0 pb-4">
+                  {/* Save Image */}
+                  <button onClick={handleDownload} disabled={!previewImage} className="flex flex-col items-center gap-2 group disabled:opacity-50">
+                    <div className="w-[52px] h-[52px] rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-all">
+                      <DownloadIcon size={20} />
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80">Save</span>
+                  </button>
+
+                  {/* Instagram */}
+                  <button onClick={handleNativeShare} disabled={!previewImage} className="flex flex-col items-center gap-2 group disabled:opacity-50">
+                    <div className="w-[52px] h-[52px] rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-all">
+                      <FaInstagram size={22} />
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80">Instagram</span>
+                  </button>
+
+                  {/* Facebook */}
+                  <button onClick={handleNativeShare} disabled={!previewImage} className="flex flex-col items-center gap-2 group disabled:opacity-50">
+                    <div className="w-[52px] h-[52px] rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-all">
+                      <FaFacebookF size={20} />
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80">Facebook</span>
+                  </button>
+
+                  {/* More */}
+                  <button onClick={handleNativeShare} disabled={!previewImage} className="flex flex-col items-center gap-2 group disabled:opacity-50">
+                    <div className="w-[52px] h-[52px] rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-all">
+                      <MoreHorizontal size={20} />
+                    </div>
+                    <span className="text-[11px] font-medium text-white/80">More</span>
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Scrollable Content */}
         <div className="relative z-10 w-full h-full overflow-y-auto hide-scrollbar flex flex-col pb-24">
@@ -436,8 +597,15 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
               </div>
             )}
 
-
-
+            {/* Big Share Button (Duolingo Style) */}
+            <button
+              id="share-btn"
+              onClick={openShareMenu}
+              className="w-full mt-4 bg-white text-black font-black text-[15px] tracking-wider uppercase py-4 rounded-2xl flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(0,0,0,0.15)] hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              <Share size={20} className="text-black" strokeWidth={2.5} />
+              Share Match
+            </button>
           </div>
         </div>
       </div>
