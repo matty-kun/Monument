@@ -6,14 +6,19 @@ import { useScheduleViewModel } from "@/features/schedule/viewModels/useSchedule
 import { ScheduleClientPageProps, Schedule } from "@/features/schedule/models/scheduleTypes";
 import MatchCard from "@/components/MatchCard";
 import CompactMatchCard from "@/components/CompactMatchCard";
+import { useSearchParams } from "next/navigation";
+import { ScheduleSkeleton } from "@/components/PublicPageSkeletons";
 
 export default function ScheduleClientPage({ 
     tournamentId,
+    tournamentSlug,
     initialSchedules, 
     initialCategories,
     initialDepartments,
     mysteryMode: initialMysteryMode
-}: ScheduleClientPageProps) {
+}: ScheduleClientPageProps & { tournamentSlug: string }) {
+  const searchParams = useSearchParams();
+  const currentSlug = searchParams?.get("tournament") || "default";
   const {
     filteredSchedules,
     searchQuery,
@@ -150,6 +155,11 @@ export default function ScheduleClientPage({
     const date = new Date(dateString + 'T00:00:00');
     return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   };
+
+  // Prevent stale data flashing during Next.js client-side query param navigation
+  if (currentSlug !== tournamentSlug) {
+    return <ScheduleSkeleton />;
+  }
 
   return (
     <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">

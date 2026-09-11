@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 import { Department } from "@/shared/models/tournamentTypes";
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import * as htmlToImage from 'html-to-image';
 import { createClient } from "@/utils/supabase/client";
 
@@ -28,7 +29,12 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const [predictions, setPredictions] = useState<Record<string, number>>({});
   const [votedTeamId, setVotedTeamId] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const supabase = createClient();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const savedVote = localStorage.getItem(`vote_${schedule.id}`);
@@ -178,7 +184,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
             </div>
           )}
           {d.image_url ? (
-            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" />
+            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" priority />
           ) : (
             <div className="w-full h-full rounded-full bg-black/20 flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-sm border border-white/20 backdrop-blur-md">
               {d.abbreviation || d.name.slice(0, 3)}
@@ -200,7 +206,12 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   const generateImage = async (): Promise<string | null> => {
     if (!exportRef.current) return null;
     try {
-      return await htmlToImage.toJpeg(exportRef.current, { quality: 0.95, backgroundColor: '#000', pixelRatio: 2 });
+      return await htmlToImage.toJpeg(exportRef.current, { 
+        quality: 0.95, 
+        backgroundColor: '#000', 
+        pixelRatio: 2,
+        style: { opacity: '1' } 
+      });
     } catch (err) {
       console.error('Error generating image', err);
       alert('Failed to generate image. Please try again.');
@@ -262,9 +273,9 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
   };
 
   return (
-    <div className="w-full h-full flex flex-col pt-2 pb-4">
-      {/* Hidden Export View for Compact Share Image */}
-      <div className="absolute top-[-9999px] left-[-9999px] pointer-events-none">
+    <div className="w-full h-full flex flex-col pt-2 pb-4 relative z-0">
+      {/* Hidden Export View for Compact Share Image (Positioned in viewport to prevent Safari culling) */}
+      <div className="absolute top-0 left-0 -z-10 pointer-events-none" style={{ opacity: 0.01 }}>
         <div 
           ref={exportRef} 
           className="w-[400px] bg-[#161618] rounded-[40px] overflow-hidden flex flex-col relative border border-white/10 shadow-xl pb-8 pt-4"
@@ -323,14 +334,14 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/45 pointer-events-none" />
 
         {/* Custom Share Sheet Modal (Suno Style) */}
-        <AnimatePresence>
-          {isShareOpen && (
-            <>
+        {mounted && typeof document !== 'undefined' && createPortal(
+          <AnimatePresence>
+            {isShareOpen && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-xl flex flex-col pt-safe px-6 pb-8"
+                className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-xl flex flex-col pt-safe px-6 pb-8"
               >
                 {/* Header */}
                 <div className="flex items-center justify-center relative py-6 shrink-0 mt-4">
@@ -343,20 +354,23 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                 </div>
 
                 {/* Preview Image */}
-                <div className="flex-1 flex flex-col items-center justify-center min-h-0 py-4 w-full">
+                <div className="flex-1 flex flex-col items-center justify-center min-h-0 py-4">
                   {previewImage ? (
-                    <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="relative w-full max-w-[320px] rounded-[32px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/10 flex shrink-0"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={previewImage} alt="Match Preview" className="w-full h-auto object-cover" />
-                    </motion.div>
+                    <div className="relative w-full max-w-[320px] aspect-[4/4.5] flex items-center justify-center">
+                      <motion.div 
+                        initial={{ scale: 0.9, y: 10 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="w-full relative shadow-2xl rounded-[32px] overflow-hidden border border-white/10"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={previewImage} alt="Match Preview" className="w-full h-auto object-contain block" />
+                      </motion.div>
+                    </div>
                   ) : (
-                    <div className="w-full max-w-[320px] aspect-[4/5] rounded-[32px] bg-white/5 border border-white/10 flex flex-col items-center justify-center animate-pulse shadow-2xl">
-                      <Clock size={32} className="text-white/30 animate-spin mb-4" />
-                      <span className="text-white/30 text-sm font-medium">Generating preview...</span>
+                    <div className="flex flex-col items-center gap-4 text-white/50">
+                      <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+                      <span className="text-[13px] font-medium animate-pulse">Generating preview...</span>
                     </div>
                   )}
                 </div>
@@ -396,9 +410,9 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                   </button>
                 </div>
               </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>
+        , document.body)}
 
         {/* Scrollable Content */}
         <div className="relative z-10 w-full h-full overflow-y-auto hide-scrollbar flex flex-col pb-24">
