@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { teamNameToColor } from "@/utils/colors";
+import TeamLogoGroup, { getDepartmentImages } from "./TeamLogoGroup";
 
 interface LeaderboardRow {
   id: string;
@@ -109,23 +110,13 @@ export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
                         className="absolute inset-[12%] scale-110 rounded-full opacity-30 blur-xl transition-opacity duration-300 group-hover:opacity-50"
                         style={{ backgroundColor: color }}
                       />
-                      {imageUrl ? (
-                        <Image
-                          src={imageUrl}
-                          alt={team?.name ?? "Team"}
-                          fill
-                          sizes={column === 1 ? "104px" : "76px"}
-                          priority={true}
-                          className="relative object-contain transition-transform duration-300 group-hover:-translate-y-0.5"
-                          style={{
-                            filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.52)) drop-shadow(0 10px 16px rgba(0,0,0,0.28))",
-                          }}
+                      <div className="flex h-full w-full items-center justify-center relative">
+                        <TeamLogoGroup 
+                          images={getDepartmentImages(imageUrl)} 
+                          size={column === 1 ? 104 : 76} 
+                          className="transition-transform duration-300 group-hover:-translate-y-0.5" 
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center rounded-full border border-black/10 bg-white/50 text-[11px] font-black text-gray-500 dark:border-white/10 dark:bg-white/10 dark:text-gray-300">
-                          {team?.abbreviation?.slice(0, 3) ?? "?"}
-                        </div>
-                      )}
+                      </div>
                       <div
                         className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full border border-white/80 bg-white/90 px-1 text-[13px] font-black text-gray-950 shadow-[0_5px_16px_rgba(0,0,0,0.22)] dark:border-white/30 dark:bg-[#1c1c1e] dark:text-white"
                         style={{ boxShadow: `0 0 0 2px ${meta.medalColor}55, 0 6px 18px rgba(0,0,0,0.24)` }}
@@ -219,19 +210,7 @@ export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
                     </div>
 
                     <div className="relative mx-2.5 h-7 w-7 shrink-0">
-                      {department.image_url ? (
-                        <Image
-                          src={department.image_url}
-                          alt={department.name}
-                          fill
-                          sizes="28px"
-                          className="object-contain"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center rounded-full bg-black/[0.06] text-[9px] font-bold text-gray-500 dark:bg-white/10 dark:text-gray-300">
-                          {department.abbreviation?.slice(0, 2) ?? "??"}
-                        </div>
-                      )}
+                      <TeamLogoGroup images={getDepartmentImages(department.image_url)} size={28} fallbackIconSize={12} />
                     </div>
 
                     <div className="min-w-0 flex-1 pr-2">

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import TeamLogoGroup, { getDepartmentImages } from "@/components/TeamLogoGroup";
 import { stringToColor } from "@/utils/colors";
 import { useResultsViewModel } from "@/features/results/viewModels/useResultsViewModel";
 import { EventsClientPageProps } from "@/features/results/models/resultsTypes";
@@ -143,13 +144,7 @@ export default function EventsClientPage({ tournamentId, initialResults, initial
                               <span className="font-bold text-[15px] text-white tracking-tight truncate pl-1">
                                 {winner.department_name}
                               </span>
-                              {winner.image_url ? (
-                                <Image src={winner.image_url} alt={winner.department_name || ''} width={24} height={24} className="w-6 h-6 object-contain" />
-                              ) : (
-                                <div className="w-6 h-6 bg-white/10 rounded-full flex items-center justify-center text-[8px] font-bold text-gray-400">
-                                  {winner.department_abbreviation?.slice(0, 3)}
-                                </div>
-                              )}
+                              <TeamLogoGroup images={getDepartmentImages(winner.image_url)} size={24} fallbackIconSize={12} className="shrink-0" />
                             </div>
                           ) : winner && !winner.department_id ? (
                             <span className="flex-1 text-[13px] font-bold italic text-gray-500">No Team</span>

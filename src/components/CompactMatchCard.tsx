@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { Schedule } from "@/features/schedule/models/scheduleTypes";
 import { Department } from "@/shared/models/tournamentTypes";
 import { formatTime } from "@/lib/utils";
+import TeamLogoGroup, { getDepartmentImages } from "./TeamLogoGroup";
 
 interface CompactMatchCardProps {
   schedule: Schedule;
@@ -63,13 +63,7 @@ export default function CompactMatchCard({ schedule, getDepartmentInfo, getDynam
                 return (
                   <div key={d.id} className={`flex flex-col items-center justify-start w-[64px] ${orderIdx === 0 ? '-mt-2' : ''}`}>
                     <div className={`relative ${orderIdx === 0 ? 'w-12 h-12' : 'w-10 h-10'} mb-2`}>
-                      {d.image_url ? (
-                        <Image src={d.image_url} alt={d.name} fill sizes={orderIdx === 0 ? "48px" : "40px"} className="object-contain drop-shadow-md" />
-                      ) : (
-                        <div className="w-full h-full rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-[11px] font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 text-center px-1 leading-none line-clamp-2 shadow-sm">
-                          {d.name.slice(0, 3)}
-                        </div>
-                      )}
+                      <TeamLogoGroup images={getDepartmentImages(d)} size={orderIdx === 0 ? 48 : 40} className="drop-shadow-md" fallbackIconSize={orderIdx === 0 ? 20 : 16} />
                       
                       {/* Badge / Medal overlay */}
                       {badge ? (
@@ -117,13 +111,7 @@ export default function CompactMatchCard({ schedule, getDepartmentInfo, getDynam
     return (
       <div className="flex flex-col items-center justify-start w-[60px]">
         <div className="relative w-8 h-8 mb-1">
-          {d.image_url ? (
-            <Image src={d.image_url} alt={d.name} fill sizes="32px" className="object-contain" />
-          ) : (
-            <div className="w-full h-full rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 text-center px-0.5 leading-none line-clamp-2 shadow-sm">
-              {d.name.slice(0, 3)}
-            </div>
-          )}
+          <TeamLogoGroup images={getDepartmentImages(d)} size={32} fallbackIconSize={14} />
         </div>
         <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 text-center leading-tight line-clamp-2">
           {d.name}

@@ -36,9 +36,9 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
 
       <div className="px-4 mt-6 space-y-4 relative z-10">
         {pastTournaments.length === 0 ? (
-          <div className="rounded-[20px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] py-16 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
-            <Trophy className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-            <div className="text-gray-500 font-medium text-[15px]">No previous games found.</div>
+          <div className="rounded-[24px] border border-white/[0.04] bg-white/[0.02] py-16 text-center backdrop-blur-3xl">
+            <Trophy className="w-8 h-8 text-white/20 mx-auto mb-4" />
+            <div className="text-white/40 font-medium text-[15px] tracking-wide">No previous games found.</div>
           </div>
         ) : (
           pastTournaments.map(t => {
@@ -49,32 +49,34 @@ export default function HistoryClientPage({ tournaments }: { tournaments: any[] 
               <Link 
                 key={t.id} 
                 href={`/?tournament=${t.slug}`}
-                className={`group flex flex-col justify-center rounded-[20px] border p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_16px_40px_rgba(0,0,0,0.25)] backdrop-blur-2xl transition-[border-color,transform,filter] hover:brightness-105 active:scale-[0.985] hover:border-white/25 ${isViewing ? 'border-[#0A84FF]/40 bg-[#0A84FF]/10' : 'border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))]'}`}
+                className={`group relative flex items-center justify-between p-5 rounded-[24px] border transition-all duration-500 hover:bg-white/[0.04] active:scale-[0.98] overflow-hidden ${isViewing ? 'border-white/[0.08] bg-white/[0.04]' : 'border-white/[0.03] bg-white/[0.01] hover:border-white/[0.06]'}`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl border shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-md transition-colors ${isViewing ? 'border-[#0A84FF]/30 bg-[#0A84FF]/20' : 'border-white/[0.12] bg-white/[0.06] group-hover:border-[#0A84FF]/25 group-hover:bg-[#0A84FF]/10'}`}>
-                      <Trophy className={`w-6 h-6 transition-colors ${isViewing ? 'text-[#0A84FF]' : 'text-gray-500 group-hover:text-[#0A84FF]'}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-[17px] font-black text-white tracking-wide">{t.name}</h3>
-                      {dateStr && (
-                        <div className="text-[13px] text-[#0A84FF]/90 font-bold tracking-wider uppercase mt-1">
-                          {dateStr}
-                        </div>
-                      )}
-                    </div>
+                {/* Subtle active glow */}
+                {isViewing && (
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,_var(--tw-gradient-stops))] from-white/[0.04] to-transparent pointer-events-none" />
+                )}
+
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="flex items-center justify-center w-10">
+                    <Trophy className={`w-6 h-6 transition-all duration-500 ${isViewing ? 'text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]' : 'text-white/20 group-hover:text-white/60 group-hover:scale-110'}`} />
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {isViewing && (
-                      <div className="text-[9px] uppercase tracking-widest font-black px-2 py-1 bg-[#0A84FF]/20 text-[#0A84FF] rounded-md border border-[#0A84FF]/30">
-                        Viewing
+                  <div>
+                    <h3 className={`text-[17px] tracking-tight transition-colors duration-300 ${isViewing ? 'text-white font-medium' : 'text-white/60 font-normal group-hover:text-white/90'}`}>{t.name}</h3>
+                    {dateStr && (
+                      <div className="text-[11px] text-white/30 font-medium tracking-[0.15em] uppercase mt-1">
+                        {dateStr}
                       </div>
                     )}
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.08] backdrop-blur-md transition-colors group-hover:bg-white/[0.14]">
-                      <ChevronRight className={`w-5 h-5 transition-colors ${isViewing ? 'text-white' : 'text-gray-500 group-hover:text-white'}`} />
-                    </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-4 relative z-10">
+                  {isViewing && (
+                    <div className="flex items-center gap-2 pr-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] animate-pulse" />
+                      <span className="text-[10px] font-medium text-emerald-400/80 tracking-[0.2em] uppercase">Viewing</span>
+                    </div>
+                  )}
+                  <ChevronRight className={`w-5 h-5 transition-transform duration-500 ${isViewing ? 'text-white/40 translate-x-1' : 'text-white/10 group-hover:text-white/40 group-hover:translate-x-1'}`} />
                 </div>
               </Link>
             );

@@ -12,6 +12,7 @@ import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import * as htmlToImage from 'html-to-image';
 import { createClient } from "@/utils/supabase/client";
+import TeamLogoGroup, { getDepartmentImages } from "./TeamLogoGroup";
 
 interface MatchCardProps {
   schedule: Schedule;
@@ -183,13 +184,8 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
               {badge}
             </div>
           )}
-          {d.image_url ? (
-            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" priority />
-          ) : (
-            <div className="w-full h-full rounded-full bg-black/20 flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-sm border border-white/20 backdrop-blur-md">
-              {d.abbreviation || d.name.slice(0, 3)}
-            </div>
-          )}
+
+          <TeamLogoGroup images={getDepartmentImages(d)} size={84} className="drop-shadow-md" fallbackIconSize={30} />
         </div>
       <div className={`text-center font-bold text-[14px] sm:text-[16px] tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-sm ${isWinner ? 'text-white' : 'text-white/75'}`}>
         {d.name}
@@ -592,7 +588,7 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                          
                          <div className="flex items-center gap-3 z-10">
                            <div className="w-5 h-5 relative">
-                             {d.image_url ? <Image src={d.image_url} alt="" fill sizes="20px" className="object-contain" /> : <div className="w-full h-full bg-gray-200 dark:bg-white/20 rounded-full" />}
+                             <TeamLogoGroup images={getDepartmentImages(d)} size={20} className="drop-shadow-sm" fallbackIconSize={10} />
                            </div>
                            <span className={`text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-900 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{d.name}</span>
                          </div>

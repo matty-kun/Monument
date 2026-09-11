@@ -15,10 +15,8 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
   const [name, setName] = useState("");
   const [courses, setCourses] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [logos, setLogos] = useState<{ url: string | null; file: File | null }[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
@@ -42,14 +40,27 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     }
   }, [fetchDepartments, selectedTournament]);
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAddLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.onloadend = () => {
+        setLogos(prev => [...prev, { url: reader.result as string, file }]);
+      };
       reader.readAsDataURL(file);
     }
+  }
+
+  function handleUpdateLogoUrl(index: number, url: string) {
+    setLogos(prev => prev.map((logo, i) => i === index ? { ...logo, url, file: null } : logo));
+  }
+
+  function handleRemoveLogo(index: number) {
+    setLogos(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function handleAddEmptyLogo() {
+    setLogos(prev => [...prev, { url: '', file: null }]);
   }
 
   async function uploadImage(file: File): Promise<string | null> {
@@ -66,17 +77,21 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
     setUploading(true);
-    let imageUrl = null;
-    if (selectedImage) {
-      imageUrl = await uploadImage(selectedImage);
-      if (!imageUrl) { setUploading(false); return; }
+    
+    let finalUrls: string[] = [];
+    
+    for (const logo of logos) {
+      if (logo.file) {
+        const uploadedUrl = await uploadImage(logo.file);
+        if (uploadedUrl) finalUrls.push(uploadedUrl);
+      } else if (logo.url && logo.url.trim() !== '') {
+        finalUrls.push(logo.url.trim());
+      }
     }
 
     try {
       const payload: any = { name, abbreviation: courses };
-      if (imageUrl) payload.image_url = imageUrl;
-      else if (imagePreview && !selectedImage && imagePreview.startsWith('http')) payload.image_url = imagePreview;
-      else if (photoRemoved) payload.image_url = null;
+      payload.image_url = finalUrls.length > 0 ? finalUrls.join(',') : null;
 
       if (editingId) {
         const { error } = await supabase.from("tournament_departments").update(payload).eq("id", editingId);
@@ -109,7 +124,10 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
   }
 
   function resetForm() {
-    setName(""); setCourses(""); setEditingId(null); setSelectedImage(null); setImagePreview(null); setPhotoRemoved(false);
+    setEditingId(null);
+    setName("");
+    setCourses("");
+    setLogos([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -194,13 +212,9 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     setCourses,
     editingId,
     setEditingId,
-    selectedImage,
-    setSelectedImage,
+    logos,
+    setLogos,
     uploading,
-    imagePreview,
-    setImagePreview,
-    photoRemoved,
-    setPhotoRemoved,
     showConfirmModal,
     setShowConfirmModal,
     departmentToDeleteId,
@@ -211,7 +225,10 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     setSearchQuery,
     showImportModal,
     setShowImportModal,
-    handleImageSelect,
+    handleAddLogo,
+    handleUpdateLogoUrl,
+    handleRemoveLogo,
+    handleAddEmptyLogo,
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,

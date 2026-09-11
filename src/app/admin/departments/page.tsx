@@ -22,13 +22,9 @@ export default function DepartmentsPage() {
     setCourses,
     editingId,
     setEditingId,
-    selectedImage,
-    setSelectedImage,
+    logos,
+    setLogos,
     uploading,
-    imagePreview,
-    setImagePreview,
-    photoRemoved,
-    setPhotoRemoved,
     showConfirmModal,
     setShowConfirmModal,
     departmentToDeleteId,
@@ -39,7 +35,10 @@ export default function DepartmentsPage() {
     setSearchQuery,
     showImportModal,
     setShowImportModal,
-    handleImageSelect,
+    handleAddLogo,
+    handleUpdateLogoUrl,
+    handleRemoveLogo,
+    handleAddEmptyLogo,
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,
@@ -81,39 +80,44 @@ export default function DepartmentsPage() {
               
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
                 <form onSubmit={handleAddOrUpdate} className="space-y-6 flex flex-col">
-                  <div className="flex flex-col items-center gap-4 bg-gray-50 dark:bg-white/5 p-8 rounded-[24px] border border-dashed border-gray-200 dark:border-white/5 group relative w-full">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 absolute top-3 left-4">Logo Visual</label>
-                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white dark:bg-[#1c1c1e] shadow-xl border-4 border-white dark:border-white/5 flex items-center justify-center relative mt-2 group-hover:scale-105 transition-transform duration-500">
-                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-100 dark:text-white/20 shadow-inner" />}
-                        {imagePreview && (
-                            <button type="button" onClick={() => { setImagePreview(null); setSelectedImage(null); setPhotoRemoved(true); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <FaTrash className="text-white scale-110" />
+                  <div className="flex flex-col gap-4 bg-gray-50 dark:bg-white/5 p-8 rounded-[24px] border border-dashed border-gray-200 dark:border-white/5 relative w-full">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 absolute top-3 left-4">Logo Visuals</label>
+                      <div className="flex flex-col gap-6 mt-4 w-full">
+                        {logos.map((logo, index) => (
+                          <div key={index} className="flex gap-4 items-center p-4 bg-white dark:bg-[#1c1c1e] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm relative group">
+                            <button type="button" onClick={() => handleRemoveLogo(index)} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-md">
+                              <FaTrash size={10} />
                             </button>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2 w-full mt-2">
-                        <label className="cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-white/40 flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                          <FaPlus size={10} /> Choose PNG/JPG File
-                          <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 dark:text-white/40">
-                             <span className="text-[10px] font-bold">URL:</span>
+                            <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/5 flex items-center justify-center">
+                              {logo.url ? <img src={logo.url} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={24} className="text-gray-200 dark:text-white/20" />}
+                            </div>
+                            <div className="flex flex-col gap-2 w-full">
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 dark:text-white/40">
+                                   <span className="text-[10px] font-bold">URL:</span>
+                                </div>
+                                <input 
+                                  type="text" 
+                                  placeholder="External image link" 
+                                  className="w-full pl-12 pr-4 py-2.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-xl text-xs font-medium text-gray-900 dark:text-white outline-none"
+                                  value={logo.file ? '' : (logo.url || '')}
+                                  onChange={(e) => handleUpdateLogoUrl(index, e.target.value)}
+                                  disabled={!!logo.file}
+                                />
+                              </div>
+                              {logo.file && <div className="text-[10px] text-green-500 font-bold px-2">Local file selected for upload</div>}
+                            </div>
                           </div>
-                          <input 
-                            type="text" 
-                            placeholder="...or paste external image link" 
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
-                            value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
-                            onChange={(e) => {
-                               const val = e.target.value;
-                               setImagePreview(val);
-                               if (val) {
-                                  setSelectedImage(null);
-                                  setPhotoRemoved(false);
-                               }
-                            }}
-                          />
+                        ))}
+                        
+                        <div className="flex gap-2">
+                          <label className="flex-1 cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-white/40 flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                            <FaPlus size={10} /> Upload File
+                            <input type="file" className="hidden" accept="image/*" onChange={handleAddLogo} />
+                          </label>
+                          <button type="button" onClick={handleAddEmptyLogo} className="flex-1 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-white/40 flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                            <FaPlus size={10} /> Add URL
+                          </button>
                         </div>
                       </div>
                   </div>
@@ -188,7 +192,13 @@ export default function DepartmentsPage() {
                             {!selectedTournament?.is_archived && (
                               <td className="px-8 py-5 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-xl transition-all"><FaEdit /></button>
+                                  <button onClick={() => { 
+                                    setEditingId(dept.id); 
+                                    setName(dept.name); 
+                                    setCourses(dept.courses || ""); 
+                                    setLogos(dept.image_url ? dept.image_url.split(',').map(url => ({ url: url.trim(), file: null })) : []);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                                  }} className="p-2 text-gray-400 dark:text-white/40 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-xl transition-all"><FaEdit /></button>
                                   <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-[#FF453A] hover:bg-[#FF453A]/10 rounded-xl transition-all"><FaTrash /></button>
                                 </div>
                               </td>
@@ -213,7 +223,13 @@ export default function DepartmentsPage() {
                        
                        {!selectedTournament?.is_archived && (
                          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                            <button onClick={() => { 
+                              setEditingId(dept.id); 
+                              setName(dept.name); 
+                              setCourses(dept.courses || ""); 
+                              setLogos(dept.image_url ? dept.image_url.split(',').map(url => ({ url: url.trim(), file: null })) : []);
+                              window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                            }} className="w-8 h-8 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
                             <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
                          </div>
                        )}
