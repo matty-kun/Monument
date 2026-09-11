@@ -101,6 +101,149 @@
   .gradient-secondary {
     @apply bg-gradient-to-r from-monument-gold to-yellow-400;
   }
+
+  .admin-icon-button {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent text-[#69706c] transition-colors hover:border-[#d9dddb] hover:bg-[#f1f3f2] hover:text-[#171a18] focus:outline-none focus:ring-2 focus:ring-monument-primary/25 dark:text-white/55 dark:hover:border-white/10 dark:hover:bg-white/[0.06] dark:hover:text-white;
+  }
+
+  .admin-panel {
+    @apply rounded-lg border border-[#dfe3e1] bg-white shadow-none dark:border-white/10 dark:bg-[#131614];
+  }
+
+  .admin-panel-header {
+    @apply flex min-h-16 items-center justify-between gap-4 border-b border-[#e7e9e8] px-4 py-3 dark:border-white/10 sm:px-5;
+  }
+
+  .admin-section-title {
+    @apply text-[13px] font-semibold text-[#252a27] dark:text-white/80;
+  }
+
+  .admin-section-description {
+    @apply mt-0.5 text-[11px] text-[#858b88] dark:text-white/35;
+  }
+
+  .admin-secondary-button {
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#d8dcda] bg-white px-3 text-xs font-medium transition-colors hover:bg-[#f2f4f3] focus:outline-none focus:ring-2 focus:ring-monument-primary/25 dark:border-white/10 dark:bg-white/[0.035] dark:hover:bg-white/[0.07];
+  }
+
+  .admin-text-button {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-[#59615d] transition-colors hover:text-monument-primary focus:outline-none focus:ring-2 focus:ring-monument-primary/25 dark:text-white/50 dark:hover:text-[#76ceb0];
+  }
+
+  .admin-table-heading {
+    @apply px-5 py-2.5 font-mono text-[10px] font-medium text-[#838a86] dark:text-white/35;
+  }
+}
+
+@keyframes podium-team-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes podium-platform-rise {
+  from {
+    opacity: 0;
+    transform: scaleY(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes podium-standing-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.podium-team-reveal {
+  animation: podium-team-reveal 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.podium-platform-rise {
+  animation: podium-platform-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.podium-standing-reveal {
+  animation: podium-standing-reveal 350ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .podium-team-reveal,
+  .podium-platform-rise,
+  .podium-standing-reveal {
+    animation: none;
+  }
+}
+
+/* The legacy admin pages share utility-heavy markup. These scoped rules make the
+   whole workspace feel like one restrained tool while those screens are migrated. */
+.admin-layout {
+  --admin-accent: #269a7a;
+  --admin-panel-radius: 8px;
+}
+
+.admin-layout :where(h1, h2, h3, h4, p, span, button, input, select, textarea, th, td) {
+  letter-spacing: 0 !important;
+}
+
+.admin-layout h1 {
+  text-transform: none !important;
+}
+
+.admin-layout .font-black {
+  font-weight: 600 !important;
+}
+
+.admin-layout [class*="rounded-[24px]"],
+.admin-layout [class*="rounded-[20px]"],
+.admin-layout [class*="rounded-[16px]"],
+.admin-layout .rounded-3xl,
+.admin-layout .rounded-2xl {
+  border-radius: var(--admin-panel-radius) !important;
+}
+
+.admin-layout :where(input, select, textarea, button):not(.rounded-full) {
+  border-radius: 6px !important;
+}
+
+.admin-layout [class*="bg-[#0A84FF]"] {
+  background-color: var(--admin-accent) !important;
+}
+
+.admin-layout [class*="text-[#0A84FF]"] {
+  color: var(--admin-accent) !important;
+}
+
+.admin-layout [class*="hover:bg-[#0070e0]"]:hover {
+  background-color: #1b7359 !important;
+}
+
+.dark .admin-layout [class*="dark:bg-[#1c1c1e]"] {
+  background-color: #131614 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-layout *,
+  .admin-layout *::before,
+  .admin-layout *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes fadeIn {

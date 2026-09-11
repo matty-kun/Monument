@@ -1,5 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import ScheduleClientPage from "./ScheduleClientPage";
+import { Suspense } from "react";
+import { ScheduleSkeleton } from "@/components/PublicPageSkeletons";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -117,6 +119,17 @@ const getDynamicStatus = (
 };
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
+  const resolvedParams = await searchParams;
+  const tSlug = resolvedParams?.tournament || 'default';
+  
+  return (
+    <Suspense key={tSlug} fallback={<ScheduleSkeleton />}>
+      <ScheduleContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ScheduleContent({ searchParams }: { searchParams: Promise<{ tournament?: string }> }) {
   const supabase = await createClient();
   const resolvedParams = await searchParams;
   const tSlug = resolvedParams?.tournament;
@@ -308,6 +321,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   return (
     <ScheduleClientPage
       tournamentId={tournamentId}
+      tournamentSlug={tSlug || "default"}
       initialSchedules={schedules}
       initialEvents={events}
       initialVenues={venues}

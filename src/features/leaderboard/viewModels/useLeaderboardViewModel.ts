@@ -25,20 +25,24 @@ export const useLeaderboardViewModel = ({
   }, [initialLeaderboard]);
 
   const fetchLeaderboard = useCallback(async () => {
-    const { data: stats, error: statsError } = tournamentId
-      ? await supabase.rpc("get_leaderboard_by_tournament", { p_tournament_id: tournamentId })
-      : await supabase.rpc("get_leaderboard");
-      
+    const [statsResponse, deptResponse] = await Promise.all([
+      tournamentId
+        ? supabase.rpc("get_leaderboard_by_tournament", { p_tournament_id: tournamentId })
+        : supabase.rpc("get_leaderboard"),
+      supabase
+        .from('tournament_departments')
+        .select('department_id, abbreviation, image_url, mascot_url')
+        .eq('tournament_id', tournamentId)
+    ]);
+
+    const { data: stats, error: statsError } = statsResponse;
+    const { data: departments, error: deptError } = deptResponse;
+
     if (statsError || !stats) {
       console.error("Error fetching leaderboard stats:", statsError);
       return;
     }
 
-    const { data: departments, error: deptError } = await supabase
-      .from('tournament_departments')
-      .select('department_id, abbreviation, image_url, mascot_url')
-      .eq('tournament_id', tournamentId);
-      
     if (deptError) {
       console.error("Error fetching abbreviations:", deptError);
     }

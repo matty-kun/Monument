@@ -3,7 +3,6 @@ import Navbar from "../components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Suspense } from "react";
 import MobileOnlyWrapper from "@/components/MobileOnlyWrapper";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = {
   metadataBase: new URL("https://citefest.vercel.app"),
@@ -44,7 +43,6 @@ export default function RootLayout({
       <body className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white pb-20 md:pb-0 selection:bg-blue-200 dark:selection:bg-blue-500/30 transition-colors">
         <ThemeProvider>
           <MobileOnlyWrapper>
-            <ThemeToggle />
             <Suspense fallback={null}>
               <Navbar />
             </Suspense>

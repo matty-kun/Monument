@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 export function usePublicTeamsViewModel({ results, schedules, allCategories }: { results: any[], schedules: any[], allCategories: any[] }) {
-  const [filter, setFilter] = useState<'all' | 'gold' | 'silver' | 'bronze' | 'upcoming'>('all');
+  const [filter, setFilter] = useState<'all' | 'gold' | 'silver' | 'bronze'>('all');
 
   const getDynamicStatus = (schedule: any): 'upcoming' | 'ongoing' | 'finished' => {
     const now = new Date();
@@ -28,7 +28,7 @@ export function usePublicTeamsViewModel({ results, schedules, allCategories }: {
   const displayItems = useMemo(() => {
     const items: any[] = [];
     
-    if (filter === 'all' || filter === 'upcoming') {
+    if (filter === 'all') {
       const activeSchedules = schedules
         .filter(s => {
           const status = getDynamicStatus(s);
@@ -42,7 +42,7 @@ export function usePublicTeamsViewModel({ results, schedules, allCategories }: {
       items.push(...activeSchedules);
     }
 
-    if (filter !== 'upcoming') {
+    if (true) {
       const filteredResults = results
         .filter((r) => filter === 'all' || r.medal_type === filter)
         .map(r => ({ ...r, itemType: 'result' }));

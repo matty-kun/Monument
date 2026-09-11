@@ -249,6 +249,7 @@ export default function AddResultPage() {
               ) : viewMode === 'cards' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 pb-20">
                   {groupedRecentResults.map(({ eventId, items, event }, index) => {
+                    const attributedResult = items.find((item) => item.assigned_by_email) || items[0];
                     return (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
@@ -303,16 +304,21 @@ export default function AddResultPage() {
                           </div>
                         </div>
 
-                        {!selectedTournament?.is_archived && (
-                          <div className="p-3 border-t border-gray-100 dark:border-white/5 flex justify-end gap-2 bg-transparent">
+                        <div className="p-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between gap-3 bg-transparent">
+                          <p className="min-w-0 truncate text-[10px] text-gray-500 dark:text-white/40" title={attributedResult?.assigned_by_email || "Legacy result"}>
+                            Assigned by <span className="font-semibold text-gray-700 dark:text-white/65">{attributedResult?.assigned_by_email || "Unknown (legacy)"}</span>
+                          </p>
+                          {!selectedTournament?.is_archived && (
+                            <div className="flex shrink-0 gap-2">
                              <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-gray-500 dark:text-white/40 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
                               ✏️ Edit
                              </button>
                              <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-gray-500 dark:text-white/40 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
                               🗑️ Delete
                              </button>
-                          </div>
-                        )}
+                            </div>
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -338,7 +344,10 @@ export default function AddResultPage() {
                                 <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center text-xs">
                                   {event?.icon || '🏆'}
                                 </div>
-                                <span className="text-[13px] font-bold text-gray-900 dark:text-white leading-tight truncate max-w-[100px]">{event?.name || 'Unknown Event'}</span>
+                                <div className="min-w-0">
+                                  <span className="block text-[13px] font-bold text-gray-900 dark:text-white leading-tight truncate max-w-[130px]">{event?.name || 'Unknown Event'}</span>
+                                  <span className="block max-w-[130px] truncate text-[9px] text-gray-400 dark:text-white/35">by {items.find((item) => item.assigned_by_email)?.assigned_by_email || 'Unknown (legacy)'}</span>
+                                </div>
                               </div>
                             </td>
                             {(['gold', 'silver', 'bronze'] as const).map(medal => {

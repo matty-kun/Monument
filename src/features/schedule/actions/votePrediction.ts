@@ -1,9 +1,11 @@
 "use server";
 
 import { createServiceClient } from "@/utils/supabase/server";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import crypto from "crypto";
 import { canVoteForDepartment, hasValidPredictionIds } from "./predictionPolicy";
+
+const VOTER_COOKIE = "monument_prediction_voter";
 
 export async function votePrediction(scheduleId: string, departmentId: string) {
   if (!hasValidPredictionIds(scheduleId, departmentId)) {
@@ -11,14 +13,19 @@ export async function votePrediction(scheduleId: string, departmentId: string) {
   }
 
   const supabase = createServiceClient();
-  
-  // Get IP address from headers
-  const headersList = await headers();
-  const forwardedFor = headersList.get("x-forwarded-for");
-  const realIp = headersList.get("x-real-ip");
-  
-  // Fallback IP for local dev if headers are missing
-  const ip = forwardedFor?.split(",")[0] || realIp || "127.0.0.1";
+  const cookieStore = await cookies();
+  let voterId = cookieStore.get(VOTER_COOKIE)?.value;
+
+  if (!voterId || !hasValidPredictionIds(voterId, departmentId)) {
+    voterId = crypto.randomUUID();
+    cookieStore.set(VOTER_COOKIE, voterId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+  }
   
   const hashSecret = process.env.PREDICTION_HASH_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!hashSecret) {
@@ -26,12 +33,12 @@ export async function votePrediction(scheduleId: string, departmentId: string) {
     return { success: false, error: "Predictions are temporarily unavailable." };
   }
 
-  const ipHash = crypto.createHmac("sha256", hashSecret).update(ip).digest("hex");
+  const voterHash = crypto.createHmac("sha256", hashSecret).update(voterId).digest("hex");
 
   try {
     const { data: schedule, error: scheduleError } = await supabase
       .from("schedules")
-      .select("tournament_id, status, departments")
+      .select("tournament_id, status, departments, date, end_date, end_time")
       .eq("id", scheduleId)
       .single();
 
@@ -55,37 +62,36 @@ export async function votePrediction(scheduleId: string, departmentId: string) {
       .from("match_predictions")
       .select("department_id")
       .eq("schedule_id", scheduleId)
-      .eq("ip_hash", ipHash)
+      .eq("ip_hash", voterHash)
       .maybeSingle();
 
     if (fetchError) throw fetchError;
 
-    let action = "added";
-
     if (existing) {
-      if (existing.department_id === departmentId) {
-        // Toggle off
-        const { error } = await supabase.from("match_predictions").delete().eq("schedule_id", scheduleId).eq("ip_hash", ipHash);
-        if (error) throw error;
-        action = "removed";
-      } else {
-        // Change vote
-        const { error } = await supabase.from("match_predictions").update({ department_id: departmentId }).eq("schedule_id", scheduleId).eq("ip_hash", ipHash);
-        if (error) throw error;
-        action = "changed";
-      }
+      const { data, error: countError } = await supabase
+        .from("match_predictions")
+        .select("department_id")
+        .eq("schedule_id", scheduleId);
+      if (countError) throw countError;
+
+      const counts: Record<string, number> = {};
+      data?.forEach((prediction: { department_id: string }) => {
+        counts[prediction.department_id] = (counts[prediction.department_id] || 0) + 1;
+      });
+
+      return { success: true, action: "unchanged", counts, userVote: existing.department_id };
     } else {
-      // Insert new
       const { error } = await supabase.from("match_predictions").insert({
         schedule_id: scheduleId,
         department_id: departmentId,
-        ip_hash: ipHash
+        ip_hash: voterHash
       });
       if (error) throw error;
     }
 
     // Return fresh counts
-    const { data } = await supabase.from('match_predictions').select('department_id').eq('schedule_id', scheduleId);
+    const { data, error: countError } = await supabase.from('match_predictions').select('department_id').eq('schedule_id', scheduleId);
+    if (countError) throw countError;
     const counts: Record<string, number> = {};
     if (data) {
       data.forEach((d: any) => {
@@ -93,7 +99,7 @@ export async function votePrediction(scheduleId: string, departmentId: string) {
       });
     }
 
-    return { success: true, action, counts, userVote: action === "removed" ? null : departmentId };
+    return { success: true, action: "added", counts, userVote: departmentId };
   } catch (error) {
     console.error("Error updating prediction:", error);
     return { success: false, error: "Failed to submit vote." };

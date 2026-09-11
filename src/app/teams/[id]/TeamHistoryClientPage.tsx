@@ -5,6 +5,8 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTime } from "@/lib/utils";
 import { usePublicTeamsViewModel } from "@/features/teams/viewModels/usePublicTeamsViewModel";
+import { teamNameToColor } from "@/utils/colors";
+import { Trophy, CalendarClock } from "lucide-react";
 
 interface TeamHistoryClientPageProps {
   team: {
@@ -45,14 +47,14 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
       {/* Top gradient wash — team-colored if we had it, defaults to green */}
       <div
         className="absolute left-0 right-0 top-0 h-80 pointer-events-none z-0"
-        style={{ background: "linear-gradient(to bottom, rgba(22,163,74,0.20) 0%, transparent 100%)" }}
+        style={{ background: `linear-gradient(to bottom, ${teamNameToColor(team.name)}33 0%, transparent 100%)` }}
       />
 
       {/* Navigation Header */}
       <div className="relative z-10 px-4 pt-6 pb-2 sticky top-0 bg-black/80 backdrop-blur-xl border-b border-white/5">
         <Link href="/" className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-white/70 hover:text-white transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          Standings
+          Podium
         </Link>
       </div>
 
@@ -92,18 +94,18 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
 
           <div className="flex justify-around w-full px-2">
             <div className="flex flex-col items-center">
-              <span className="text-2xl mb-1 drop-shadow-sm">🥇</span>
-              <span className="text-[11px] font-bold text-yellow-500 uppercase tracking-widest">{stats.golds} Gold</span>
+              <span className="text-2xl font-black text-yellow-500 tabular-nums tracking-tighter mb-1">{stats.golds}</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Gold</span>
             </div>
             <div className="w-px bg-white/10 mx-2" />
             <div className="flex flex-col items-center">
-              <span className="text-2xl mb-1 drop-shadow-sm">🥈</span>
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{stats.silvers} Silver</span>
+              <span className="text-2xl font-black text-gray-400 tabular-nums tracking-tighter mb-1">{stats.silvers}</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Silver</span>
             </div>
             <div className="w-px bg-white/10 mx-2" />
             <div className="flex flex-col items-center">
-              <span className="text-2xl mb-1 drop-shadow-sm">🥉</span>
-              <span className="text-[11px] font-bold text-orange-500 uppercase tracking-widest">{stats.bronzes} Bronze</span>
+              <span className="text-2xl font-black text-orange-500 tabular-nums tracking-tighter mb-1">{stats.bronzes}</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Bronze</span>
             </div>
           </div>
         </div>
@@ -112,7 +114,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
       {/* Filter Tabs */}
       <div className="relative z-10 px-4 sticky top-[52px] bg-black/80 backdrop-blur-xl py-3 border-b border-white/5">
         <div className="flex bg-white/10 p-1 rounded-xl overflow-x-auto no-scrollbar snap-x border border-white/5">
-          {(['all', 'gold', 'silver', 'bronze', 'upcoming'] as const).map(f => (
+          {(['all', 'gold', 'silver', 'bronze'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -122,7 +124,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                   : 'text-gray-500 hover:text-gray-300'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'gold' ? '🥇 Gold' : f === 'silver' ? '🥈 Silver' : f === 'bronze' ? '🥉 Bronze' : '⏳ Upcoming'}
+              {f === 'all' ? 'All' : f === 'gold' ? 'Gold' : f === 'silver' ? 'Silver' : 'Bronze'}
             </button>
           ))}
         </div>
@@ -152,7 +154,6 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
 
                   <div className="relative z-10 flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="text-3xl">{item.events?.icon || '🏅'}</span>
                       <div className="flex flex-col">
                         <h4 className="font-bold text-[15px] text-white tracking-tight">{item.events?.name}</h4>
                         <div className="flex items-center gap-1.5 mt-0.5">
@@ -197,9 +198,11 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
             })
           ) : (
             <div className="py-20 flex flex-col items-center justify-center text-center">
-              <span className="text-5xl opacity-20 mb-3">{filter === 'upcoming' ? '⏳' : '🏆'}</span>
+              <div className="opacity-20 mb-3">
+                <Trophy className="w-12 h-12" />
+              </div>
               <p className="text-gray-500 font-medium text-sm">
-                {filter === 'upcoming' ? "No upcoming schedules." : `No ${filter !== 'all' ? filter : ''} medals found.`}
+                {`No ${filter !== 'all' ? filter : ''} medals found.`}
               </p>
             </div>
           )}

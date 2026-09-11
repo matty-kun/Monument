@@ -1,63 +1,85 @@
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, CalendarDays, Trophy } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-gradient-to-br from-green-50 via-gray-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 text-center relative overflow-hidden">
-      {/* Sporty Background Elements */}
-      <div className="absolute inset-0 opacity-5 dark:opacity-10">
-        <div className="absolute top-10 left-10 text-9xl">🏆</div>
-        <div className="absolute top-20 right-20 text-8xl">⚽</div>
-        <div className="absolute bottom-20 left-20 text-7xl">🏀</div>
-        <div className="absolute bottom-10 right-10 text-9xl">🏅</div>
-        <div className="absolute top-1/2 left-1/4 text-6xl">🎯</div>
-        <div className="absolute top-1/3 right-1/3 text-7xl">🏐</div>
-      </div>
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#f5f5f7] px-5 pb-28 text-[#111311] transition-colors dark:bg-black dark:text-white sm:px-8">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[#269a7a]" aria-hidden="true" />
 
-      {/* Main Content */}
-      <div className="relative z-10 space-y-6">
-        {/* Animated Trophy */}
-        <div className="text-8xl mb-4 animate-bounce">🏆</div>
-        
-        <h1 className="text-9xl font-extrabold text-monument-green dark:text-green-400 drop-shadow-lg">
-          404
-        </h1>
-        
-        <div className="space-y-2">
-          <h2 className="text-4xl font-bold text-gray-800 dark:text-gray-100">
-            Out of Bounds!
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-            Looks like this play didn&apos;t go as planned. The page you&apos;re looking for is off the field! 🏃‍♂️
-          </p>
-        </div>
+      <main className="mx-auto flex min-h-[calc(100dvh-7rem)] w-full max-w-5xl flex-col justify-center py-12">
+        <header className="flex items-center justify-between border-b border-black/10 pb-5 dark:border-white/15">
+          <Link href="/" className="flex items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-[#269a7a] focus:ring-offset-4 dark:focus:ring-offset-black">
+            <Image
+              src="/monument-logo.png"
+              alt="Monument"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-md object-cover"
+              priority
+            />
+            <div>
+              <p className="text-sm font-bold leading-none tracking-normal">Monument</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase leading-none tracking-normal text-black/45 dark:text-white/45">
+                Tournament center
+              </p>
+            </div>
+          </Link>
 
-        {/* Score Display */}
-        <div className="flex gap-4 justify-center items-center my-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg border-2 border-monument-green dark:border-green-500">
-            <div className="text-4xl font-bold text-monument-green dark:text-green-400">0</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Pages Found</div>
+          <div className="flex items-center gap-2 text-xs font-semibold tracking-normal text-black/50 dark:text-white/50">
+            <span className="h-2 w-2 rounded-full bg-[#ff453a]" aria-hidden="true" />
+            Page unavailable
           </div>
-          <div className="text-3xl font-bold text-gray-400 dark:text-gray-500">VS</div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg border-2 border-red-500">
-            <div className="text-4xl font-bold text-red-500">404</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Error Code</div>
+        </header>
+
+        <section className="grid flex-1 items-center gap-8 border-b border-black/10 py-10 dark:border-white/15 md:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] md:gap-16 md:py-16">
+          <div className="relative flex min-h-48 items-center border-l-4 border-[#269a7a] pl-6 sm:pl-10 md:min-h-72">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-normal text-[#217f66] dark:text-[#67c9aa]">
+                Final
+              </p>
+              <h1 className="text-[112px] font-black tabular-nums leading-[0.82] tracking-normal sm:text-[176px]">
+                404
+              </h1>
+            </div>
           </div>
-        </div>
 
-        {/* Call to Action Button */}
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 px-8 py-4 bg-monument-green !text-white font-bold text-lg rounded-lg shadow-xl hover:bg-green-700 hover:scale-105 dark:bg-green-600 dark:hover:bg-green-700 transition-all duration-300 transform"
-        >
-          <span>🏠</span>
-          Back to Home Base
-        </Link>
+          <div className="max-w-md">
+            <p className="mb-3 text-xs font-bold uppercase tracking-normal text-black/45 dark:text-white/45">
+              Page not found
+            </p>
+            <h2 className="text-3xl font-bold leading-tight tracking-normal sm:text-4xl">
+              That page isn&apos;t on the schedule.
+            </h2>
+            <p className="mt-4 text-[15px] leading-6 tracking-normal text-black/55 dark:text-white/55">
+              The address may have changed, or the event page may no longer be available.
+            </p>
 
-        {/* Motivational Quote */}
-        <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-8 max-w-md mx-auto">
-          &quot;Every champion was once a contender that refused to give up.&quot;
-        </p>
-      </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#111311] px-5 text-sm font-semibold tracking-normal text-white transition-colors hover:bg-[#269a7a] focus:outline-none focus:ring-2 focus:ring-[#269a7a] focus:ring-offset-2 dark:bg-white dark:text-black dark:hover:bg-[#67c9aa] dark:focus:ring-offset-black"
+              >
+                <Trophy className="h-4 w-4" aria-hidden="true" />
+                Return to podium
+              </Link>
+              <Link
+                href="/schedule"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-black/15 bg-white px-5 text-sm font-semibold tracking-normal text-[#111311] transition-colors hover:bg-black/[0.04] focus:outline-none focus:ring-2 focus:ring-[#269a7a] focus:ring-offset-2 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 dark:focus:ring-offset-black"
+              >
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                View scores
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <footer className="flex items-center justify-between pt-5 text-[11px] font-semibold uppercase tracking-normal text-black/40 dark:text-white/40">
+          <span>Monument</span>
+          <span>Live tournament standings</span>
+        </footer>
+      </main>
     </div>
   );
 }

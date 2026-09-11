@@ -1,8 +1,23 @@
+const namedColorHints: Array<[RegExp, string]> = [
+  [/\bred\b/i, '#ff3b30'],
+  [/\bblue\b/i, '#0a84ff'],
+  [/\bsilver\b/i, '#8e8e93'],
+  [/\bgold(?:en)?\b/i, '#d6a51f'],
+  [/\bgreen\b/i, '#30b46c'],
+  [/\bpurple\b|\bviolet\b/i, '#8b5cf6'],
+  [/\borange\b/i, '#ff8a1f'],
+  [/\byellow\b/i, '#e7b416'],
+  [/\bpink\b/i, '#ff4f9a'],
+];
+
 /**
- * Generates a consistent, vibrant hex color based on a string (like a department name).
- * Used for dynamic team gradients.
+ * Returns a stable team color, honoring color words in a team name before
+ * falling back to a deterministic hue.
  */
-export function stringToColor(str: string): string {
+export function teamNameToColor(str: string): string {
+  const namedColor = namedColorHints.find(([pattern]) => pattern.test(str));
+  if (namedColor) return namedColor[1];
+
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -16,6 +31,8 @@ export function stringToColor(str: string): string {
   
   return hslToHex(h, s, l);
 }
+
+export const stringToColor = teamNameToColor;
 
 function hslToHex(h: number, s: number, l: number): string {
   l /= 100;
