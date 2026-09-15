@@ -170,6 +170,42 @@ export function HistorySkeleton() {
   );
 }
 
+export function UpdatesSkeleton() {
+  return (
+    <PublicSkeletonShell label="Loading updates" darkOnly>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[linear-gradient(to_bottom,rgba(38,154,122,0.22),transparent)]"
+      />
+
+      <div aria-hidden="true" className="relative z-10 px-4 pb-8 pt-10">
+        <Bone className="mb-3 h-3 w-32 rounded" />
+        <Bone className="h-9 w-36 rounded-lg" />
+        <Bone className="mt-3 h-4 w-72 max-w-[88%] rounded" />
+
+        <div className="mt-7 overflow-hidden rounded-[26px] border border-white/[0.08] bg-white/[0.06] backdrop-blur-2xl">
+          {[0, 1, 2, 3].map((row) => (
+            <div
+              key={row}
+              className="flex gap-3 border-b border-white/[0.07] px-4 py-4 last:border-b-0"
+            >
+              <Bone className="h-10 w-10 shrink-0 rounded-2xl" />
+              <div className="min-w-0 flex-1">
+                <div className="flex justify-between gap-3">
+                  <Bone className="h-4 w-36 rounded" />
+                  <Bone className="h-3 w-12 rounded" />
+                </div>
+                <Bone className="mt-3 h-3 w-11/12 rounded" />
+                <Bone className="mt-3 h-2.5 w-24 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </PublicSkeletonShell>
+  );
+}
+
 export function ResultsSkeleton() {
   return (
     <PublicSkeletonShell label="Loading results" darkOnly>

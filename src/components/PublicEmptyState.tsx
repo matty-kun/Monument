@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { History } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 export default function PublicEmptyState() {
   return (
@@ -16,9 +16,9 @@ export default function PublicEmptyState() {
         There are currently no active intramurals or live tournaments happening. Check back later for upcoming seasons.
       </p>
       
-      <Link href="/history" className="group flex items-center gap-3 bg-[#1c1c1e] hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all px-8 py-4 rounded-full text-white shadow-lg active:scale-95">
-        <History className="text-monument-primary group-hover:-rotate-12 transition-transform duration-300" size={20} strokeWidth={2.5} />
-        <span className="text-[15px] font-bold tracking-wide">View Past Seasons</span>
+      <Link href="/updates" className="group flex items-center gap-3 bg-[#1c1c1e] hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all px-8 py-4 rounded-full text-white shadow-lg active:scale-95">
+        <Bell className="text-monument-primary group-hover:-rotate-12 transition-transform duration-300" size={20} strokeWidth={2.5} />
+        <span className="text-[15px] font-bold tracking-wide">View Updates</span>
       </Link>
     </div>
   );

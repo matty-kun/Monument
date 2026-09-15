@@ -6,6 +6,8 @@
     "dev": "next dev --hostname localhost --port 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
+    "seed:demo": "node scripts/seed-demo-data.mjs",
+    "seed:clean-cite-fest": "node scripts/remove-cite-fest-demo-data.mjs",
     "lint": "eslint .",
     "test": "node --no-warnings --experimental-strip-types --test",
     "test:admin": "node --no-warnings --experimental-strip-types --test test/admin-*.test.mjs test/team-*.test.mjs test/authorization-policy.test.mjs",

@@ -37,20 +37,22 @@ export default function CompactMatchCard({ schedule, getDepartmentInfo, getDynam
     return (
       <button 
         onClick={onClick}
-        className="w-full flex flex-col py-3 active:bg-gray-50 dark:active:bg-white/5 px-2 transition-colors relative group"
+        className="w-full flex flex-col py-3 active:bg-gray-50 dark:active:bg-white/5 px-2 transition-colors relative group overflow-hidden"
       >
         <div className="absolute top-2 right-3 flex items-center gap-1.5 opacity-90">
           <div className={`w-2 h-2 rounded-full shadow-sm ${status === 'finished' ? 'bg-[#FF5F56]' : status === 'live' ? 'bg-[#27C93F]' : 'bg-[#FFBD2E]'}`} />
-          {status !== 'finished' && <span className={`text-[10px] font-bold text-center ${status === 'live' ? 'text-[#27C93F]' : 'text-gray-400 dark:text-gray-500'}`}>{displayStatus}</span>}
         </div>
 
-        <div className="w-full flex flex-col items-center mb-3">
+        <div className="relative z-10 w-full flex flex-col items-center mb-3">
           <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 text-center">{schedule.events?.name}</span>
+          <span className={`text-[11px] font-black ${status === 'live' ? 'text-[#27C93F]' : 'text-white/85'}`}>
+            {displayStatus}
+          </span>
         </div>
         {departments.length === 0 ? (
           <div className="text-[12px] text-gray-400 dark:text-gray-500 text-center py-2">Teams TBA</div>
         ) : (
-          <div className="flex flex-col items-center w-full mt-1">
+          <div className="relative z-10 flex flex-col items-center w-full mt-1">
             <div className="flex items-start justify-center gap-8 w-full">
               {[1, 0, 2].map((orderIdx) => {
                 const d = top3[orderIdx];
@@ -61,7 +63,7 @@ export default function CompactMatchCard({ schedule, getDepartmentInfo, getDynam
                 const badge = medal === 'gold' ? '🥇' : medal === 'silver' ? '🥈' : medal === 'bronze' ? '🥉' : null;
 
                 return (
-                  <div key={d.id} className={`flex flex-col items-center justify-start w-[64px] ${orderIdx === 0 ? '-mt-2' : ''}`}>
+                  <div key={`${schedule.id}-${d.id || d.name}-${orderIdx}`} className={`flex flex-col items-center justify-start w-[64px] ${orderIdx === 0 ? '-mt-2' : ''}`}>
                     <div className={`relative ${orderIdx === 0 ? 'w-12 h-12' : 'w-10 h-10'} mb-2`}>
                       <TeamLogoGroup images={getDepartmentImages(d)} size={orderIdx === 0 ? 48 : 40} className="drop-shadow-md" fallbackIconSize={orderIdx === 0 ? 20 : 16} />
                       
@@ -132,34 +134,30 @@ export default function CompactMatchCard({ schedule, getDepartmentInfo, getDynam
   return (
     <button 
       onClick={onClick}
-      className="w-full flex flex-col py-3 active:bg-gray-50 dark:active:bg-white/5 px-2 transition-colors relative group"
+      className="w-full flex flex-col py-3 active:bg-gray-50 dark:active:bg-white/5 px-2 transition-colors relative group overflow-hidden"
     >
       <div className="absolute top-2 right-3 flex items-center gap-1.5 opacity-90">
         <div className={`w-2 h-2 rounded-full shadow-sm ${status === 'finished' ? 'bg-[#FF5F56]' : status === 'live' ? 'bg-[#27C93F]' : 'bg-[#FFBD2E]'}`} />
-        {status !== 'finished' && (
-          <span className={`text-[10px] font-bold ${status === 'live' ? 'text-[#27C93F]' : 'text-gray-400 dark:text-gray-500'}`}>
-            {displayStatus}
-          </span>
-        )}
       </div>
 
       {/* Tiny Event Name Header */}
-      <div className="w-full text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-10 truncate">
+      <div className="relative z-10 w-full text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-10 truncate">
         {schedule.events?.name}
       </div>
 
-      <div className="w-full flex items-center justify-between px-2 mt-1">
+      <div className="relative z-10 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 px-2 mt-1">
         {/* Team 1 Area */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-start gap-4">
           {renderTeam(d1)}
           {renderScore(score1, isD1Winner)}
         </div>
 
-        {/* Status Area (Now Empty, as it is moved to top right) */}
-        <div className="flex items-center justify-center min-w-[30px]" />
+        <div className={`flex min-w-[58px] items-center justify-center text-center text-[12px] font-black leading-tight ${status === 'live' ? 'text-[#27C93F]' : 'text-white/85'}`}>
+          {displayStatus}
+        </div>
 
         {/* Team 2 Area */}
-        <div className="flex items-center gap-4 flex-row-reverse">
+        <div className="flex items-center justify-start gap-4 flex-row-reverse">
           {renderTeam(d2)}
           {renderScore(score2, isD2Winner)}
         </div>

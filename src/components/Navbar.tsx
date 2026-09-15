@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trophy, CalendarDays, List, MoreHorizontal, LayoutDashboard, History, Swords } from "lucide-react";
+import { Trophy, MoreHorizontal, LayoutDashboard, History, Swords, Bell } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -64,14 +64,15 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: activeTournamentParam ? `/?tournament=${activeTournamentParam}` : "/", label: "Podium", icon: Trophy },
-    { href: activeTournamentParam ? `/schedule?tournament=${activeTournamentParam}` : "/schedule", label: "Scores", icon: Swords },
+    { href: activeTournamentParam ? `/schedule?tournament=${activeTournamentParam}` : "/schedule", label: "Matches", icon: Swords },
   ], [activeTournamentParam]);
 
   const isMainAdminPath = pathname?.startsWith('/admin');
   if (isMainAdminPath) return null;
 
-  // Third tab logic: History if non-admin (or loading), More if admin
-  const isHistoryActive = mounted && pathname === "/history";
+  // Third tab logic: Updates if non-admin (or loading), More if admin
+  const updatesHref = activeTournamentParam ? `/updates?tournament=${activeTournamentParam}` : "/updates";
+  const isUpdatesActive = mounted && pathname === "/updates";
 
   return (
     <>
@@ -92,7 +93,7 @@ export default function Navbar() {
                     isActive ? 'text-white' : 'text-[#b3b3b3]'
                   }`}
                   strokeWidth={isActive ? 2.5 : 2}
-                  fill={isActive && label !== 'Scores' ? 'currentColor' : 'none'}
+                  fill={isActive && label !== 'Matches' ? 'currentColor' : 'none'}
                 />
                 <span className={`text-[10px] font-semibold tracking-wide transition-colors duration-300 ${
                   isActive ? 'text-white' : 'text-[#b3b3b3]'
@@ -114,20 +115,20 @@ export default function Navbar() {
             </button>
           ) : (
             <Link
-              href="/history"
+              href={updatesHref}
               className="flex flex-col items-center justify-center w-20 transition-all duration-300 z-10"
             >
-              <History
+              <Bell
                 className={`w-[26px] h-[26px] mb-1 transition-colors duration-300 ${
-                  isHistoryActive ? 'text-white' : 'text-[#b3b3b3]'
+                  isUpdatesActive ? 'text-white' : 'text-[#b3b3b3]'
                 }`}
-                strokeWidth={isHistoryActive ? 2.5 : 2}
+                strokeWidth={isUpdatesActive ? 2.5 : 2}
                 fill="none"
               />
               <span className={`text-[10px] font-semibold tracking-wide transition-colors duration-300 ${
-                isHistoryActive ? 'text-white' : 'text-[#b3b3b3]'
+                isUpdatesActive ? 'text-white' : 'text-[#b3b3b3]'
               }`}>
-                History
+                Updates
               </span>
             </Link>
           )}

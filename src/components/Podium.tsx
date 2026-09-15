@@ -176,12 +176,7 @@ export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
           <div className="mb-2 flex items-center px-3 text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400">
             <div className="w-6 text-center">#</div>
             <div className="ml-3 flex-1">Team</div>
-            <div className="flex shrink-0 gap-3">
-              <div className="w-5 text-center">G</div>
-              <div className="w-5 text-center">S</div>
-              <div className="w-5 text-center">B</div>
-              <div className="w-10 text-right">Pts</div>
-            </div>
+            <div className="w-10 text-right">Pts</div>
           </div>
 
           <div className="overflow-hidden rounded-[20px] border border-white/80 bg-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_16px_40px_rgba(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.14] dark:bg-white/[0.06] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_18px_45px_rgba(0,0,0,0.28)]">
@@ -224,13 +219,8 @@ export default function ApplePodium({ leaderboard, mysteryMode }: PodiumProps) {
                       )}
                     </div>
 
-                    <div className="flex shrink-0 gap-3 text-[13px] tabular-nums">
-                      <div className="w-5 text-center font-medium text-yellow-600 dark:text-yellow-500">{department.golds}</div>
-                      <div className="w-5 text-center font-medium text-gray-500 dark:text-gray-400">{department.silvers}</div>
-                      <div className="w-5 text-center font-medium text-orange-600 dark:text-orange-500">{department.bronzes}</div>
-                      <div className="w-10 text-right font-black text-gray-700 dark:text-gray-300">
-                        {mysteryMode ? "???" : department.total_points}
-                      </div>
+                    <div className="w-10 shrink-0 text-right text-[13px] font-black text-gray-700 tabular-nums dark:text-gray-300">
+                      {mysteryMode ? "???" : department.total_points}
                     </div>
                   </Link>
                 </div>
