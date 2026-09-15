@@ -41,17 +41,23 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
     const date = new Date(dateString + 'T00:00:00');
     return `${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
   };
+  const teamColor = teamNameToColor(team.name);
 
   return (
     <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-hidden">
-      {/* Top gradient wash — team-colored if we had it, defaults to green */}
+      {/* Top gradient wash — team-colored and softly fading */}
       <div
         className="absolute left-0 right-0 top-0 h-80 pointer-events-none z-0"
-        style={{ background: `linear-gradient(to bottom, ${teamNameToColor(team.name)}33 0%, transparent 100%)` }}
+        style={{
+          background: [
+            `radial-gradient(circle at 50% 0%, ${teamColor}4a 0%, transparent 58%)`,
+            `linear-gradient(to bottom, ${teamColor}26 0%, ${teamColor}14 36%, transparent 100%)`,
+          ].join(", "),
+        }}
       />
 
       {/* Navigation Header */}
-      <div className="relative z-10 px-4 pt-6 pb-2 sticky top-0 bg-black/80 backdrop-blur-xl border-b border-white/5">
+      <div className="relative z-10 px-4 pt-6 pb-2 sticky top-0">
         <Link href="/" className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-white/70 hover:text-white transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           Podium
@@ -112,7 +118,7 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
       </div>
 
       {/* Filter Tabs */}
-      <div className="relative z-10 px-4 sticky top-[52px] bg-black/80 backdrop-blur-xl py-3 border-b border-white/5">
+      <div className="relative z-10 px-4 sticky top-[52px] bg-black/55 backdrop-blur-xl py-3">
         <div className="flex bg-white/10 p-1 rounded-xl overflow-x-auto no-scrollbar snap-x border border-white/5">
           {(['all', 'gold', 'silver', 'bronze'] as const).map(f => (
             <button
@@ -150,6 +156,12 @@ export default function TeamHistoryClientPage({ team, results, stats, allCategor
                 >
                   {isMedal && item.medal_type === 'gold' && (
                     <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-yellow-400 to-transparent pointer-events-none mix-blend-screen" />
+                  )}
+                  {isMedal && item.medal_type === 'silver' && (
+                    <div className="absolute inset-0 opacity-[0.055] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-300 to-transparent pointer-events-none mix-blend-screen" />
+                  )}
+                  {isMedal && item.medal_type === 'bronze' && (
+                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-orange-500 to-transparent pointer-events-none mix-blend-screen" />
                   )}
 
                   <div className="relative z-10 flex items-start justify-between">

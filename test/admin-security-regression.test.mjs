@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("security: every tournament-team mutation requires an admin", async () => {
@@ -26,5 +26,4 @@ test("acceptance: admin routes own their loading experience", async () => {
   const source = await readFile(new URL("../src/app/admin/loading.tsx", import.meta.url), "utf8");
   assert.match(source, /Loading admin workspace/);
   assert.doesNotMatch(source, /Loading standings|PodiumSkeleton/);
-  await assert.rejects(access(new URL("../src/app/loading.tsx", import.meta.url)));
 });

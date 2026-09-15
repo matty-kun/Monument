@@ -163,12 +163,16 @@ export default function ScheduleClientPage({
 
   return (
     <div className="bg-black text-white min-h-screen pb-24 font-sans relative overflow-x-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-x-0 top-0 h-52 bg-[linear-gradient(to_bottom,rgba(22,163,74,0.34)_0%,rgba(22,163,74,0.22)_32%,rgba(22,163,74,0.08)_62%,transparent_100%)]"
+      />
       {/* Top Header */}
-      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0 bg-black/80 backdrop-blur-xl">
-        <h1 className="text-3xl font-black text-white tracking-tight mb-4">Matches</h1>
+      <div className="relative z-10 px-4 pt-6 pb-4 sticky top-0">
+        <h1 className="relative z-10 text-3xl font-black text-white tracking-tight mb-4">Matches</h1>
 
         {/* Segmented Control */}
-        <div className="flex p-1 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 shadow-inner">
+        <div className="relative z-10 flex p-1 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 shadow-inner">
           {(['all', 'ongoing', 'upcoming', 'finished'] as const).map(tab => {
             const isActive = statusTab === tab;
             let label = "All";
