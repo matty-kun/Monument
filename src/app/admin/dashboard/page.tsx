@@ -1,11 +1,11 @@
 "use client";
-
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   Building2,
   CalendarDays,
   Flag,
-  LogOut,
   Medal,
   Tags,
 } from "lucide-react";
@@ -13,6 +13,7 @@ import BouncingBallsLoader from "@/components/BouncingBallsLoader";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { type Tournament, useTournament } from "@/components/AdminTournamentProvider";
 import { useDashboardViewModel } from "@/features/admin/dashboard/viewModels/useDashboardViewModel";
+import Loading from "@/components/loading";
 import { formatTime } from "@/lib/utils";
 
 const medalStyles: Record<string, string> = {
@@ -33,11 +34,17 @@ export default function AdminDashboardPage() {
     teamsData,
     stats,
     handleCardClick,
-    handleLogout,
   } = useDashboardViewModel({ selectedTournament });
 
+  const router = useRouter();
+
+  useEffect(() => {
+    if (role === "scorer") {
+      router.replace("/admin/schedule");
+    }
+  }, [role, router]);
   if (loading) {
-    return <div className="flex h-[60vh] items-center justify-center"><BouncingBallsLoader /></div>;
+    return <Loading />;
   }
 
   if (!selectedTournament) return <EmptyTournamentState />;
@@ -53,7 +60,6 @@ export default function AdminDashboardPage() {
       teamsData={teamsData}
       stats={stats}
       handleCardClick={handleCardClick}
-      handleLogout={handleLogout}
     />
   );
 }
@@ -68,7 +74,6 @@ interface DashboardViewProps {
   teamsData: any[];
   stats: { teams: number; events: number; results: number; categories: number };
   handleCardClick: (href: string) => void;
-  handleLogout: () => void | Promise<void>;
 }
 
 export function DashboardView({
@@ -81,7 +86,6 @@ export function DashboardView({
   teamsData,
   stats,
   handleCardClick,
-  handleLogout,
 }: DashboardViewProps) {
   const quickActions = [
     { href: "/admin/results", label: "Record results", detail: "Medals and points", icon: Medal },
@@ -102,10 +106,6 @@ export function DashboardView({
         </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-xs capitalize text-[#7a817d] dark:text-white/40 sm:inline">{role?.replace("_", " ")}</span>
-          <button type="button" onClick={handleLogout} className="admin-secondary-button text-red-600 dark:text-red-400" title="Sign out">
-            <LogOut size={15} />
-            <span>Sign out</span>
-          </button>
         </div>
       </header>
 

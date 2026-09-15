@@ -1,163 +1,220 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Clock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Clock, X } from "lucide-react";
 
 interface TimePickerDropdownProps {
-  value: string; // "HH:mm" 24h format, or empty for none
+  value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   allowClear?: boolean;
 }
 
+const hours = Array.from({ length: 12 }, (_, index) => index + 1);
+const minutes = ["00", "15", "30", "45"];
+
+function parseTime(value: string) {
+  if (!value) return { hour12: 9, minute: "00", ampm: "AM" as "AM" | "PM" };
+  const [hourValue, minuteValue = "00"] = value.split(":").map(Number);
+  const ampm: "AM" | "PM" = hourValue >= 12 ? "PM" : "AM";
+  const hour12 = hourValue === 0 ? 12 : hourValue > 12 ? hourValue - 12 : hourValue;
+  return {
+    hour12,
+    minute: String(minuteValue).padStart(2, "0"),
+    ampm,
+  };
+}
+
+function to24Hour(hour12: number, minute: string, ampm: "AM" | "PM") {
+  let hour = hour12;
+  if (ampm === "PM" && hour12 < 12) hour += 12;
+  if (ampm === "AM" && hour12 === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${minute}`;
+}
+
+function formatTime(value: string) {
+  if (!value) return "Select time";
+  const parsed = parseTime(value);
+  return `${String(parsed.hour12).padStart(2, "0")}:${parsed.minute} ${parsed.ampm}`;
+}
+
 export default function TimePickerDropdown({ value, onChange, disabled = false, allowClear = false }: TimePickerDropdownProps) {
+  const parsed = useMemo(() => parseTime(value), [value]);
   const [isOpen, setIsOpen] = useState(false);
-  const [tempAmpm, setTempAmpm] = useState<'AM' | 'PM'>(() => {
-    if (!value) return 'AM';
-    const hour = parseInt(value.split(':')[0]);
-    return hour >= 12 ? 'PM' : 'AM';
-  });
-  
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [hour, setHour] = useState(parsed.hour12);
+  const [minute, setMinute] = useState(parsed.minute);
+  const [ampm, setAmpm] = useState<"AM" | "PM">(parsed.ampm);
 
-  useEffect(() => {
-    if (value) {
-      const hour = parseInt(value.split(':')[0]);
-      setTempAmpm(hour >= 12 ? 'PM' : 'AM');
-    }
-  }, [value]);
+  function openPicker() {
+    if (disabled) return;
+    const current = parseTime(value);
+    setHour(current.hour12);
+    setMinute(current.minute);
+    setAmpm(current.ampm);
+    setIsOpen(true);
+  }
 
-  const times = useMemo(() => {
-    const list = [];
-    for (let h = 1; h <= 12; h++) {
-      for (let m = 0; m < 60; m += 30) {
-        list.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-      }
-    }
-    const parts = list.splice(22, 2); 
-    return [...parts, ...list];
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-
-  const handleTimeSelect = (timeStr: string) => {
-    const [h, m] = timeStr.split(':').map(Number);
-    let hour24 = h;
-    if (tempAmpm === 'PM' && h < 12) hour24 += 12;
-    if (tempAmpm === 'AM' && h === 12) hour24 = 0;
-    
-    const value24 = `${hour24.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-    onChange(value24);
+  function applyTime() {
+    onChange(to24Hour(hour, minute, ampm));
     setIsOpen(false);
-  };
-
-  const handleAmpmChange = (newAmpm: 'AM' | 'PM') => {
-    setTempAmpm(newAmpm);
-    if (value) {
-      const [h, m] = value.split(':').map(Number);
-      let newH = h;
-      if (newAmpm === 'PM' && h < 12) newH += 12;
-      if (newAmpm === 'AM' && h >= 12) newH -= 12;
-      onChange(`${newH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-    }
-  };
-
-  const currentDisplayTime = useMemo(() => {
-    if (!value) return 'Select time';
-    const [h24, m] = value.split(':');
-    const hour = parseInt(h24);
-    const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
-  }, [value]);
+  }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <div
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors'}`}
+    <>
+      <button
+        type="button"
+        onClick={openPicker}
+        disabled={disabled}
+        className={`input flex items-center justify-between text-left ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/10"}`}
       >
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-monument-primary" />
-          <span className={`font-bold text-xs ${!value ? 'text-gray-400' : 'text-gray-900 dark:text-gray-200'}`}>
-            {currentDisplayTime}
+        <span className="flex min-w-0 items-center gap-2">
+          <Clock className="h-4 w-4 shrink-0 text-monument-primary" />
+          <span className={`truncate text-xs font-bold ${value ? "text-gray-900 dark:text-gray-200" : "text-gray-400"}`}>
+            {formatTime(value)}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
+        </span>
+        <span className="flex items-center gap-2">
           {allowClear && value && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); onChange(''); }}
-              className="text-gray-400 hover:text-rose-500 transition-colors"
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(event) => {
+                event.stopPropagation();
+                onChange("");
+              }}
+              className="text-gray-400 transition-colors hover:text-red-500"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
+              <X size={12} />
+            </span>
           )}
           <span className="text-gray-400 text-[10px]">▼</span>
-        </div>
-      </div>
+        </span>
+      </button>
 
       <AnimatePresence>
-      {isOpen && !disabled && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: -8, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-          className="absolute z-[999] bottom-full mb-2 w-full min-w-[180px] bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[1.5rem] shadow-2xl overflow-hidden flex flex-col p-3 sm:p-4"
-        >
-          <div className="flex bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 gap-1 mb-3 w-fit mx-auto border border-gray-100/50 dark:border-white/5">
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAmpmChange('AM'); }}
-              className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'AM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+        {isOpen && (
+          <motion.div
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button type="button" className="absolute inset-0 cursor-default" aria-label="Close time picker" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+              className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
             >
-              AM
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAmpmChange('PM'); }}
-              className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${tempAmpm === 'PM' ? 'bg-monument-primary text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              PM
-            </button>
-          </div>
+              <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-white/10">
+                <div>
+                  <h2 className="text-[15px] font-semibold text-gray-950 dark:text-white">Choose time</h2>
+                  <p className="mt-0.5 text-[12px] text-gray-500 dark:text-white/45">{`${String(hour).padStart(2, "0")}:${minute} ${ampm}`}</p>
+                </div>
+                <button type="button" onClick={() => setIsOpen(false)} className="admin-icon-button" aria-label="Close time picker">
+                  <X size={17} />
+                </button>
+              </div>
 
-          <div className="max-h-48 overflow-y-auto custom-scrollbar px-1">
-            <div className="grid grid-cols-1 gap-0.5">
-              {times.map((t) => {
-                const [h, m] = t.split(':').map(Number);
-                let h24 = h;
-                if (tempAmpm === 'PM' && h < 12) h24 += 12;
-                if (tempAmpm === 'AM' && h === 12) h24 = 0;
-                const v24 = `${h24.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-                const isSelected = value === v24;
+              <div className="p-5">
+                <div className="mx-auto mb-5 flex h-48 w-48 items-center justify-center rounded-full border border-gray-200 bg-gray-50 shadow-inner dark:border-white/10 dark:bg-white/[0.03]">
+                  <div className="relative h-40 w-40 rounded-full">
+                    {hours.map((item, index) => {
+                      const angle = (index / 12) * 360 - 60;
+                      const radius = 68;
+                      const x = Math.cos((angle * Math.PI) / 180) * radius;
+                      const y = Math.sin((angle * Math.PI) / 180) * radius;
+                      const selected = hour === item;
 
-                return (
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setHour(item)}
+                          className={`absolute flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[13px] font-bold transition ${
+                            selected
+                              ? "bg-[#269a7a] text-white shadow-sm"
+                              : "text-gray-600 hover:bg-[#20c997]/10 hover:text-[#007a5a] dark:text-white/60 dark:hover:text-[#33d6a6]"
+                          }`}
+                          style={{ left: `calc(50% + ${x}px)`, top: `calc(50% + ${y}px)` }}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#269a7a]" />
+                  </div>
+                </div>
+
+                <div className="mb-4 grid grid-cols-4 gap-2">
+                  {minutes.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setMinute(item)}
+                      className={`rounded-lg border px-3 py-2 text-[13px] font-bold transition ${
+                        minute === item
+                          ? "border-[#008060] bg-[#20c997]/10 text-[#007a5a] dark:border-[#20c997] dark:text-[#33d6a6]"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-white/60 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      :{item}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1 dark:bg-white/5">
+                  {(["AM", "PM"] as const).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setAmpm(item)}
+                      className={`rounded-lg py-2 text-[12px] font-bold transition ${
+                        ampm === item
+                          ? "bg-white text-[#007a5a] shadow-sm dark:bg-[#269a7a] dark:text-white"
+                          : "text-gray-500 hover:text-gray-900 dark:text-white/50 dark:hover:text-white"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex justify-between gap-2 border-t border-gray-200 pt-4 dark:border-white/10">
+                  {allowClear ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChange("");
+                        setIsOpen(false);
+                      }}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                    >
+                      Clear
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsOpen(false)}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                  )}
                   <button
-                    key={t}
                     type="button"
-                    onClick={() => handleTimeSelect(t)}
-                    className={`py-2 px-3 text-left text-xs font-black uppercase tracking-wide rounded-lg transition-all ${isSelected ? 'text-monument-primary bg-monument-primary/5 shadow-sm' : 'text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                    onClick={applyTime}
+                    className="rounded-lg bg-[#269a7a] px-4 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#1b7359]"
                   >
-                    {t}
+                    Set time
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        </motion.div>
-      )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

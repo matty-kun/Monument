@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { isDashboardAccessRole } from '@/utils/supabase/authorizationPolicy';
 
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminTournamentProvider from '@/components/AdminTournamentProvider';
@@ -20,20 +21,19 @@ export default async function AdminLayout({
     redirect('/'); // Update to point to new login location
   }
   
-  // 2. Check if the logged-in user has 'admin' or 'super_admin' role.
+  // 2. Check if the logged-in user has a valid admin/scorer role.
   const { data: profiles, error } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  // Allow both 'admin' and 'super_admin' roles
-  if (error || !profiles || (profiles.role !== 'admin' && profiles.role !== 'super_admin')) {
+  if (error || !profiles || !isDashboardAccessRole(profiles.role)) {
     redirect('/not-authorized');
   }
 
   return (
-    <div className="admin-layout flex min-h-screen flex-col bg-[#f4f6f5] text-[#171a18] selection:bg-monument-primary/20 dark:bg-[#0d0f0e] dark:text-[#f1f3f2] md:h-screen md:flex-row md:overflow-hidden">
+    <div className="admin-layout flex min-h-screen flex-col bg-[#f4f6f5] text-[#171a18] selection:bg-monument-primary/20 dark:bg-[#0b0b0c] dark:text-[#f1f3f2] md:h-screen md:flex-row md:overflow-hidden">
       <AdminTournamentProvider>
         <AdminSidebar />
         <main className="relative min-w-0 flex-1 px-4 pb-8 pt-20 sm:px-6 md:overflow-y-auto md:px-8 md:py-7 lg:px-10">

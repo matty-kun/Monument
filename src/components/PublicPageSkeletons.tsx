@@ -134,30 +134,34 @@ export function HistorySkeleton() {
     <PublicSkeletonShell label="Loading history">
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-64 bg-[linear-gradient(to_bottom,rgba(10,132,255,0.14),transparent)]"
+        className="absolute inset-x-0 top-0 h-64 pointer-events-none z-0"
+        style={{ background: "linear-gradient(to bottom, rgba(10,132,255,0.15) 0%, transparent 100%)" }}
       />
 
       <div aria-hidden="true" className="relative z-10 px-4 pb-8 pt-10">
         <div className="flex items-center gap-3">
-          <Bone className="h-8 w-8 rounded-full" />
           <Bone className="h-9 w-32 rounded-lg" />
         </div>
         <Bone className="mt-3 h-4 w-72 max-w-[88%] rounded" />
 
-        <div className="mt-10 space-y-4">
+        <div className="mt-6 space-y-4">
           {[0, 1, 2].map((row) => (
             <div
               key={row}
-              className={`${glassPanel} flex h-[112px] items-center justify-between rounded-[20px] p-5`}
+              className="flex items-center justify-between p-5 rounded-[24px] border border-white/[0.03] bg-white/[0.01] backdrop-blur-3xl overflow-hidden h-[90px]"
             >
               <div className="flex items-center gap-5">
-                <Bone className="h-12 w-12 rounded-xl" />
+                <div className="flex items-center justify-center w-10">
+                  <Bone className="h-6 w-6 rounded-full" />
+                </div>
                 <div className="space-y-3">
                   <Bone className="h-5 w-40 rounded" />
-                  <Bone className="h-3 w-20 rounded" />
+                  <Bone className="h-2.5 w-20 rounded" />
                 </div>
               </div>
-              <Bone className="h-8 w-8 rounded-full" />
+              <div className="flex items-center gap-4 pr-1">
+                <Bone className="h-5 w-5 rounded-md" />
+              </div>
             </div>
           ))}
         </div>

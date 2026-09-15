@@ -12,6 +12,7 @@ import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import * as htmlToImage from 'html-to-image';
 import { createClient } from "@/utils/supabase/client";
+import TeamLogoGroup, { getDepartmentImages } from "./TeamLogoGroup";
 
 interface MatchCardProps {
   schedule: Schedule;
@@ -183,13 +184,8 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
               {badge}
             </div>
           )}
-          {d.image_url ? (
-            <Image src={d.image_url} alt={d.name} fill sizes="84px" className="object-contain drop-shadow-md" priority />
-          ) : (
-            <div className="w-full h-full rounded-full bg-black/20 flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-sm border border-white/20 backdrop-blur-md">
-              {d.abbreviation || d.name.slice(0, 3)}
-            </div>
-          )}
+
+          <TeamLogoGroup images={getDepartmentImages(d)} size={84} className="drop-shadow-md" fallbackIconSize={30} />
         </div>
       <div className={`text-center font-bold text-[14px] sm:text-[16px] tracking-tight leading-tight w-full whitespace-nowrap overflow-hidden text-ellipsis drop-shadow-sm ${isWinner ? 'text-white' : 'text-white/75'}`}>
         {d.name}
@@ -519,17 +515,17 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
 
             {/* Live Stream / Broadcast Link */}
             {schedule.stream_url && status === 'live' && (
-              <div className="bg-blue-600/20 backdrop-blur-xl border border-blue-500/30 rounded-[24px] p-4 flex items-center gap-4 cursor-pointer hover:bg-blue-600/30 transition-colors">
-                <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+              <div className="bg-[#20c997]/15 backdrop-blur-xl border border-[#20c997]/30 rounded-[24px] p-4 flex items-center gap-4 cursor-pointer hover:bg-[#20c997]/25 transition-colors">
+                <div className="w-12 h-12 bg-[#008060] rounded-2xl flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(32,201,151,0.35)]">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-white">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </div>
                 <div className="flex-1">
                   <div className="text-[15px] font-bold text-white mb-0.5">Watch Live</div>
-                  <div className="text-[13px] text-blue-200">Streaming now on Facebook</div>
+                  <div className="text-[13px] text-[#b9f7df]">Streaming now on Facebook</div>
                 </div>
-                <ChevronRight size={18} className="text-blue-300" />
+                <ChevronRight size={18} className="text-[#7ee6bd]" />
               </div>
             )}
 
@@ -586,17 +582,17 @@ export default function MatchCard({ schedule, getDepartmentInfo, getDynamicStatu
                         key={d.id} 
                         onClick={() => handleVote(d.id)} 
                         disabled={isVoting || Boolean(votedTeamId)}
-                        className={`relative w-full overflow-hidden border py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors group shadow-sm ${votedTeamId === d.id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10 disabled:opacity-90'}`}
+                        className={`relative w-full overflow-hidden border py-2.5 px-3 rounded-xl flex items-center justify-between transition-colors group shadow-sm ${votedTeamId === d.id ? 'bg-[#20c997]/10 border-[#20c997]/30' : 'bg-white dark:bg-[#1c1c1e] hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10 disabled:opacity-90'}`}
                       >
-                         <div className={`absolute left-0 top-0 bottom-0 transition-all duration-500 z-0 ${votedTeamId === d.id ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-white/5'}`} style={{ width: `${votedTeamId || totalMultiVotes > 0 ? dPercentage : 0}%` }} />
+                         <div className={`absolute left-0 top-0 bottom-0 transition-all duration-500 z-0 ${votedTeamId === d.id ? 'bg-[#20c997]/20' : 'bg-gray-100 dark:bg-white/5'}`} style={{ width: `${votedTeamId || totalMultiVotes > 0 ? dPercentage : 0}%` }} />
                          
                          <div className="flex items-center gap-3 z-10">
                            <div className="w-5 h-5 relative">
-                             {d.image_url ? <Image src={d.image_url} alt="" fill sizes="20px" className="object-contain" /> : <div className="w-full h-full bg-gray-200 dark:bg-white/20 rounded-full" />}
+                             <TeamLogoGroup images={getDepartmentImages(d)} size={20} className="drop-shadow-sm" fallbackIconSize={10} />
                            </div>
-                           <span className={`text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-900 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{d.name}</span>
+                           <span className={`text-[13px] font-bold ${votedTeamId === d.id ? 'text-[#007a5a] dark:text-[#33d6a6]' : 'text-gray-700 dark:text-gray-300'}`}>{d.name}</span>
                          </div>
-                         <div className={`z-10 text-[13px] font-bold ${votedTeamId === d.id ? 'text-blue-700 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                         <div className={`z-10 text-[13px] font-bold ${votedTeamId === d.id ? 'text-[#007a5a] dark:text-[#33d6a6]' : 'text-gray-500 dark:text-gray-400'}`}>
                            {votedTeamId === d.id ? 'Voted' : votedTeamId ? 'Locked' : (totalMultiVotes > 0 ? `${dPercentage.toFixed(0)}%` : 'Vote')}
                          </div>
                       </button>

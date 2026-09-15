@@ -107,7 +107,7 @@
   }
 
   .admin-panel {
-    @apply rounded-lg border border-[#dfe3e1] bg-white shadow-none dark:border-white/10 dark:bg-[#131614];
+    @apply rounded-lg border border-[#dedee3] bg-white shadow-none dark:border-white/10 dark:bg-[#1c1c1e];
   }
 
   .admin-panel-header {
@@ -192,7 +192,22 @@
    whole workspace feel like one restrained tool while those screens are migrated. */
 .admin-layout {
   --admin-accent: #269a7a;
+  --admin-accent-hover: #1b7359;
+  --admin-bg: #f6f7f6;
+  --admin-surface: #ffffff;
+  --admin-surface-strong: #e7ebe8;
+  --admin-border: #dfe3e1;
+  --admin-surface-dark: #1c1c1e;
+  --admin-surface-raised-dark: #242426;
+  --admin-separator-dark: rgba(255, 255, 255, 0.1);
   --admin-panel-radius: 8px;
+}
+
+.dark .admin-layout {
+  --admin-bg: #0b0b0c;
+  --admin-surface: #18181a;
+  --admin-surface-strong: #27272a;
+  --admin-border: rgba(255, 255, 255, 0.1);
 }
 
 .admin-layout :where(h1, h2, h3, h4, p, span, button, input, select, textarea, th, td) {
@@ -219,20 +234,44 @@
   border-radius: 6px !important;
 }
 
-.admin-layout [class*="bg-[#0A84FF]"] {
+.admin-layout [class*="bg-monument-primary"] {
   background-color: var(--admin-accent) !important;
 }
 
-.admin-layout [class*="text-[#0A84FF]"] {
+.admin-layout [class*="text-monument-primary"] {
   color: var(--admin-accent) !important;
 }
 
-.admin-layout [class*="hover:bg-[#0070e0]"]:hover {
-  background-color: #1b7359 !important;
+.admin-layout [class*="hover:bg-monument-dark"]:hover {
+  background-color: var(--admin-accent-hover) !important;
 }
 
 .dark .admin-layout [class*="dark:bg-[#1c1c1e]"] {
-  background-color: #131614 !important;
+  background-color: var(--admin-surface-dark) !important;
+}
+
+.admin-layout .bg-monument-primary {
+  background-color: var(--admin-accent) !important;
+}
+
+.admin-layout .text-monument-primary {
+  color: var(--admin-accent) !important;
+}
+
+.admin-layout .border-monument-primary {
+  border-color: var(--admin-accent) !important;
+}
+
+.admin-layout :where(input, select, textarea) {
+  box-shadow: none !important;
+}
+
+.dark .admin-layout :where(input, select, textarea) {
+  color-scheme: dark;
+}
+
+.dark .admin-layout [class*="dark:bg-white/[0.05]"] {
+  background-color: rgba(255, 255, 255, 0.055) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -103,11 +103,6 @@ export const useDashboardViewModel = ({ selectedTournament }: UseDashboardViewMo
     router.push(href);
   }, [router]);
 
-  const handleLogout = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) router.push("/");
-  }, [router, supabase]);
-
   return {
     role,
     loading,
@@ -119,6 +114,5 @@ export const useDashboardViewModel = ({ selectedTournament }: UseDashboardViewMo
     teamsData,
     stats,
     handleCardClick,
-    handleLogout
   };
 };

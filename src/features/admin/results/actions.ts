@@ -1,11 +1,11 @@
 "use server";
 
-import { AuthorizationError, requireAdmin } from "@/utils/supabase/authorization";
+import { AuthorizationError, requireAdminOrScorer } from "@/utils/supabase/authorization";
 import { type ReplaceEventResultsInput, validateResultReplacement } from "./resultPolicy";
 
 export async function replaceEventResultsAction(input: ReplaceEventResultsInput) {
   try {
-    const { supabase } = await requireAdmin();
+    const { supabase } = await requireAdminOrScorer();
 
     const validationError = validateResultReplacement(input);
     if (validationError) return { success: false as const, error: validationError };

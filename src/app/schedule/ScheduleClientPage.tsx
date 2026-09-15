@@ -251,7 +251,7 @@ export default function ScheduleClientPage({
             ))
           ) : (
             <div className="w-full flex flex-col items-center justify-center text-center h-[30vh]">
-              <p className="text-gray-400 font-medium">No matches found.</p>
+              <p className="text-gray-400 font-medium">No schedules.</p>
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from "lucide-react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   isWide?: boolean;
+  variant?: "default" | "destructive";
 }
 
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
@@ -19,37 +21,62 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
-  isWide = true,
+  isWide = false,
+  variant = "default",
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-[9999] flex justify-center items-center p-4 backdrop-blur-md transition-all">
-      <div className={`relative p-8 border shadow-2xl rounded-[2.5rem] bg-white dark:bg-gray-800 dark:border-gray-700 transition-all transform ${isWide ? 'max-w-2xl w-full' : 'max-w-md w-full'}`}>
-        <div className="flex flex-col gap-6">
-          <div className="space-y-4">
-            <div className="text-2xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">{title}</div>
-            <div className="w-12 h-1.5 bg-monument-primary rounded-full"></div>
+    <div className="fixed inset-0 z-[9999] flex h-full w-full items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm transition-all">
+      <div className={`relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl transition-all dark:border-white/10 dark:bg-[#181818] ${isWide ? 'max-w-2xl w-full' : 'max-w-md w-full'}`}>
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-white/10">
+          <div>
+            <div className="text-[15px] font-semibold text-gray-950 dark:text-white">{title}</div>
+            <div className="mt-1 text-[13px] leading-5 text-gray-500 dark:text-white/45">
+              {message}
+            </div>
           </div>
-          
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {message}
-          </div>
+          <button
+            type="button"
+            className="admin-icon-button shrink-0"
+            onClick={onClose}
+            aria-label="Close confirmation"
+          >
+            <X size={17} />
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+        <div className="p-5">
+          <div className={`rounded-xl border p-4 ${
+            variant === "destructive"
+              ? "border-[#FF453A]/20 bg-[#FF453A]/5"
+              : "border-gray-200 bg-gray-50/60 dark:border-white/10 dark:bg-white/[0.03]"
+          }`}>
+            <p className="text-[13px] leading-5 text-gray-600 dark:text-white/55">
+              {variant === "destructive"
+                ? "This action cannot be undone. Review before continuing."
+                : "Confirm this action to continue."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-gray-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-white/10 dark:bg-[#181818]/95">
             <button
-              className="bg-monument-primary hover:bg-monument-dark text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/20 active:scale-95 text-xs uppercase tracking-widest"
-              onClick={onConfirm}
-            >
-              {confirmLabel}
-            </button>
-            <button
-              className="bg-gray-50 dark:bg-gray-900/50 hover:bg-red-500 hover:text-white text-gray-400 font-bold py-4 rounded-2xl transition-all border border-transparent hover:border-red-600 active:scale-95 text-xs uppercase tracking-widest"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
               onClick={onClose}
             >
               {cancelLabel}
             </button>
-          </div>
+            <button
+              className={`rounded-lg px-4 py-2 text-[13px] font-bold text-white shadow-sm transition active:scale-[0.99] ${
+                variant === "destructive"
+                  ? "bg-[#FF453A] hover:bg-[#d9362d]"
+                  : "bg-[#269a7a] hover:bg-[#1b7359]"
+              }`}
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </button>
         </div>
       </div>
     </div>

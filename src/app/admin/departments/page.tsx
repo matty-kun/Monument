@@ -1,20 +1,19 @@
 "use client";
-import Image from 'next/image';
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster } from 'react-hot-toast';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaShieldAlt, FaDownload } from "react-icons/fa";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import { FaTable, FaThLarge, FaSearch, FaTrash, FaEdit, FaShieldAlt, FaPlus, FaLink, FaUpload } from "react-icons/fa";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
-import ImportFromTournamentModal from "../../../components/ImportFromTournamentModal";
 import { useDepartmentsViewModel } from "@/features/admin/departments/viewModels/useDepartmentsViewModel";
+import { X } from "lucide-react";
 
 export default function DepartmentsPage() {
   const { selectedTournament } = useTournament();
+  const [showTeamModal, setShowTeamModal] = useState(false);
   const {
     name,
     setName,
@@ -22,13 +21,9 @@ export default function DepartmentsPage() {
     setCourses,
     editingId,
     setEditingId,
-    selectedImage,
-    setSelectedImage,
+    logos,
+    setLogos,
     uploading,
-    imagePreview,
-    setImagePreview,
-    photoRemoved,
-    setPhotoRemoved,
     showConfirmModal,
     setShowConfirmModal,
     departmentToDeleteId,
@@ -37,13 +32,13 @@ export default function DepartmentsPage() {
     setViewMode,
     searchQuery,
     setSearchQuery,
-    showImportModal,
-    setShowImportModal,
-    handleImageSelect,
+    handleAddLogo,
+    handleUpdateLogoUrl,
+    handleRemoveLogo,
+    handleAddEmptyLogo,
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,
-    handleImportTeams,
     filteredDepartments,
   } = useDepartmentsViewModel({ selectedTournament });
 
@@ -62,81 +57,165 @@ export default function DepartmentsPage() {
         </div>
         {!selectedTournament?.is_archived && (
           <button 
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-700 dark:text-white hover:text-monument-primary hover:border-monument-primary dark:hover:text-monument-primary dark:hover:border-monument-primary transition-all shadow-sm active:scale-95 whitespace-nowrap"
+            onClick={() => {
+              resetForm();
+              setShowTeamModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-[#269a7a] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1b7359] active:scale-95"
           >
-            <FaDownload size={14} /> Import from Past
+            <FaPlus size={12} /> Add team
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
-        {!selectedTournament?.is_archived && (
-        <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all hover:shadow-md flex flex-col h-full">
-              <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-800 dark:text-white">{editingId ? 'Update Team' : 'Team Entry Form'}</h2>
+        {!selectedTournament?.is_archived && showTeamModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <button className="absolute inset-0 cursor-default" aria-label="Close add team form" onClick={() => setShowTeamModal(false)} />
+            <div className="relative max-h-[90vh] w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl transition-all dark:border-white/10 dark:bg-[#181818]">
+              <div className="border-b border-gray-200 px-5 py-4 dark:border-white/10">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-gray-950 dark:text-white">{editingId ? 'Edit team' : 'Add team'}</h2>
+                    <p className="mt-1 text-[13px] leading-5 text-gray-500 dark:text-white/45">
+                      Create the team profile used across schedules, results, and public standings.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetForm();
+                      setShowTeamModal(false);
+                    }}
+                    className="admin-icon-button shrink-0"
+                    aria-label="Close team form"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
               </div>
               
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 relative flex flex-col">
-                <form onSubmit={handleAddOrUpdate} className="space-y-6 flex flex-col">
-                  <div className="flex flex-col items-center gap-4 bg-gray-50 dark:bg-white/5 p-8 rounded-[24px] border border-dashed border-gray-200 dark:border-white/5 group relative w-full">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 absolute top-3 left-4">Logo Visual</label>
-                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white dark:bg-[#1c1c1e] shadow-xl border-4 border-white dark:border-white/5 flex items-center justify-center relative mt-2 group-hover:scale-105 transition-transform duration-500">
-                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-contain" alt="Preview"/> : <FaShieldAlt size={40} className="text-gray-100 dark:text-white/20 shadow-inner" />}
-                        {imagePreview && (
-                            <button type="button" onClick={() => { setImagePreview(null); setSelectedImage(null); setPhotoRemoved(true); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <FaTrash className="text-white scale-110" />
-                            </button>
-                        )}
+              <div className="max-h-full overflow-y-auto custom-scrollbar">
+                <form onSubmit={handleAddOrUpdate} className="flex flex-col">
+                  <div className="space-y-5 p-5">
+                    <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                      <div>
+                        <h3 className="text-[13px] font-semibold text-gray-900 dark:text-white">Team details</h3>
+                        <p className="mt-0.5 text-[12px] text-gray-500 dark:text-white/40">Keep names short so they fit cleanly on public match cards.</p>
                       </div>
-                      <div className="flex flex-col gap-2 w-full mt-2">
-                        <label className="cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-white/40 flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                          <FaPlus size={10} /> Choose PNG/JPG File
-                          <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
-                        </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 dark:text-white/40">
-                             <span className="text-[10px] font-bold">URL:</span>
-                          </div>
-                          <input 
-                            type="text" 
-                            placeholder="...or paste external image link" 
-                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none"
-                            value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
-                            onChange={(e) => {
-                               const val = e.target.value;
-                               setImagePreview(val);
-                               if (val) {
-                                  setSelectedImage(null);
-                                  setPhotoRemoved(false);
-                               }
-                            }}
-                          />
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[13px] font-medium text-gray-700 dark:text-white/70">Team name</label>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-[14px] font-medium text-gray-950 outline-none transition focus:border-[#008060] focus:ring-2 focus:ring-[#008060]/15 dark:border-white/10 dark:bg-[#111] dark:text-white dark:focus:border-[#33d6a6]"
+                          placeholder="CITE Department"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[13px] font-medium text-gray-700 dark:text-white/70">Courses or abbreviation</label>
+                        <input
+                          type="text"
+                          value={courses}
+                          onChange={(e) => setCourses(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-[14px] font-medium text-gray-950 outline-none transition focus:border-[#008060] focus:ring-2 focus:ring-[#008060]/15 dark:border-white/10 dark:bg-[#111] dark:text-white dark:focus:border-[#33d6a6]"
+                          placeholder="BSCS, BSIS"
+                        />
+                      </div>
+                    </section>
+
+                    <section className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-[13px] font-semibold text-gray-900 dark:text-white">Media</h3>
+                          <p className="mt-0.5 text-[12px] text-gray-500 dark:text-white/40">Add one clean logo or mascot image.</p>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-[12px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10">
+                            <FaUpload size={11} /> Upload
+                            <input type="file" className="hidden" accept="image/*" onChange={handleAddLogo} />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleAddEmptyLogo}
+                            className="inline-flex h-8 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-[12px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                          >
+                            <FaLink size={11} /> URL
+                          </button>
                         </div>
                       </div>
+
+                      <div className="space-y-3">
+                        {logos.length === 0 ? (
+                          <div className="flex items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white p-3 dark:border-white/10 dark:bg-[#111]">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-white/5">
+                              <FaShieldAlt size={18} className="text-gray-400 dark:text-white/25" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[13px] font-semibold text-gray-800 dark:text-white/80">No logo selected</p>
+                              <p className="text-[12px] text-gray-500 dark:text-white/40">Upload an image or paste a direct image URL.</p>
+                            </div>
+                          </div>
+                        ) : logos.map((logo, index) => (
+                          <div key={index} className="group rounded-lg border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-[#111]">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5">
+                                {logo.url ? <img src={logo.url} className="h-full w-full object-contain" alt="Team logo preview"/> : <FaShieldAlt size={18} className="text-gray-300 dark:text-white/25" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                {logo.file ? (
+                                  <div>
+                                    <p className="truncate text-[13px] font-semibold text-gray-900 dark:text-white">Ready to upload</p>
+                                    <p className="truncate text-[12px] text-gray-500 dark:text-white/40">{logo.file.name}</p>
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    placeholder="https://example.com/logo.png"
+                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-[13px] font-medium text-gray-950 outline-none transition focus:border-[#008060] focus:ring-2 focus:ring-[#008060]/15 dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:focus:border-[#33d6a6]"
+                                    value={logo.url || ''}
+                                    onChange={(e) => handleUpdateLogoUrl(index, e.target.value)}
+                                  />
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLogo(index)}
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                                aria-label="Remove logo"
+                              >
+                                <FaTrash size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2">Team Name</label>
-                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none" placeholder="e.g. CITE Department" required />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white/40 mb-2">Courses / Abbreviation</label>
-                      <input type="text" value={courses} onChange={(e) => setCourses(e.target.value)} className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:ring-2 focus:ring-monument-primary transition-all outline-none" placeholder="e.g. BSCS, BSIS" />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-3 pt-2">
-                    <button type="submit" disabled={uploading} className="w-full bg-monument-primary hover:bg-monument-dark text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/20 active:scale-95 disabled:opacity-50">
-                      {uploading ? "SAVING..." : editingId ? "UPDATE TEAM" : "CREATE TEAM"}
+                  <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-gray-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-white/10 dark:bg-[#181818]/95">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetForm();
+                        setShowTeamModal(false);
+                      }}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                    >
+                      Cancel
                     </button>
-                    {editingId && (
-                      <button type="button" onClick={resetForm} className="w-full bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/60 font-bold py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">Cancel Edit</button>
-                    )}
+                    <button
+                      type="submit"
+                      disabled={uploading}
+                      className="rounded-lg bg-[#269a7a] px-4 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#1b7359] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {uploading ? "Saving..." : editingId ? "Save changes" : "Add team"}
+                    </button>
                   </div>
                 </form>
               </div>
@@ -145,11 +224,11 @@ export default function DepartmentsPage() {
         )}
 
         {/* RIGHT COLUMN: List */}
-        <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1c1c1e] p-4 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm gap-4 shrink-0 mb-4">
+        <div className="lg:col-span-12 h-full flex flex-col min-h-0 pb-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
-                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40" />
-                  <input type="text" placeholder="Search teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border-none rounded-[16px] pl-12 pr-4 py-3 text-sm font-medium outline-none placeholder:text-gray-400 dark:placeholder:text-white/40 focus:ring-2 focus:ring-[#0A84FF]/50 transition-all" />
+                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" />
+                  <input type="text" placeholder="Search teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border border-transparent focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 rounded-[16px] text-[13px] font-medium transition-all outline-none shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500" />
                </div>
                <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl">
                   <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-monument-primary border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}><FaTable size={18}/></button>
@@ -188,8 +267,14 @@ export default function DepartmentsPage() {
                             {!selectedTournament?.is_archived && (
                               <td className="px-8 py-5 text-right">
                                 <div className="flex justify-end gap-2">
-                                  <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10 rounded-xl transition-all"><FaEdit /></button>
-                                  <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 text-gray-400 dark:text-white/40 hover:text-[#FF453A] hover:bg-[#FF453A]/10 rounded-xl transition-all"><FaTrash /></button>
+                                  <button onClick={() => { 
+                                    setEditingId(dept.id); 
+                                    setName(dept.name); 
+                                    setCourses(dept.courses || ""); 
+                                    setLogos(dept.image_url ? dept.image_url.split(',').map(url => ({ url: url.trim(), file: null })) : []);
+                                    setShowTeamModal(true);
+                                  }} className="p-2 bg-yellow-400/15 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/25 rounded-xl transition-all"><FaEdit /></button>
+                                  <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="p-2 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-xl transition-all"><FaTrash /></button>
                                 </div>
                               </td>
                             )}
@@ -213,7 +298,13 @@ export default function DepartmentsPage() {
                        
                        {!selectedTournament?.is_archived && (
                          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setEditingId(dept.id); setName(dept.name); setCourses(dept.courses || ""); setImagePreview(dept.image_url || null); setSelectedImage(null); setPhotoRemoved(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-8 h-8 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
+                            <button onClick={() => { 
+                              setEditingId(dept.id); 
+                              setName(dept.name); 
+                              setCourses(dept.courses || ""); 
+                              setLogos(dept.image_url ? dept.image_url.split(',').map(url => ({ url: url.trim(), file: null })) : []);
+                              setShowTeamModal(true);
+                            }} className="w-8 h-8 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaEdit size={12}/></button>
                             <button onClick={() => { setDepartmentToDeleteId(dept.id); setShowConfirmModal(true); }} className="w-8 h-8 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"><FaTrash size={12}/></button>
                          </div>
                        )}
@@ -232,14 +323,8 @@ export default function DepartmentsPage() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to delete this team? This action cannot be undone."
-      />
-      <ImportFromTournamentModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={handleImportTeams}
-        currentTournamentId={selectedTournament?.id || ""}
-        title="Import Teams"
-        description="Select a past tournament to instantly copy all its participating teams into the current season. Duplicates will be skipped."
+        confirmLabel="Delete"
+        variant="destructive"
       />
       <Toaster />
     </div>

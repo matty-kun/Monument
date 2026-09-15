@@ -169,7 +169,7 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
 
   async function handleSubmit(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!eventId || !selectedTournament) return;
+    if (!eventId || !selectedTournament) return false;
 
     setIsSubmitting(true);
     const loadingToast = toast.loading("Finalizing event results...");
@@ -179,7 +179,7 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
       const uniqueIds = new Set(selectedIds);
       if (uniqueIds.size !== selectedIds.length) {
         toast.error("A team cannot win more than one medal in the same event!", { id: loadingToast });
-        return;
+        return false;
       }
 
       const assignments: ResultAssignmentInput[] = [];
@@ -202,8 +202,10 @@ export const useResultsViewModel = ({ selectedTournament }: UseResultsViewModelP
       setCurrentEventResults([]);
       setIsEditing(false);
       fetchDropdownData();
+      return true;
     } catch (error: any) {
       toast.error(`Error: ${error.message}`, { id: loadingToast });
+      return false;
     } finally {
       setIsSubmitting(false);
     }

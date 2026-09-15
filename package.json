@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 0.0.0.0",
+    "dev": "next dev --hostname localhost --port 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint .",
     "test": "node --no-warnings --experimental-strip-types --test",
+    "test:admin": "node --no-warnings --experimental-strip-types --test test/admin-*.test.mjs test/team-*.test.mjs test/authorization-policy.test.mjs",
     "check": "npm run lint && npm run test && tsc --noEmit"
   },
   "dependencies": {

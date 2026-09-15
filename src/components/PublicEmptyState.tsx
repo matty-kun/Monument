@@ -17,7 +17,7 @@ export default function PublicEmptyState() {
       </p>
       
       <Link href="/history" className="group flex items-center gap-3 bg-[#1c1c1e] hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all px-8 py-4 rounded-full text-white shadow-lg active:scale-95">
-        <History className="text-[#0A84FF] group-hover:-rotate-12 transition-transform duration-300" size={20} strokeWidth={2.5} />
+        <History className="text-monument-primary group-hover:-rotate-12 transition-transform duration-300" size={20} strokeWidth={2.5} />
         <span className="text-[15px] font-bold tracking-wide">View Past Seasons</span>
       </Link>
     </div>

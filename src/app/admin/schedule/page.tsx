@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import { 
   Plus, 
+  CalendarDays,
   Search, 
   Trash2, 
   CheckCircle2, 
@@ -101,17 +102,17 @@ export default function AdminSchedulePage() {
       <div className="flex-none p-4 md:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="flex items-center gap-3 text-[32px] font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">Admin Control Center</h1>
+            <h1 className="flex items-center gap-3 text-[32px] font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">Schedule</h1>
             <p className="text-[15px] text-gray-500 dark:text-white/50 font-semibold tracking-wide">Schedules & Competition Management</p>
           </div>
           <div className="flex items-center gap-2">
             {!selectedTournament?.is_archived && (
               <button
                 onClick={() => { closeModal(); setShowFormModal(true); }}
-                className="flex items-center gap-2 px-6 py-3 bg-[#0A84FF] hover:bg-[#0070e0] text-white rounded-[16px] shadow-sm transition-all text-[13px] font-bold"
+                className="flex items-center gap-2 rounded-lg bg-[#269a7a] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1b7359] active:scale-95"
               >
                 <Plus size={16} strokeWidth={3} />
-                <span>Create Schedule</span>
+                <span>Add schedule</span>
               </button>
             )}
           </div>
@@ -138,6 +139,15 @@ export default function AdminSchedulePage() {
           </div>
         ) : (
           <div className="h-full overflow-y-auto custom-scrollbar p-2">
+            {filteredSchedules.length === 0 ? (
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white/60 p-8 text-center dark:border-white/10 dark:bg-white/[0.03]">
+                <CalendarDays size={32} className="text-gray-300 dark:text-white/20" />
+                <h2 className="mt-4 text-[16px] font-semibold text-gray-900 dark:text-white">No schedules</h2>
+                <p className="mt-1 max-w-sm text-[13px] text-gray-500 dark:text-white/45">
+                  Add a schedule to start assigning events, teams, venues, and match times.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
               {filteredSchedules.map((s) => {
                 const dynStatus = getDynamicStatus(s);
@@ -245,7 +255,7 @@ export default function AdminSchedulePage() {
                            </button>
                          )}
                          {s.departments.length > 0 ? (
-                          <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-white dark:bg-white/5 text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-[12px] flex items-center justify-center shadow-sm transition-all" title="Manage Result">
+                          <button onClick={() => openResultModal(s)} className="w-9 h-9 bg-white dark:bg-white/5 text-monument-primary hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-[12px] flex items-center justify-center shadow-sm transition-all" title="Manage Result">
                             <ClipboardEdit size={16} />
                           </button>
                          ) : (
@@ -256,10 +266,10 @@ export default function AdminSchedulePage() {
                          <button onClick={() => { 
                            setEditingId(s.id); setEventId(s.event_id); setVenueId(s.venue_id || ""); setDate(s.date); setEndDate(s.end_date || s.date); setStartTime(s.start_time); setEndTime(s.end_time || ""); setSelectedDepartments(s.departments);
                            setIsWholeDay(s.start_time.startsWith("00:00") && (s.end_time?.startsWith("23:59") || false)); setShowFormModal(true);
-                         }} className="w-9 h-9 bg-white dark:bg-white/5 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-[12px] flex items-center justify-center shadow-sm transition-all">
+                         }} className="w-9 h-9 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-[12px] flex items-center justify-center shadow-sm transition-all">
                            <FaEdit />
                          </button>
-                         <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-white dark:bg-white/5 text-gray-600 dark:text-white/60 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-[12px] flex items-center justify-center shadow-sm transition-all">
+                         <button onClick={() => { setScheduleToDeleteId(s.id); setShowConfirmModal(true); }} className="w-9 h-9 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-[12px] flex items-center justify-center shadow-sm transition-all">
                            <FaTrash />
                          </button>
                       </div>
@@ -268,6 +278,7 @@ export default function AdminSchedulePage() {
                 );
               })}
             </div>
+            )}
           </div>
         )}
       </div>
@@ -312,17 +323,17 @@ export default function AdminSchedulePage() {
                   <div className="flex items-center justify-between px-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Competing Departments</label>
                     <div className="flex items-center gap-2">
-                       {selectedDepartments.length > 0 && <button onClick={() => setSelectedDepartments([])} className="text-[9px] font-bold uppercase tracking-widest text-[#0A84FF] hover:bg-[#0A84FF]/10 px-2 py-0.5 rounded-full transition-all">Set to TBA</button>}
-                       <span className={`text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-[#0A84FF]/10 text-[#0A84FF]' : 'bg-white/5 text-white/40'}`}>{selectedDepartments.length}/3 selected</span>
+                       {selectedDepartments.length > 0 && <button onClick={() => setSelectedDepartments([])} className="text-[9px] font-bold uppercase tracking-widest text-monument-primary hover:bg-monument-primary/10 px-2 py-0.5 rounded-full transition-all">Set to TBA</button>}
+                       <span className={`text-[9px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full ${selectedDepartments.length >= 2 ? 'bg-monument-primary/10 text-monument-primary' : 'bg-white/5 text-white/40'}`}>{selectedDepartments.length}/3 selected</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {departments.map((d) => {
                       const isSelected = selectedDepartments.includes(d.name);
                       return (
-                        <button key={d.id} onClick={() => { setSelectedDepartments(prev => isSelected ? prev.filter(x => x !== d.name) : (prev.length < 3 ? [...prev, d.name] : prev)); }} className={`flex flex-col items-center p-2 rounded-[16px] transition-all border ${isSelected ? 'border-[#0A84FF]/50 bg-[#0A84FF]/10 shadow-md scale-105' : selectedDepartments.length >= 3 ? 'border-transparent bg-gray-100 dark:bg-white/5 grayscale opacity-30 cursor-not-allowed' : 'border-transparent bg-gray-50 dark:bg-white/5 grayscale opacity-60 hover:opacity-100'}`}>
+                        <button key={d.id} onClick={() => { setSelectedDepartments(prev => isSelected ? prev.filter(x => x !== d.name) : (prev.length < 3 ? [...prev, d.name] : prev)); }} className={`flex flex-col items-center p-2 rounded-[16px] transition-all border ${isSelected ? 'border-monument-primary/50 bg-monument-primary/10 shadow-md scale-105' : selectedDepartments.length >= 3 ? 'border-transparent bg-gray-100 dark:bg-white/5 grayscale opacity-30 cursor-not-allowed' : 'border-transparent bg-gray-50 dark:bg-white/5 grayscale opacity-60 hover:opacity-100'}`}>
                           {d.image_url ? <img src={d.image_url} className="w-8 h-8 object-contain drop-shadow-sm mb-1" /> : <div className="w-8 h-8 bg-gray-200 dark:bg-white/10 rounded-full mb-1" />}
-                          <span className={`text-[10px] font-bold uppercase truncate w-full text-center mt-1 ${isSelected ? 'text-[#0A84FF]' : 'text-gray-900 dark:text-white'}`}>{d.name}</span>
+                          <span className={`text-[10px] font-bold uppercase truncate w-full text-center mt-1 ${isSelected ? 'text-monument-primary' : 'text-gray-900 dark:text-white'}`}>{d.name}</span>
                         </button>
                       );
                     })}
@@ -356,12 +367,12 @@ export default function AdminSchedulePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full py-3 bg-[#0A84FF]/10 border border-dashed border-[#0A84FF]/30 rounded-[16px] flex items-center justify-center text-[10px] font-bold text-[#0A84FF] uppercase tracking-widest">Whole Day Match Window</div>
+                    <div className="w-full py-3 bg-monument-primary/10 border border-dashed border-monument-primary/30 rounded-[16px] flex items-center justify-center text-[10px] font-bold text-monument-primary uppercase tracking-widest">Whole Day Match Window</div>
                   )}
                 </div>
 
                 <div className="pt-4">
-                  <button onClick={handleSaveSchedule} disabled={isSubmitting} className="w-full bg-[#0A84FF] text-white py-4 rounded-[20px] text-[13px] font-bold tracking-wide shadow-sm hover:bg-[#0070e0] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <button onClick={handleSaveSchedule} disabled={isSubmitting} className="w-full bg-[#269a7a] text-white py-4 rounded-[20px] text-[13px] font-bold tracking-wide shadow-sm hover:bg-[#1b7359] active:scale-95 transition-all flex items-center justify-center gap-2">
                     {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : editingId ? (<span>Update Record</span>) : (<span>Deploy Schedule</span>)}
                   </button>
                 </div>
@@ -531,7 +542,7 @@ export default function AdminSchedulePage() {
 
                     <div className="flex gap-4">
                       <button onClick={() => setShowResultModal(false)} className="flex-1 py-4 text-[11px] font-bold uppercase tracking-widest text-white/50 bg-white/5 hover:bg-white/10 hover:text-white rounded-[20px] transition-all">Cancel</button>
-                      <button onClick={handleSaveResult} disabled={isSubmittingResult || !winnerId} className="flex-[2] py-4 bg-[#0A84FF] text-white rounded-[20px] text-[13px] font-bold tracking-wide shadow-sm hover:bg-[#0070e0] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
+                      <button onClick={handleSaveResult} disabled={isSubmittingResult || !winnerId} className="flex-[2] py-4 bg-[#269a7a] text-white rounded-[20px] text-[13px] font-bold tracking-wide shadow-sm hover:bg-[#1b7359] active:scale-95 transition-all disabled:opacity-30 disabled:grayscale">
                         Deploy Final Result
                       </button>
                     </div>

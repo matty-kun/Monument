@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { uploadImageAction, deleteImageAction } from "@/app/admin/actions";
+import {
+  uploadImageAction,
+  deleteImageAction,
+  deleteTournamentTeamAction,
+  saveTournamentTeamAction,
+} from "@/app/admin/actions";
 import toast from 'react-hot-toast';
 import { Department } from "../models/departmentTypes";
 import { Tournament } from "@/components/AdminTournamentProvider";
@@ -9,21 +14,22 @@ interface UseDepartmentsViewModelProps {
   selectedTournament: Tournament | null;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong.";
+}
+
 export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsViewModelProps) => {
   const supabase = createClient();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [name, setName] = useState("");
   const [courses, setCourses] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [logos, setLogos] = useState<{ url: string | null; file: File | null }[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('card');
   const [searchQuery, setSearchQuery] = useState("");
-  const [showImportModal, setShowImportModal] = useState(false);
 
   const fetchDepartments = useCallback(async () => {
     if (!selectedTournament) return;
@@ -42,14 +48,27 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     }
   }, [fetchDepartments, selectedTournament]);
 
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAddLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.onloadend = () => {
+        setLogos(prev => [...prev, { url: reader.result as string, file }]);
+      };
       reader.readAsDataURL(file);
     }
+  }
+
+  function handleUpdateLogoUrl(index: number, url: string) {
+    setLogos(prev => prev.map((logo, i) => i === index ? { ...logo, url, file: null } : logo));
+  }
+
+  function handleRemoveLogo(index: number) {
+    setLogos(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function handleAddEmptyLogo() {
+    setLogos(prev => [...prev, { url: '', file: null }]);
   }
 
   async function uploadImage(file: File): Promise<string | null> {
@@ -66,50 +85,43 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
   async function handleAddOrUpdate(e: React.FormEvent) {
     e.preventDefault();
     setUploading(true);
-    let imageUrl = null;
-    if (selectedImage) {
-      imageUrl = await uploadImage(selectedImage);
-      if (!imageUrl) { setUploading(false); return; }
+    
+    const finalUrls: string[] = [];
+    
+    for (const logo of logos) {
+      if (logo.file) {
+        const uploadedUrl = await uploadImage(logo.file);
+        if (uploadedUrl) finalUrls.push(uploadedUrl);
+      } else if (logo.url && logo.url.trim() !== '') {
+        finalUrls.push(logo.url.trim());
+      }
     }
 
     try {
-      const payload: any = { name, abbreviation: courses };
-      if (imageUrl) payload.image_url = imageUrl;
-      else if (imagePreview && !selectedImage && imagePreview.startsWith('http')) payload.image_url = imagePreview;
-      else if (photoRemoved) payload.image_url = null;
-
-      if (editingId) {
-        const { error } = await supabase.from("tournament_departments").update(payload).eq("id", editingId);
-        if (error) throw error;
-        toast.success("Team updated for this tournament!");
-      } else {
-        const { data: globalDept, error: globalError } = await supabase
-          .from("departments")
-          .upsert([{ name: payload.name, abbreviation: payload.abbreviation, image_url: payload.image_url }], { onConflict: 'name' })
-          .select()
-          .single();
-          
-        if (globalError) throw globalError;
-
-        const { error } = await supabase.from("tournament_departments").insert([{
-          ...payload,
-          tournament_id: selectedTournament?.id,
-          department_id: globalDept.id
-        }]);
-        if (error) throw error;
-        toast.success("Team added to tournament!");
-      }
+      if (!selectedTournament) throw new Error("Select a tournament first.");
+      const result = await saveTournamentTeamAction({
+        teamId: editingId,
+        tournamentId: selectedTournament.id,
+        name,
+        abbreviation: courses,
+        imageUrl: finalUrls.length > 0 ? finalUrls.join(',') : null,
+      });
+      if (!result.success) throw new Error(result.error);
+      toast.success(editingId ? "Team updated for this tournament!" : "Team added to tournament!");
       resetForm();
       fetchDepartments();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     } finally {
       setUploading(false);
     }
   }
 
   function resetForm() {
-    setName(""); setCourses(""); setEditingId(null); setSelectedImage(null); setImagePreview(null); setPhotoRemoved(false);
+    setEditingId(null);
+    setName("");
+    setCourses("");
+    setLogos([]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -121,63 +133,14 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
         const urlParts = dept.image_url.split('/');
         await deleteImageAction('department-images', `departments/${urlParts[urlParts.length - 1]}`);
       }
-      const { error } = await supabase.from("tournament_departments").delete().eq("id", departmentToDeleteId);
-      if (error) throw error;
+      if (!selectedTournament) throw new Error("Select a tournament first.");
+      const result = await deleteTournamentTeamAction(departmentToDeleteId, selectedTournament.id);
+      if (!result.success) throw new Error(result.error);
       toast.success("Team removed from tournament!");
       fetchDepartments();
-    } catch (error: any) { toast.error(error.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
     setShowConfirmModal(false);
     setDepartmentToDeleteId(null);
-  }
-
-  async function handleImportTeams(sourceTournamentId: string) {
-    if (!selectedTournament) return;
-    
-    const { data: sourceTeams, error: sourceError } = await supabase
-      .from("tournament_departments")
-      .select("department_id, name, abbreviation, image_url")
-      .eq("tournament_id", sourceTournamentId);
-      
-    if (sourceError || !sourceTeams) {
-      toast.error("Failed to fetch teams from source tournament.");
-      return;
-    }
-    
-    if (sourceTeams.length === 0) {
-      toast.error("No teams found in the selected tournament.");
-      return;
-    }
-
-    const { data: currentTeams } = await supabase
-      .from("tournament_departments")
-      .select("department_id")
-      .eq("tournament_id", selectedTournament.id);
-      
-    const currentDeptIds = new Set(currentTeams?.map(t => t.department_id) || []);
-    
-    const newTeamsToInsert = sourceTeams
-      .filter(team => !currentDeptIds.has(team.department_id))
-      .map(team => ({
-        ...team,
-        tournament_id: selectedTournament.id
-      }));
-      
-    if (newTeamsToInsert.length === 0) {
-      toast.error("All teams from that tournament already exist here.");
-      return;
-    }
-    
-    const { error: insertError } = await supabase
-      .from("tournament_departments")
-      .insert(newTeamsToInsert);
-      
-    if (insertError) {
-      toast.error(`Error importing teams: ${insertError.message}`);
-    } else {
-      toast.success(`Successfully imported ${newTeamsToInsert.length} teams!`);
-      fetchDepartments();
-    }
-    setShowImportModal(false);
   }
 
   const filteredDepartments = useMemo(() => {
@@ -194,13 +157,9 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     setCourses,
     editingId,
     setEditingId,
-    selectedImage,
-    setSelectedImage,
+    logos,
+    setLogos,
     uploading,
-    imagePreview,
-    setImagePreview,
-    photoRemoved,
-    setPhotoRemoved,
     showConfirmModal,
     setShowConfirmModal,
     departmentToDeleteId,
@@ -209,13 +168,13 @@ export const useDepartmentsViewModel = ({ selectedTournament }: UseDepartmentsVi
     setViewMode,
     searchQuery,
     setSearchQuery,
-    showImportModal,
-    setShowImportModal,
-    handleImageSelect,
+    handleAddLogo,
+    handleUpdateLogoUrl,
+    handleRemoveLogo,
+    handleAddEmptyLogo,
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,
-    handleImportTeams,
     filteredDepartments,
   };
 };

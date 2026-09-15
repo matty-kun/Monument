@@ -33,17 +33,7 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
   const allOptions = options.flatMap(opt => 'label' in opt ? opt.options : opt);
   const selectedOption = allOptions.find(opt => opt.id === selectedValue);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
+  // Removed handleClickOutside since we're using a modal overlay
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -77,37 +67,39 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
   }, [options, searchTerm]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`w-full py-3 px-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl text-sm font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/10 transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         {selectedOption ? (
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
             {selectedOption.icon ? (
               <span className="text-xl w-6 h-6 flex items-center justify-center shrink-0">{selectedOption.icon}</span>
             ) : selectedOption.image_url ? (
               <Image src={selectedOption.image_url} alt={selectedOption.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full shrink-0" priority />
             ) : null}
-            <span className="ml-1 text-gray-900 dark:text-gray-200 truncate block">{selectedOption.name}</span>
+            <span className="text-gray-900 dark:text-gray-200 truncate block">{selectedOption.name}</span>
           </div>
-        ) : <span className="text-gray-500 dark:text-gray-400 truncate flex-1 block">{placeholder}</span>}
-        <span className="text-gray-400 shrink-0 ml-2">▼</span>
+        ) : <span className="text-gray-500 dark:text-gray-400 truncate block uppercase text-[10px] tracking-widest">{placeholder}</span>}
       </div>
       {isOpen && !disabled && (
-        <div className={`absolute z-[999] w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-72 ${dropDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
-          <div className="p-2 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-              <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-monument-primary"
-                  onClick={(e) => e.stopPropagation()}
-                  ref={searchInputRef}
-              />
-          </div>
-          <div className="overflow-y-auto w-full flex-grow">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setIsOpen(false)}>
+          <div 
+            className="w-full max-w-sm bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] animate-in fade-in zoom-in-95 duration-200" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0">
+                <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-3 text-sm bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl dark:text-white focus:outline-none focus:ring-2 focus:ring-monument-primary transition-all"
+                    ref={searchInputRef}
+                />
+            </div>
+            <div className="overflow-y-auto custom-scrollbar w-full flex-grow py-2">
           {filteredOptions.length === 0 ? (
              <div className="p-4 text-center text-sm text-gray-500">No results found</div>
           ) : (
@@ -115,15 +107,15 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
               if ('label' in option) {
                 return (
                   <div key={option.label}>
-                    <div className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-900 shadow-sm sticky top-0">{option.label}</div>
+                    <div className="px-4 py-2 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-white dark:bg-[#1c1c1e] shadow-sm sticky top-0 z-10">{option.label}</div>
                     {option.options.map(subOption => (
                       <div
                         key={subOption.id}
                         onClick={() => handleSelect(subOption.id)}
-                        className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer pl-6 transition-colors"
+                        className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
                       >
                         {subOption.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center ">{subOption.icon}</span> : <div className="w-6 h-6" />}
-                        <span className="ml-1 text-sm text-gray-900 dark:text-gray-200">{subOption.name}</span>
+                        <span className="font-medium text-sm text-gray-900 dark:text-white">{subOption.name}</span>
                       </div>
                     ))}
                   </div>
@@ -133,14 +125,15 @@ function SingleSelectDropdown({ options, selectedValue, onChange, placeholder = 
                 <div
                   key={option.id + '-' + index}
                   onClick={() => handleSelect(option.id)}
-                  className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
                 >
                   {option.icon ? <span className="text-xl w-6 h-6 flex items-center justify-center">{option.icon}</span> : option.image_url ? <Image src={option.image_url} alt={option.name} width={24} height={24} className="w-6 h-6 object-cover rounded-full" priority /> : null}
-                  <span className="ml-1 text-sm text-gray-900 dark:text-gray-200">{option.name}</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">{option.name}</span>
                 </div>
               );
             })
           )}
+          </div>
           </div>
         </div>
       )}
