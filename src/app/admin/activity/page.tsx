@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, ShieldCheck } from "lucide-react";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import Loading from "@/components/loading";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
 import { createClient } from "@/utils/supabase/client";
@@ -87,7 +88,7 @@ export default function ResultActivityPage() {
   );
 
   if (!selectedTournament) return <EmptyTournamentState />;
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><BouncingBallsLoader /></div>;
+  if (loading) return <Loading />;
 
   return (
     <div className="space-y-5 animate-fadeIn">

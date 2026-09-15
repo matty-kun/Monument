@@ -1,210 +1,204 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 interface DatePickerDropdownProps {
-  value: string; // "YYYY-MM-DD"
+  value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 }
 
+const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
+
+function toIsoDate(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function parseDate(value: string) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function DatePickerDropdown({ value, onChange, disabled = false }: DatePickerDropdownProps) {
+  const selectedDate = parseDate(value);
   const [isOpen, setIsOpen] = useState(false);
-  const [viewDate, setViewDate] = useState(() => {
-    if (value) return new Date(value + 'T00:00:00');
-    return new Date();
-  });
-  
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (value && !isOpen) {
-      setViewDate(new Date(value + 'T00:00:00'));
-    }
-  }, [value, isOpen]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
+  const [viewDate, setViewDate] = useState(() => selectedDate || new Date());
 
   const days = useMemo(() => {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
-    
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    // Adjust for Monday start: 0(Sun) becomes 6, 1(Mon) becomes 0, etc.
-    const adjustedFirstDay = (firstDayOfMonth + 6) % 7;
-    
-    const lastDateOfMonth = new Date(year, month + 1, 0).getDate();
-    
-    const calendarDays = [];
-    
-    // Previous month padding
-    const prevMonthLastDate = new Date(year, month, 0).getDate();
-    for (let i = adjustedFirstDay - 1; i >= 0; i--) {
-      calendarDays.push({ day: prevMonthLastDate - i, month: month - 1, current: false });
+    const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    const cells: { date: Date; current: boolean }[] = [];
+
+    for (let i = firstDay - 1; i >= 0; i -= 1) {
+      cells.push({ date: new Date(year, month - 1, prevMonthDays - i), current: false });
     }
-    
-    // Current month
-    for (let i = 1; i <= lastDateOfMonth; i++) {
-      calendarDays.push({ day: i, month: month, current: true });
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      cells.push({ date: new Date(year, month, day), current: true });
     }
-    
-    // Future month padding
-    const remaining = 42 - calendarDays.length;
-    for (let i = 1; i <= remaining; i++) {
-        calendarDays.push({ day: i, month: month + 1, current: false });
+
+    while (cells.length % 7 !== 0 || cells.length < 35) {
+      const nextDay = cells.length - firstDay - daysInMonth + 1;
+      cells.push({ date: new Date(year, month + 1, nextDay), current: false });
     }
-    
-    return calendarDays;
+
+    return cells;
   }, [viewDate]);
 
-  const monthName = viewDate.toLocaleString('default', { month: 'long' });
-  const year = viewDate.getFullYear();
+  const displayDate = useMemo(() => {
+    if (!selectedDate) return "Select date";
+    return new Intl.DateTimeFormat("en", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(selectedDate);
+  }, [selectedDate]);
 
-  const handleDateSelect = (e: React.MouseEvent, d: number, m: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const newDate = new Date(viewDate.getFullYear(), m, d);
-    const monthStr = (newDate.getMonth() + 1).toString().padStart(2, '0');
-    const dayStr = newDate.getDate().toString().padStart(2, '0');
-    const isoString = `${newDate.getFullYear()}-${monthStr}-${dayStr}`;
-    onChange(isoString);
-  };
+  const monthTitle = new Intl.DateTimeFormat("en", {
+    month: "long",
+    year: "numeric",
+  }).format(viewDate);
 
-  const formattedDisplayDate = useMemo(() => {
-     if (!value) return "Select date";
-     try {
-       const date = new Date(value + 'T00:00:00');
-       if (isNaN(date.getTime())) return "Select date";
-       return date.toLocaleDateString();
-     } catch (e) {
-       return "Select date";
-     }
-  }, [value]);
+  const selectedIso = selectedDate ? toIsoDate(selectedDate) : "";
+  const todayIso = toIsoDate(new Date());
 
-  const isToday = (day: number, month: number, year: number) => {
-    const today = new Date();
-    return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-  };
+  function openPicker() {
+    if (disabled) return;
+    setViewDate(selectedDate || new Date());
+    setIsOpen(true);
+  }
 
-  const isSelected = (day: number, month: number, yearIdx: number) => {
-    if (!value) return false;
-    try {
-      const date = new Date(value + 'T00:00:00');
-      if (isNaN(date.getTime())) return false;
-      const targetDate = new Date(viewDate.getFullYear(), month, day);
-      return date.toDateString() === targetDate.toDateString();
-    } catch (e) {
-      return false;
-    }
-  };
+  function selectDate(date: Date) {
+    onChange(toIsoDate(date));
+    setIsOpen(false);
+  }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <div
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`input flex items-center justify-between ${disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors'}`}
+    <>
+      <button
+        type="button"
+        onClick={openPicker}
+        disabled={disabled}
+        className={`input flex items-center justify-between text-left ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/10"}`}
       >
-        <div className="flex items-center gap-2">
-          <CalendarIcon className="w-4 h-4 text-monument-primary" />
-          <span className="text-gray-900 dark:text-gray-200 font-bold text-xs">
-            {formattedDisplayDate}
+        <span className="flex min-w-0 items-center gap-2">
+          <CalendarIcon className="h-4 w-4 shrink-0 text-monument-primary" />
+          <span className={`truncate text-xs font-bold ${selectedDate ? "text-gray-900 dark:text-gray-200" : "text-gray-400"}`}>
+            {displayDate}
           </span>
-        </div>
+        </span>
         <span className="text-gray-400 text-[10px]">▼</span>
-      </div>
+      </button>
 
-      <AnimatePresence mode="wait">
-      {isOpen && !disabled && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: -8, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-          className="absolute z-[999] bottom-full mb-2 w-[260px] sm:w-[280px] left-1/2 -track-x-1/2 sm:left-0 sm:translate-x-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl p-4 sm:p-5 flex flex-col"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
-              {monthName} {year}
-            </h3>
-            <div className="flex gap-2">
-              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1)); }} className="p-1.5 text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)); }} className="p-1.5 text-gray-400 hover:text-monument-primary hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Week Days */}
-          <div className="grid grid-cols-7 mb-2">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-              <span key={i} className="text-center text-[9px] font-black text-gray-400 uppercase">
-                {day}
-              </span>
-            ))}
-          </div>
-
-          {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-y-1 mb-4">
-            {days.map((item, i) => {
-              const currentYear = viewDate.getFullYear();
-              // Calculate actual year for padding months
-              let actMonth = item.month;
-              let actYear = currentYear;
-              if (actMonth < 0) { actMonth = 11; actYear--; }
-              if (actMonth > 11) { actMonth = 0; actYear++; }
-
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={(e) => handleDateSelect(e, item.day, item.month)}
-                  className={`
-                    relative flex items-center justify-center h-8 w-8 mx-auto rounded-full text-xs font-bold transition-all
-                    ${!item.current ? 'text-gray-200 dark:text-gray-700 pointer-events-none' : 'text-gray-500 dark:text-gray-400 hover:bg-monument-primary/10 hover:text-monument-primary'}
-                    ${isSelected(item.day, item.month, item.month < 0 ? -1 : item.month > 11 ? 1 : 0) ? '!bg-monument-primary !text-white shadow-md scale-105' : ''}
-                    ${isToday(item.day, actMonth, actYear) && !isSelected(item.day, item.month, 0) ? 'border border-monument-primary/30' : ''}
-                  `}
-                >
-                  {item.day}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button type="button" className="absolute inset-0 cursor-default" aria-label="Close calendar" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+              className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
+            >
+              <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-white/10">
+                <div>
+                  <h2 className="text-[15px] font-semibold text-gray-950 dark:text-white">Choose date</h2>
+                  <p className="mt-0.5 text-[12px] text-gray-500 dark:text-white/45">{displayDate}</p>
+                </div>
+                <button type="button" onClick={() => setIsOpen(false)} className="admin-icon-button" aria-label="Close calendar">
+                  <X size={17} />
                 </button>
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Footer Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-50 dark:border-gray-700">
-            <button 
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(""); setIsOpen(false); }}
-              className="py-2.5 px-4 bg-gray-50 dark:bg-gray-900/50 text-gray-400 dark:text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
-            >
-              Remove
-            </button>
-            <button 
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); }}
-              className="py-2.5 px-4 bg-monument-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-monument-primary/10 hover:bg-monument-dark transition-all active:scale-95"
-            >
-              Done
-            </button>
-          </div>
-        </motion.div>
-      )}
+              <div className="p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-[#008060] dark:text-white/50 dark:hover:bg-white/10 dark:hover:text-[#33d6a6]"
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="text-[14px] font-bold text-gray-950 dark:text-white">{monthTitle}</div>
+                  <button
+                    type="button"
+                    onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-[#008060] dark:text-white/50 dark:hover:bg-white/10 dark:hover:text-[#33d6a6]"
+                    aria-label="Next month"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {weekDays.map((day, index) => (
+                    <div key={`${day}-${index}`} className="flex h-8 items-center justify-center text-[11px] font-bold text-gray-400">
+                      {day}
+                    </div>
+                  ))}
+
+                  {days.map(({ date, current }) => {
+                    const iso = toIsoDate(date);
+                    const selected = selectedIso === iso;
+                    const today = todayIso === iso;
+
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        onClick={() => selectDate(date)}
+                        className={`flex h-10 items-center justify-center rounded-lg text-[13px] font-semibold transition ${
+                          selected
+                            ? "bg-[#269a7a] text-white shadow-sm"
+                            : current
+                              ? "text-gray-800 hover:bg-[#20c997]/10 hover:text-[#007a5a] dark:text-white/80 dark:hover:text-[#33d6a6]"
+                              : "text-gray-300 hover:bg-gray-100 dark:text-white/20 dark:hover:bg-white/5"
+                        } ${today && !selected ? "ring-1 ring-[#20c997]/40" : ""}`}
+                      >
+                        {date.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 flex justify-between gap-2 border-t border-gray-200 pt-4 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange("");
+                      setIsOpen(false);
+                    }}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[13px] font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectDate(new Date())}
+                    className="rounded-lg bg-[#269a7a] px-4 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#1b7359]"
+                  >
+                    Today
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

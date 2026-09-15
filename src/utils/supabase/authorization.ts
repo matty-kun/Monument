@@ -35,3 +35,31 @@ export async function requireAdmin() {
 
   return { supabase, user, role: profile.role };
 }
+
+export async function requireAdminOrScorer() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new AuthorizationError("Authentication is required.");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    (!isAdminRole(profile.role) && profile.role !== "scorer")
+  ) {
+    throw new AuthorizationError("Admin or Scorer access is required.");
+  }
+
+  return { supabase, user, role: profile.role };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { useTheme } from "next-themes";
@@ -8,15 +8,16 @@ import { Toaster } from "react-hot-toast";
 import ConfirmModal from "../../../components/ConfirmModal";
 import SingleSelectDropdown from "../../../components/SingleSelectDropdown";
 import Breadcrumbs from "../../../components/Breadcrumbs";
-import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit, FaDownload } from "react-icons/fa";
+import { FaTable, FaThLarge, FaSearch, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
 import { useTournament } from "@/components/AdminTournamentProvider";
-import ImportFromTournamentModal from "../../../components/ImportFromTournamentModal";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useEventsViewModel } from "@/features/admin/events/viewModels/useEventsViewModel";
+import { X } from "lucide-react";
 
 export default function ManageEventsPage() {
   const { resolvedTheme } = useTheme();
   const { selectedTournament } = useTournament();
+  const [showEventModal, setShowEventModal] = useState(false);
 
   const {
     events,
@@ -43,8 +44,6 @@ export default function ManageEventsPage() {
     setViewMode,
     searchQuery,
     setSearchQuery,
-    showImportModal,
-    setShowImportModal,
     visualType,
     setVisualType,
     selectedImage,
@@ -59,13 +58,23 @@ export default function ManageEventsPage() {
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,
-    handleImportEvents,
     formatEventName,
     genderOptions,
     divisionOptions,
     getCategoryName,
     filteredEvents,
   } = useEventsViewModel({ selectedTournament });
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowEmojiPicker(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showEmojiPicker, setShowEmojiPicker]);
 
   const PhotoOrEmoji = ({ icon, className, emojiSize = "text-2xl" }: { icon?: string | null, className: string, emojiSize?: string }) => {
     const [isError, setIsError] = useState(false);
@@ -98,19 +107,23 @@ export default function ManageEventsPage() {
         </div>
         {!selectedTournament?.is_archived && (
           <button 
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 px-5 py-2.5 rounded-[16px] text-sm font-bold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+            onClick={() => {
+              resetForm();
+              setShowEventModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-[#269a7a] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1b7359] active:scale-95"
           >
-            <FaDownload size={14} /> Import from Past
+            <FaPlus size={12} /> Add event
           </button>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-1 min-h-0 pb-2">
         {/* LEFT COLUMN: Entry Form */}
-        {!selectedTournament?.is_archived && (
-        <div className="lg:col-span-4 h-full flex flex-col min-h-0 pb-2">
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all flex flex-col h-full">
+        {!selectedTournament?.is_archived && showEventModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <button className="absolute inset-0 cursor-default" aria-label="Close add event form" onClick={() => setShowEventModal(false)} />
+            <div className="relative max-h-[90vh] w-full max-w-xl overflow-hidden rounded-[24px] bg-white shadow-2xl border border-gray-200 dark:bg-[#1c1c1e] dark:border-white/5 transition-all flex flex-col">
               <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0 sticky top-0 z-10 backdrop-blur-sm">
                 <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/40">{editingId ? 'Update Event' : 'Add New Event'}</h2>
               </div>
@@ -121,7 +134,7 @@ export default function ManageEventsPage() {
                   <div className="space-y-4">
                     <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl">
                       <button type="button" onClick={() => setVisualType('emoji')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'emoji' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>Emoji</button>
-                      <button type="button" onClick={() => setVisualType('photo')} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'photo' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>Photo</button>
+                      <button type="button" onClick={() => { setVisualType('photo'); setShowEmojiPicker(false); }} className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-xl transition-all ${visualType === 'photo' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}>Photo</button>
                     </div>
 
                     <div className="flex flex-col items-center gap-4 bg-gray-50 dark:bg-[#1c1c1e] p-6 rounded-[20px] border border-dashed border-gray-300 dark:border-white/10">
@@ -134,7 +147,7 @@ export default function ManageEventsPage() {
                         
                         {visualType === 'photo' ? (
                           <div className="flex flex-col gap-2 w-full">
-                            <label className="w-full cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-center py-3 rounded-[16px] hover:border-[#0A84FF] transition-colors text-gray-500 dark:text-white/50 shadow-sm active:scale-95">
+                            <label className="w-full cursor-pointer bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest text-center py-3 rounded-[16px] hover:border-monument-primary transition-colors text-gray-500 dark:text-white/50 shadow-sm active:scale-95">
                               Choose Image File
                               <input type="file" className="hidden" accept="image/*" onChange={handleImageSelect} />
                             </label>
@@ -145,7 +158,7 @@ export default function ManageEventsPage() {
                               <input 
                                 type="text" 
                                 placeholder="...or paste image link" 
-                                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-[16px] text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none"
+                                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-[16px] text-[10px] font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-monument-primary focus:border-transparent transition-all outline-none"
                                 value={imagePreview && !selectedImage && (typeof imagePreview === 'string') && imagePreview.startsWith('http') ? imagePreview : ''}
                                 onChange={(e) => {
                                    const val = e.target.value;
@@ -158,13 +171,7 @@ export default function ManageEventsPage() {
                             </div>
                           </div>
                         ) : (
-                          <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="w-full py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-[10px] font-bold uppercase hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-gray-400">Pick Emoji</button>
-                        )}
-
-                        {showEmojiPicker && visualType === 'emoji' && (
-                          <div className="absolute z-[80] mt-48 shadow-2xl">
-                            <EmojiPicker theme={Theme.DARK} onEmojiClick={(d) => { setIcon(d.emoji); setShowEmojiPicker(false); }} />
-                          </div>
+                          <button type="button" onClick={() => setShowEmojiPicker(true)} className="w-full py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-[16px] text-[10px] font-bold uppercase hover:bg-gray-50 dark:hover:bg-white/10 transition-all text-gray-500 dark:text-gray-400">Choose Emoji</button>
                         )}
                     </div>
                   </div>
@@ -172,7 +179,7 @@ export default function ManageEventsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Event Title</label>
-                      <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all outline-none" placeholder="e.g. Basketball Men" required />
+                      <input type="text" value={eventName} onChange={(e) => setEventName(e.target.value)} className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 rounded-2xl px-4 py-4 text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-monument-primary focus:border-transparent transition-all outline-none" placeholder="e.g. Basketball Men" required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -193,7 +200,7 @@ export default function ManageEventsPage() {
                   </div>
 
                   <div className="flex flex-col gap-3 pt-4">
-                    <button type="submit" disabled={uploading} className="w-full bg-[#0A84FF] hover:bg-[#0070e0] text-white font-bold py-4 rounded-[20px] transition-all shadow-lg text-[13px] tracking-wide active:scale-95 flex items-center justify-center disabled:opacity-50">
+                    <button type="submit" disabled={uploading} className="w-full bg-[#269a7a] hover:bg-[#1b7359] text-white font-bold py-4 rounded-[20px] transition-all shadow-sm text-[13px] tracking-wide active:scale-95 flex items-center justify-center disabled:opacity-50">
                       {uploading ? "SAVING..." : editingId ? "UPDATE EVENT" : "CREATE EVENT"}
                     </button>
                     {editingId && (
@@ -207,11 +214,11 @@ export default function ManageEventsPage() {
         )}
 
         {/* RIGHT COLUMN: List */}
-        <div className={`${selectedTournament?.is_archived ? 'lg:col-span-12' : 'lg:col-span-8'} h-full flex flex-col min-h-0 pb-2`}>
-            <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#1c1c1e] p-2 rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm gap-4 shrink-0 mb-4">
+        <div className="lg:col-span-12 h-full flex flex-col min-h-0 pb-2">
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 mb-4">
                <div className="relative flex-1 w-full">
-                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type="text" placeholder="Search events or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border-none rounded-[16px] pl-12 pr-4 py-3 text-sm font-medium outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500" />
+                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" />
+                  <input type="text" placeholder="Search events or categories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border border-transparent focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 rounded-[16px] text-[13px] font-medium transition-all outline-none shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500" />
                </div>
                <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-xl shrink-0">
                   <button onClick={() => setViewMode('table')} className={`p-2.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-white/10 shadow-sm text-gray-900 dark:text-white' : 'text-gray-500'}`}><FaTable size={18}/></button>
@@ -252,9 +259,9 @@ export default function ManageEventsPage() {
                                 <div className="flex justify-end gap-2">
                                   <button onClick={() => { 
                                     setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
-                                    setIcon(event.icon || ""); setVisualType(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? 'photo' : 'emoji'); setImagePreview(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? event.icon : null); window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }} className="p-2 text-gray-500 dark:text-white/40 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"><FaEdit size={14} /></button>
-                                  <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 text-gray-500 dark:text-white/40 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"><FaTrash size={14} /></button>
+                                    setIcon(event.icon || ""); setVisualType(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? 'photo' : 'emoji'); setImagePreview(event.icon?.startsWith('http') || event.icon?.startsWith('data:') ? event.icon : null); setShowEventModal(true);
+                                  }} className="p-2 bg-yellow-400/15 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/25 rounded-xl transition-all"><FaEdit size={14} /></button>
+                                  <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-xl transition-all"><FaTrash size={14} /></button>
                                 </div>
                               </td>
                             )}
@@ -277,9 +284,9 @@ export default function ManageEventsPage() {
                                <button onClick={() => { 
                                        setEditingId(event.id); setEventName(event.name); setSelectedCategory(event.category); setGender(event.gender || "N/A"); setDivision(event.division || "N/A");
                                        const isPhoto = event.icon?.startsWith('http'); setVisualType(isPhoto ? 'photo' : 'emoji'); setIcon(isPhoto ? "" : (event.icon || "")); setImagePreview(isPhoto ? (event.icon || null) : null);
-                                       window.scrollTo({ top: 0, behavior: 'smooth' }); 
-                               }} className="p-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/70 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaEdit size={12}/></button>
-                               <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/70 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/10 rounded-[12px] shadow-sm transition-all"><FaTrash size={12}/></button>
+                                       setShowEventModal(true);
+                               }} className="p-2 bg-yellow-400/20 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/30 rounded-[12px] shadow-sm transition-all"><FaEdit size={12}/></button>
+                               <button onClick={() => { setEventToDeleteId(event.id); setShowConfirmModal(true); }} className="p-2 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-[12px] shadow-sm transition-all"><FaTrash size={12}/></button>
                             </div>
                           )}
                        </div>
@@ -304,23 +311,72 @@ export default function ManageEventsPage() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {showEmojiPicker && visualType === 'emoji' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="emoji-picker-title"
+          >
+            <button
+              type="button"
+              className="absolute inset-0 cursor-default"
+              onClick={() => setShowEmojiPicker(false)}
+              aria-label="Close emoji picker"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 10 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-[420px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#171a18]"
+            >
+              <div className="flex h-14 items-center justify-between border-b border-gray-200 px-4 dark:border-white/10">
+                <div className="min-w-0">
+                  <h2 id="emoji-picker-title" className="text-sm font-semibold text-gray-900 dark:text-white">Choose an event icon</h2>
+                  <p className="truncate text-xs text-gray-500 dark:text-white/45">{eventName || "New event"}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(false)}
+                  className="admin-icon-button shrink-0"
+                  aria-label="Close emoji picker"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+              <div className="p-2">
+                <EmojiPicker
+                  theme={resolvedTheme === "light" ? Theme.LIGHT : Theme.DARK}
+                  width="100%"
+                  height={430}
+                  searchPlaceholder="Search icons"
+                  previewConfig={{ showPreview: false }}
+                  onEmojiClick={(detail) => {
+                    setIcon(detail.emoji);
+                    setShowEmojiPicker(false);
+                  }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
       />
       
-      <ImportFromTournamentModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={handleImportEvents}
-        currentTournamentId={selectedTournament?.id || ""}
-        title="Clone Events"
-        description="Select a past tournament to instantly clone its entire list of sports and events into the current season. Duplicates will be skipped."
-      />
-
       <Toaster />
 
       <AnimatePresence>

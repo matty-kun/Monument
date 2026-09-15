@@ -9,6 +9,8 @@ import ConfirmModal from "../../../components/ConfirmModal";
 import EmptyTournamentState from "@/components/EmptyTournamentState";
 import { useTournament } from "@/components/AdminTournamentProvider";
 import { useResultsViewModel } from "@/features/admin/results/viewModels/useResultsViewModel";
+import { Pencil, Plus, Search, Trash2, Trophy, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function AddResultPage() {
   const { selectedTournament } = useTournament();
@@ -41,40 +43,99 @@ export default function AddResultPage() {
     handleEditByEvent,
     getMedalStyles,
   } = useResultsViewModel({ selectedTournament });
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+
+  const closeResultModal = useCallback(() => {
+    setIsResultModalOpen(false);
+    setIsEditing(false);
+    setEventId("");
+    setGoldId("awaiting");
+    setSilverId("awaiting");
+    setBronzeId("awaiting");
+  }, [setBronzeId, setEventId, setGoldId, setIsEditing, setSilverId]);
+
+  const submitResults = async () => {
+    const saved = await handleSubmit();
+    if (saved) closeResultModal();
+  };
+
+  const openResultForEditing = async (selectedEventId: string) => {
+    setIsResultModalOpen(true);
+    await handleEditByEvent(selectedEventId);
+  };
+
+  useEffect(() => {
+    if (!isResultModalOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSubmitting) closeResultModal();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeResultModal, isResultModalOpen, isSubmitting]);
 
   if (!selectedTournament) return <EmptyTournamentState />;
 
   return (
     <div className="w-full h-full text-gray-900 dark:text-white flex flex-col overflow-hidden max-w-[1400px]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0 mb-4">
-        <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Add Result' }]} />
+        <Breadcrumbs items={[{ href: '/admin/dashboard', label: 'Dashboard' }, { label: 'Results' }]} />
       </div>
 
-      <div className="mb-4 shrink-0">
-        <h1 className="text-[32px] font-black text-gray-900 dark:text-white tracking-tight leading-none mb-2">{isEditing ? 'Edit Result' : 'Add Results'}</h1>
-        <p className="text-[15px] text-gray-500 dark:text-white/50 font-semibold tracking-wide">{isEditing ? 'Modify medal standings for this event' : 'Record competition winners and points'}</p>
+      <div className="mb-4 flex shrink-0 items-end justify-between gap-4">
+        <div>
+          <h1 className="mb-2 text-[32px] font-black leading-none tracking-tight text-gray-900 dark:text-white">Results</h1>
+          <p className="text-[15px] font-semibold tracking-wide text-gray-500 dark:text-white/50">Review competition winners and recorded points</p>
+        </div>
+        {!selectedTournament.is_archived && (
+          <button
+            type="button"
+            onClick={() => setIsResultModalOpen(true)}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-lg bg-[#269a7a] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#1b7359]"
+          >
+            <Plus size={17} />
+            Add results
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-0 pb-2">
-        {/* LEFT COLUMN: Entry Form */}
-        <div className="lg:col-span-4 h-fit flex flex-col pb-2">
-          {selectedTournament?.is_archived ? (
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden flex flex-col items-center justify-center p-12 text-center h-[400px]">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-2xl opacity-50">🔒</span>
-              </div>
-              <h2 className="text-[18px] font-bold text-gray-900 dark:text-white mb-2">Season Archived</h2>
-              <p className="text-[14px] text-gray-500 dark:text-white/50 font-semibold tracking-wide max-w-[250px] leading-relaxed">
-                This tournament has been archived. Results can no longer be modified.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-[#1c1c1e] rounded-[24px] shadow-sm border border-gray-200 dark:border-white/5 overflow-visible transition-all flex flex-col">
-              <div className="p-6 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#1c1c1e] shrink-0 z-10 rounded-t-[24px]">
-                <h2 className="text-[12px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/40">{isEditing ? 'Edit Result' : 'Medal Entry Form'}</h2>
+      <div className="flex flex-1 min-h-0 pb-2">
+        <AnimatePresence>
+          {isResultModalOpen && !selectedTournament.is_archived && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="result-modal-title"
+            >
+              <button
+                type="button"
+                className="absolute inset-0 cursor-default"
+                onClick={() => !isSubmitting && closeResultModal()}
+                aria-label="Close results form"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: 12 }}
+                transition={{ duration: 0.16, ease: "easeOut" }}
+                className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[520px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#1c1c1e]"
+              >
+              <div className="z-10 flex shrink-0 items-center justify-between border-b border-gray-200 bg-gray-50 px-5 py-4 dark:border-white/10 dark:bg-[#1c1c1e]">
+                <div>
+                  <h2 id="result-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">{isEditing ? 'Edit event results' : 'Add event results'}</h2>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-white/45">Select the event, then assign its medal placements.</p>
+                </div>
+                <button type="button" onClick={closeResultModal} disabled={isSubmitting} className="admin-icon-button shrink-0" aria-label="Close results form">
+                  <X size={17} />
+                </button>
               </div>
               
-              <div className="p-6 relative flex flex-col pt-4">
+              <div className="relative flex flex-col overflow-y-auto p-5 custom-scrollbar">
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 dark:text-gray-500">Step 1: Select Event</label>
@@ -172,12 +233,12 @@ export default function AddResultPage() {
                     className="space-y-6 pt-4"
                   >
                     <button
-                      onClick={handleSubmit}
+                      onClick={submitResults}
                       disabled={isSubmitting || !eventId || (!goldId && !silverId && !bronzeId)}
                       className={`w-full font-bold py-4 rounded-[20px] transition-all shadow-lg text-[13px] tracking-wide active:scale-95 flex items-center justify-center gap-3 ${
                         (isSubmitting || !eventId || (!goldId && !silverId && !bronzeId))
                         ? "bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/40 cursor-not-allowed shadow-none"
-                        : "bg-[#0A84FF] hover:bg-[#0070e0] text-white"
+                        : "bg-[#269a7a] hover:bg-[#1b7359] text-white"
                       }`}
                     >
                       {isSubmitting ? (
@@ -197,21 +258,17 @@ export default function AddResultPage() {
                   </motion.div>
                 </div>
               </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
-        {/* RIGHT COLUMN: History */}
-          <div className="lg:col-span-8 flex flex-col h-fit lg:max-h-[calc(100vh-180px)] overflow-hidden">
-            <div className="mb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0">
-              <div>
-                <h3 className="text-[18px] font-bold text-gray-900 dark:text-white uppercase tracking-wide">Results History</h3>
-                <p className="text-[12px] text-gray-500 dark:text-white/50 font-semibold tracking-wide">Full log of all competition records</p>
-              </div>
-              <div className="flex items-center gap-3 bg-white dark:bg-[#1c1c1e] p-2 rounded-[16px] shadow-sm border border-gray-200 dark:border-white/5">
-                 <div className="relative flex-1 sm:w-64">
-                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 text-xs">🔍</div>
-                   <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-xl pl-9 pr-4 py-2 text-[14px] font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/40 focus:ring-2 focus:ring-[#0A84FF]/50 outline-none transition-all shadow-inner" />
+        <div className="flex h-fit w-full flex-col overflow-hidden lg:max-h-[calc(100vh-180px)]">
+            <div className="mb-4 flex flex-col sm:flex-row items-center gap-3 shrink-0">
+              <div className="flex w-full items-center gap-3">
+                 <div className="relative flex-1">
+                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" />
+                   <input type="text" placeholder="Search events..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white border border-transparent focus:ring-1 focus:ring-gray-300 dark:focus:ring-white/20 rounded-[16px] text-[13px] font-medium transition-all outline-none shadow-sm placeholder:text-gray-400 dark:placeholder:text-gray-500" />
                  </div>
                  <div className="bg-gray-50 dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/5 px-3 py-2 rounded-xl shrink-0">
                     <span className="text-[10px] font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">{groupedRecentResults.length} Competitions</span>
@@ -219,14 +276,14 @@ export default function AddResultPage() {
                  <div className="flex items-center gap-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl shadow-inner ml-1">
                     <button 
                       onClick={() => setViewMode('cards')} 
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-[#0A84FF] border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}
+                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-monument-primary border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}
                       title="Card View"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
                     </button>
                     <button 
                       onClick={() => setViewMode('table')} 
-                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-[#0A84FF] border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}
+                      className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-[#1c1c1e] shadow-sm text-monument-primary border border-gray-200 dark:border-white/10' : 'text-gray-400 dark:text-white/40 hover:text-gray-900 dark:hover:text-white'}`}
                       title="Table View"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -238,12 +295,12 @@ export default function AddResultPage() {
             <div className="overflow-y-auto custom-scrollbar flex-1 pb-4">
               {groupedRecentResults.length === 0 ? (
                 <div className="p-12 bg-white dark:bg-[#1c1c1e] rounded-[24px] border border-gray-200 dark:border-white/5 shadow-sm text-center">
-                  <div className="text-5xl mb-4 opacity-50">🏆</div>
+                  <Trophy size={34} strokeWidth={1.5} className="mx-auto mb-4 text-gray-400 dark:text-white/25" />
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                     {searchQuery ? "No results match your search" : "No results recorded yet"}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-white/50">
-                    {searchQuery ? "Try a different search term." : "Use the form to start awarding medals!"}
+                    {searchQuery ? "Try a different search term." : "Add results to start the tournament record."}
                   </p>
                 </div>
               ) : viewMode === 'cards' ? (
@@ -293,8 +350,8 @@ export default function AddResultPage() {
                                          <span className="text-[13px] font-bold text-gray-900 dark:text-white truncate pr-2">{department.name}</span>
                                        </div>
                                      ) : (
-                                       <span className="text-[10px] font-bold italic text-[#0A84FF]/70 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
-                                         <div className="w-1 h-1 bg-[#0A84FF] rounded-full animate-pulse" />
+                                       <span className="text-[10px] font-bold italic text-monument-primary/70 uppercase tracking-widest flex items-center gap-1.5 opacity-80">
+                                         <div className="w-1 h-1 bg-monument-primary rounded-full animate-pulse" />
                                          Awaiting...
                                        </span>
                                      )}
@@ -310,11 +367,11 @@ export default function AddResultPage() {
                           </p>
                           {!selectedTournament?.is_archived && (
                             <div className="flex shrink-0 gap-2">
-                             <button onClick={() => handleEditByEvent(eventId)} className="px-4 py-2 text-gray-500 dark:text-white/40 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
-                              ✏️ Edit
+                             <button onClick={() => openResultForEditing(eventId)} className="px-4 py-2 bg-yellow-400/15 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/25 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                              <Pencil size={13} /> Edit
                              </button>
-                             <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 text-gray-500 dark:text-white/40 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
-                              🗑️ Delete
+                             <button onClick={() => handleDeleteEventResults(eventId)} className="px-4 py-2 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-xl transition-all flex items-center gap-2 text-[10px] font-bold uppercase">
+                              <Trash2 size={13} /> Delete
                              </button>
                             </div>
                           )}
@@ -374,8 +431,8 @@ export default function AddResultPage() {
                                          <span className="text-[11px] font-bold text-gray-900 dark:text-white truncate">{dept.name}</span>
                                        </div>
                                      ) : (
-                                       <span className="text-[9px] font-bold italic text-[#0A84FF]/70 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
-                                         <div className="w-1 h-1 bg-[#0A84FF] rounded-full animate-pulse" />
+                                       <span className="text-[9px] font-bold italic text-monument-primary/70 uppercase tracking-widest flex items-center gap-1.5 opacity-70">
+                                         <div className="w-1 h-1 bg-monument-primary rounded-full animate-pulse" />
                                          Awaiting...
                                        </span>
                                      )}
@@ -386,11 +443,11 @@ export default function AddResultPage() {
                             {!selectedTournament?.is_archived && (
                               <td className="px-3 py-2 text-right">
                                 <div className="flex items-center justify-end">
-                                  <button onClick={() => handleEditByEvent(eventId)} className="p-1.5 text-gray-400 dark:text-white/40 hover:text-[#0A84FF] hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-all" title="Edit">
-                                    <span className="text-xs">✏️</span>
+                                  <button onClick={() => openResultForEditing(eventId)} className="p-1.5 bg-yellow-400/15 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-400/25 rounded-lg transition-all" title="Edit">
+                                    <Pencil size={13} />
                                   </button>
-                                  <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 text-gray-400 dark:text-white/40 hover:text-[#FF453A] hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-all" title="Delete">
-                                    <span className="text-xs">🗑️</span>
+                                  <button onClick={() => handleDeleteEventResults(eventId)} className="p-1.5 bg-[#FF453A]/10 text-[#FF453A] hover:bg-[#FF453A]/20 rounded-lg transition-all" title="Delete">
+                                    <Trash2 size={13} />
                                   </button>
                                 </div>
                               </td>
@@ -412,6 +469,8 @@ export default function AddResultPage() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         message="Are you sure you want to delete this result entry? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
       />
       <Toaster />
 

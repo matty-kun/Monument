@@ -40,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white pb-20 md:pb-0 selection:bg-blue-200 dark:selection:bg-blue-500/30 transition-colors">
+      <body className="flex flex-col min-h-screen bg-[#F5F5F7] dark:bg-black text-gray-900 dark:text-white pb-20 md:pb-0 selection:bg-[#20c997]/25 dark:selection:bg-[#20c997]/30 transition-colors">
         <ThemeProvider>
           <MobileOnlyWrapper>
             <Suspense fallback={null}>

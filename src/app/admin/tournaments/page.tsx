@@ -1,11 +1,18 @@
 "use client";
 
-import { Trophy, Plus, Save, Trash2, CheckCircle, Archive } from "lucide-react";
-import BouncingBallsLoader from "@/components/BouncingBallsLoader";
+import { useState } from "react";
+import { Trophy, Plus, CheckCircle, Archive } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useTournamentsViewModel } from "@/features/admin/tournaments/viewModels/useTournamentsViewModel";
 
+import Loading from "@/components/loading";
+
 export default function AdminTournamentsPage() {
+  const [mysteryConfirmation, setMysteryConfirmation] = useState<{
+    id: string;
+    name: string;
+    currentValue: boolean;
+  } | null>(null);
   const {
     localTournaments,
     loading,
@@ -26,7 +33,13 @@ export default function AdminTournamentsPage() {
     handleConfirmArchive,
   } = useTournamentsViewModel();
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><BouncingBallsLoader /></div>;
+  if (loading) return <Loading />;
+
+  const handleConfirmMysteryMode = () => {
+    if (!mysteryConfirmation) return;
+    handleToggleMysteryMode(mysteryConfirmation.id, mysteryConfirmation.currentValue);
+    setMysteryConfirmation(null);
+  };
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
@@ -37,7 +50,7 @@ export default function AdminTournamentsPage() {
         </div>
         <button 
           onClick={() => setShowNewForm(!showNewForm)}
-          className="bg-monument-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:bg-violet-700 transition-all flex items-center gap-2"
+          className="flex items-center gap-2 rounded-lg bg-[#269a7a] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1b7359] active:scale-95"
         >
           <Plus size={18} /> New Tournament
         </button>
@@ -76,7 +89,7 @@ export default function AdminTournamentsPage() {
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <button type="button" onClick={() => setShowNewForm(false)} className="px-5 py-2.5 text-sm font-bold text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all">Cancel</button>
-              <button type="submit" disabled={isSaving} className="bg-monument-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-violet-700 transition-all disabled:opacity-50">
+              <button type="submit" disabled={isSaving} className="rounded-lg bg-[#269a7a] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1b7359] disabled:opacity-50">
                 {isSaving ? 'Creating...' : 'Create Tournament'}
               </button>
             </div>
@@ -112,7 +125,11 @@ export default function AdminTournamentsPage() {
               
               <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
                 <button 
-                  onClick={() => handleToggleMysteryMode(tournament.id, tournament.mystery_mode)}
+                  onClick={() => setMysteryConfirmation({
+                    id: tournament.id,
+                    name: tournament.name,
+                    currentValue: tournament.mystery_mode,
+                  })}
                   className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${tournament.mystery_mode ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-gray-50 text-gray-500 border border-gray-200 dark:bg-white/5 dark:border-white/5 dark:text-white/60'}`}
                 >
                   Mystery Mode: {tournament.mystery_mode ? 'ON' : 'OFF'}
@@ -122,7 +139,7 @@ export default function AdminTournamentsPage() {
                   <button 
                     onClick={() => handleSetActive(tournament.id)}
                     disabled={isSaving}
-                    className="px-4 py-2 bg-gray-50 dark:bg-white/5 hover:bg-monument-primary dark:hover:bg-monument-primary hover:text-white dark:hover:text-white text-gray-600 dark:text-white/60 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-gray-200 dark:border-white/5"
+                    className="px-4 py-2 bg-gray-50 dark:bg-white/5 hover:bg-[#269a7a] dark:hover:bg-[#269a7a] hover:text-white dark:hover:text-white text-gray-600 dark:text-white/60 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-gray-200 dark:border-white/5"
                   >
                     Set Active
                   </button>
@@ -152,6 +169,20 @@ export default function AdminTournamentsPage() {
         onConfirm={handleConfirmArchive}
         title="Archive Tournament"
         message="Are you sure you want to archive this tournament? This will lock the tournament into Read-Only mode and it will no longer be active."
+        confirmLabel="Archive"
+        variant="destructive"
+      />
+      <ConfirmModal
+        isOpen={mysteryConfirmation !== null}
+        onClose={() => setMysteryConfirmation(null)}
+        onConfirm={handleConfirmMysteryMode}
+        title={mysteryConfirmation?.currentValue ? "Turn Off Mystery Mode" : "Turn On Mystery Mode"}
+        message={
+          mysteryConfirmation?.currentValue
+            ? `Reveal standings for ${mysteryConfirmation.name}? Public rankings, scores, and medals will become visible.`
+            : `Hide standings for ${mysteryConfirmation?.name}? Public rankings, scores, and medals will be concealed until Mystery Mode is turned off.`
+        }
+        confirmLabel={mysteryConfirmation?.currentValue ? "Reveal standings" : "Hide standings"}
       />
     </div>
   );

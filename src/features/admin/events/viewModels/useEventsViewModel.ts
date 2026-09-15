@@ -24,7 +24,6 @@ export const useEventsViewModel = ({ selectedTournament }: UseEventsViewModelPro
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [searchQuery, setSearchQuery] = useState("");
-  const [showImportModal, setShowImportModal] = useState(false);
   const [visualType, setVisualType] = useState<'emoji' | 'photo'>('emoji');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -162,57 +161,6 @@ export const useEventsViewModel = ({ selectedTournament }: UseEventsViewModelPro
     setEventToDeleteId(null);
   }
 
-  async function handleImportEvents(sourceTournamentId: string) {
-    if (!selectedTournament) return;
-    
-    const { data: sourceEvents, error: sourceError } = await supabase
-      .from("events")
-      .select("name, icon, category, gender, division")
-      .eq("tournament_id", sourceTournamentId);
-      
-    if (sourceError || !sourceEvents) {
-      toast.error("Failed to fetch events from source tournament.");
-      return;
-    }
-    
-    if (sourceEvents.length === 0) {
-      toast.error("No events found in the selected tournament.");
-      return;
-    }
-
-    const { data: currentEvents } = await supabase
-      .from("events")
-      .select("name, category, gender, division")
-      .eq("tournament_id", selectedTournament.id);
-      
-    const makeKey = (e: any) => `${e.name}-${e.category}-${e.gender || 'NA'}-${e.division || 'NA'}`.toLowerCase();
-    const currentKeys = new Set(currentEvents?.map(makeKey) || []);
-    
-    const newEventsToInsert = sourceEvents
-      .filter(evt => !currentKeys.has(makeKey(evt)))
-      .map(evt => ({
-        ...evt,
-        tournament_id: selectedTournament.id
-      }));
-      
-    if (newEventsToInsert.length === 0) {
-      toast.error("All events from that tournament already exist here.");
-      return;
-    }
-    
-    const { error: insertError } = await supabase
-      .from("events")
-      .insert(newEventsToInsert);
-      
-    if (insertError) {
-      toast.error(`Error importing events: ${insertError.message}`);
-    } else {
-      toast.success(`Successfully imported ${newEventsToInsert.length} events!`);
-      fetchEvents();
-    }
-    setShowImportModal(false);
-  }
-
   const formatEventName = useCallback((event: AdminEvent) => {
     const parts = [event.name];
     if (event.division && event.division !== "N/A") parts.push(`(${event.division})`);
@@ -269,8 +217,6 @@ export const useEventsViewModel = ({ selectedTournament }: UseEventsViewModelPro
     setViewMode,
     searchQuery,
     setSearchQuery,
-    showImportModal,
-    setShowImportModal,
     visualType,
     setVisualType,
     selectedImage,
@@ -285,7 +231,6 @@ export const useEventsViewModel = ({ selectedTournament }: UseEventsViewModelPro
     handleAddOrUpdate,
     resetForm,
     handleConfirmDelete,
-    handleImportEvents,
     formatEventName,
     genderOptions,
     divisionOptions,
