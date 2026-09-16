@@ -225,6 +225,7 @@ export default async function UpdatesPage({
 
   return (
     <UpdatesClientPage
+      tournamentId={tournament.id}
       mysteryMode={tournament.mystery_mode}
       updates={updates}
     />

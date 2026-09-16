@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { calculateTotalPoints } from "@/utils/scoring";
 import { LeaderboardRow, LeaderboardRPCData } from "../models/leaderboardTypes";
-import { getTournamentRealtimeFilter, readMysteryMode } from "@/utils/tournamentRealtime";
+import { getTournamentDataFilter, getTournamentRealtimeFilter, readMysteryMode } from "@/utils/tournamentRealtime";
 
 interface UseLeaderboardViewModelProps {
   initialLeaderboard: LeaderboardRow[];
@@ -18,17 +18,21 @@ export const useLeaderboardViewModel = ({
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>(initialLeaderboard);
   const [mysteryMode, setMysteryMode] = useState<boolean>(initialMysteryMode);
   
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     setLeaderboard(initialLeaderboard);
   }, [initialLeaderboard]);
 
+  useEffect(() => {
+    setMysteryMode(initialMysteryMode);
+  }, [initialMysteryMode]);
+
   const fetchLeaderboard = useCallback(async () => {
+    if (!tournamentId) return;
+
     const [statsResponse, deptResponse] = await Promise.all([
-      tournamentId
-        ? supabase.rpc("get_leaderboard_by_tournament", { p_tournament_id: tournamentId })
-        : supabase.rpc("get_leaderboard"),
+      supabase.rpc("get_leaderboard_by_tournament", { p_tournament_id: tournamentId }),
       supabase
         .from('tournament_departments')
         .select('department_id, abbreviation, image_url, mascot_url')
@@ -64,29 +68,28 @@ export const useLeaderboardViewModel = ({
   }, [supabase, tournamentId]);
 
   useEffect(() => {
+    if (!tournamentId) return;
+
     const resultsChannel = supabase
-      .channel("results-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "results", filter: `tournament_id=eq.${tournamentId}` }, fetchLeaderboard)
+      .channel(`public-podium-results-${tournamentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "results", filter: getTournamentDataFilter(tournamentId) }, fetchLeaderboard)
       .subscribe();
 
     const departmentsChannel = supabase
-      .channel("departments-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tournament_departments", filter: `tournament_id=eq.${tournamentId}` }, fetchLeaderboard)
+      .channel(`public-podium-departments-${tournamentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tournament_departments", filter: getTournamentDataFilter(tournamentId) }, fetchLeaderboard)
       .subscribe();
 
-    // 🔮 Subscribe to Mystery Mode changes in realtime
     const settingsChannel = supabase
-      .channel("settings-changes")
+      .channel(`public-podium-settings-${tournamentId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tournaments", filter: getTournamentRealtimeFilter(tournamentId || "") },
+        { event: "*", schema: "public", table: "tournaments", filter: getTournamentRealtimeFilter(tournamentId) },
         (payload: any) => {
           if (payload.new) {
             const nextMysteryMode = readMysteryMode(payload.new);
             setMysteryMode(nextMysteryMode);
-            if (!nextMysteryMode) {
-              void fetchLeaderboard();
-            }
+            void fetchLeaderboard();
           }
         }
       )

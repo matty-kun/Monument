@@ -1,6 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Bell, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { getTournamentDataFilter, getTournamentRealtimeFilter } from "@/utils/tournamentRealtime";
 
 export type PublicUpdate = {
   id: string;
@@ -38,12 +43,56 @@ const formatRelativeTime = (value: string) => {
 };
 
 export default function UpdatesClientPage({
+  tournamentId,
   mysteryMode,
   updates,
 }: {
+  tournamentId: string;
   mysteryMode: boolean;
   updates: PublicUpdate[];
 }) {
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
+  const [visibleUpdates, setVisibleUpdates] = useState(updates);
+
+  useEffect(() => {
+    setVisibleUpdates(updates);
+  }, [updates]);
+
+  useEffect(() => {
+    const refreshUpdates = () => {
+      router.refresh();
+    };
+
+    const feedChannel = supabase
+      .channel(`public-updates-feed-${tournamentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "schedules", filter: getTournamentDataFilter(tournamentId) },
+        refreshUpdates
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "results", filter: getTournamentDataFilter(tournamentId) },
+        refreshUpdates
+      )
+      .subscribe();
+
+    const settingsChannel = supabase
+      .channel(`public-updates-settings-${tournamentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tournaments", filter: getTournamentRealtimeFilter(tournamentId) },
+        refreshUpdates
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(feedChannel);
+      supabase.removeChannel(settingsChannel);
+    };
+  }, [router, supabase, tournamentId]);
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-black pb-24 font-sans text-white">
       <div
@@ -73,36 +122,43 @@ export default function UpdatesClientPage({
             </div>
           )}
 
-          {updates.length === 0 ? (
+          {visibleUpdates.length === 0 ? (
             <div className="flex h-[30vh] w-full flex-col items-center justify-center text-center">
               <Bell className="mb-4 h-8 w-8 text-white/20" />
               <p className="font-medium text-gray-400">No updates yet.</p>
             </div>
           ) : (
-            <div className="flex flex-col overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1c1c1e]">
-              {updates.map((update, index) => {
-                const style = toneStyles[update.tone];
+            <motion.div layout className="flex flex-col overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#1c1c1e]">
+              <AnimatePresence initial={false}>
+                {visibleUpdates.map((update, index) => {
+                  const style = toneStyles[update.tone];
 
-                return (
-                  <div
-                    key={update.id}
-                    className={`relative px-4 py-4 ${index === updates.length - 1 ? "" : "border-b border-white/[0.08]"}`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
-                        <h2 className={`truncate text-[14px] font-bold leading-5 ${style.label}`}>{update.title}</h2>
+                  return (
+                    <motion.div
+                      key={update.id}
+                      layout
+                      initial={{ opacity: 0, y: -10, scale: 0.985 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.985 }}
+                      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                      className={`relative px-4 py-4 ${index === visibleUpdates.length - 1 ? "" : "border-b border-white/[0.08]"}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+                          <h2 className={`truncate text-[14px] font-bold leading-5 ${style.label}`}>{update.title}</h2>
+                        </div>
+                        <span className="shrink-0 text-[11px] font-semibold text-white/35">{formatRelativeTime(update.timestamp)}</span>
                       </div>
-                      <span className="shrink-0 text-[11px] font-semibold text-white/35">{formatRelativeTime(update.timestamp)}</span>
-                    </div>
-                    <div className="mt-1 pl-3.5">
-                      <p className="text-[13px] font-medium leading-5 text-white/72">{update.description}</p>
-                      <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/32">{update.meta}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      <div className="mt-1 pl-3.5">
+                        <p className="text-[13px] font-medium leading-5 text-white/72">{update.description}</p>
+                        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/32">{update.meta}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </main>

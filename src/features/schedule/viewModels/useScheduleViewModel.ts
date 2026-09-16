@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Schedule, ScheduleStatus } from "../models/scheduleTypes";
 import { Department, Category } from "@/shared/models/tournamentTypes";
@@ -19,24 +20,41 @@ export const useScheduleViewModel = ({
   initialCategories,
   initialMysteryMode = false,
 }: UseScheduleViewModelProps) => {
+  const router = useRouter();
   const [mysteryMode, setMysteryMode] = useState(initialMysteryMode);
-  const [schedules] = useState<Schedule[]>(initialSchedules);
+  const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
   const [filteredSchedules, setFilteredSchedules] = useState<Schedule[]>(initialSchedules);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusTab, setStatusTab] = useState<'all' | 'ongoing' | 'upcoming' | 'finished'>('all');
-  const [showRefresh, setShowRefresh] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
+
+  useEffect(() => {
+    setSchedules(initialSchedules);
+  }, [initialSchedules]);
+
+  useEffect(() => {
+    setMysteryMode(initialMysteryMode);
+  }, [initialMysteryMode]);
+
+  const refreshScheduleData = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   // Supabase Realtime Subscriptions
   useEffect(() => {
     const channel = supabase
-      .channel('public-schedules-page')
+      .channel(`public-schedules-page-${tournamentId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'schedules', filter: getTournamentDataFilter(tournamentId) },
-        () => setShowRefresh(true)
+        refreshScheduleData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'results', filter: getTournamentDataFilter(tournamentId) },
+        refreshScheduleData
       )
       .subscribe();
 
@@ -48,6 +66,7 @@ export const useScheduleViewModel = ({
         (payload) => {
           if (payload.new) {
             setMysteryMode(readMysteryMode(payload.new));
+            refreshScheduleData();
           }
         }
       )
@@ -57,7 +76,7 @@ export const useScheduleViewModel = ({
       supabase.removeChannel(channel);
       supabase.removeChannel(mysterySub);
     };
-  }, [supabase, tournamentId]);
+  }, [refreshScheduleData, supabase, tournamentId]);
 
   const getDynamicStatus = useCallback((schedule: Schedule): { status: ScheduleStatus; label: string; color: string; icon: string } => {
     if (schedule.status === "finished") {
@@ -146,10 +165,6 @@ export const useScheduleViewModel = ({
     setFilteredSchedules(filtered);
   }, [schedules, searchQuery, statusTab, getCategoryName, getDynamicStatus]);
 
-  const refreshPage = () => {
-    window.location.reload();
-  };
-
   return {
     mysteryMode,
     filteredSchedules,
@@ -157,8 +172,6 @@ export const useScheduleViewModel = ({
     setSearchQuery,
     statusTab,
     setStatusTab,
-    showRefresh,
-    refreshPage,
     isSearchFocused,
     setIsSearchFocused,
     getDynamicStatus,
