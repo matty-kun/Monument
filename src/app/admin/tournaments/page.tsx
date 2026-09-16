@@ -31,6 +31,7 @@ export default function AdminTournamentsPage() {
     handleSetActive,
     handleToggleMysteryMode,
     handleConfirmArchive,
+    handleUnarchive
   } = useTournamentsViewModel();
 
   if (loading) return <Loading />;
@@ -152,9 +153,19 @@ export default function AdminTournamentsPage() {
                       setShowArchiveModal(true);
                     }}
                     disabled={isSaving}
-                    className="px-4 py-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-500 dark:hover:bg-red-500 hover:text-white dark:hover:text-white text-red-600 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-red-100 dark:border-red-500/20"
+                    className="px-4 py-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-500 dark:hover:bg-red-500 hover:text-white dark:hover:text-white text-red-600 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-red-100 dark:border-red-500/20 disabled:opacity-50"
                   >
                     Archive
+                  </button>
+                )}
+                
+                {tournament.is_archived && (
+                  <button 
+                    onClick={() => handleUnarchive(tournament.id)}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-gray-50 dark:bg-white/5 hover:bg-monument-primary hover:text-white text-gray-600 dark:text-gray-300 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border border-gray-200 dark:border-white/10 disabled:opacity-50"
+                  >
+                    Unarchive
                   </button>
                 )}
               </div>

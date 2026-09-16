@@ -25,7 +25,6 @@ export default function ScheduleClientPage({
     setSearchQuery,
     statusTab,
     setStatusTab,
-    showRefresh,
     getDynamicStatus,
     getDepartmentInfo,
     getCategoryName,
@@ -193,25 +192,6 @@ export default function ScheduleClientPage({
         </div>
       </div>
 
-      {/* Refresh Pill */}
-      <AnimatePresence>
-        {showRefresh && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-32 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none"
-          >
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 bg-[#1c1c1e] text-white shadow-xl rounded-full px-5 py-2 hover:bg-white/10 active:scale-95 transition-all pointer-events-auto text-sm font-bold tracking-wide"
-            >
-              <span>Refresh Matches</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="relative z-10 px-4 mt-4">
         {/* Search Bar */}
         <div className="relative mb-6">
@@ -228,37 +208,57 @@ export default function ScheduleClientPage({
         </div>
 
         {/* Compact Matches List Grouped by Date */}
-        <div className="space-y-6">
+        <motion.div layout className="space-y-6">
           {Object.keys(groupedSchedules).length > 0 ? (
-            Object.entries(groupedSchedules).map(([dateStr, daySchedules]) => (
-              <div key={dateStr} className="space-y-3">
-                <h2 className="text-[14px] font-bold text-gray-400 uppercase tracking-wider pl-1">
-                  {formatDateLabel(dateStr)}
-                </h2>
-                <div className="flex flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-                  {daySchedules.map((s, index) => {
-                    const globalIndex = filteredSchedules.findIndex(fs => fs.id === s.id);
-                    const isLast = index === daySchedules.length - 1;
-                    return (
-                      <div key={s.id} className={isLast ? "" : "border-b border-white/[0.08]"}>
-                        <CompactMatchCard
-                          schedule={s}
-                          getDepartmentInfo={getDepartmentInfo}
-                          getDynamicStatus={getDynamicStatus}
-                          onClick={() => openMatch(globalIndex)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))
+            <AnimatePresence initial={false}>
+              {Object.entries(groupedSchedules).map(([dateStr, daySchedules]) => (
+                <motion.div
+                  key={dateStr}
+                  layout
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  className="space-y-3"
+                >
+                  <h2 className="text-[14px] font-bold text-gray-400 uppercase tracking-wider pl-1">
+                    {formatDateLabel(dateStr)}
+                  </h2>
+                  <motion.div layout className="flex flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[linear-gradient(145deg,rgba(28,28,30,0.8),rgba(28,28,30,0.65))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+                    <AnimatePresence initial={false}>
+                      {daySchedules.map((s, index) => {
+                        const globalIndex = filteredSchedules.findIndex(fs => fs.id === s.id);
+                        const isLast = index === daySchedules.length - 1;
+                        return (
+                          <motion.div
+                            key={s.id}
+                            layout
+                            initial={{ opacity: 0, y: -10, scale: 0.985 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.985 }}
+                            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                            className={isLast ? "" : "border-b border-white/[0.08]"}
+                          >
+                            <CompactMatchCard
+                              schedule={s}
+                              getDepartmentInfo={getDepartmentInfo}
+                              getDynamicStatus={getDynamicStatus}
+                              onClick={() => openMatch(globalIndex)}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           ) : (
             <div className="w-full flex flex-col items-center justify-center text-center h-[30vh]">
               <p className="text-gray-400 font-medium">No schedules.</p>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Full Screen Swiper Bottom Sheet Modal */}

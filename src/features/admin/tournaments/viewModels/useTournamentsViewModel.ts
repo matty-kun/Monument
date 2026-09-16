@@ -94,6 +94,21 @@ export const useTournamentsViewModel = () => {
     setTournamentToArchive(null);
   };
 
+  const handleUnarchive = async (id: string) => {
+    setIsSaving(true);
+    const { error } = await supabase
+      .from("tournaments")
+      .update({ is_archived: false })
+      .eq("id", id);
+      
+    if (!error) {
+       window.location.reload();
+    } else {
+       alert("Failed to unarchive tournament.");
+    }
+    setIsSaving(false);
+  };
+
   return {
     localTournaments,
     loading,
@@ -112,5 +127,6 @@ export const useTournamentsViewModel = () => {
     handleSetActive,
     handleToggleMysteryMode,
     handleConfirmArchive,
+    handleUnarchive,
   };
 };
